@@ -56,7 +56,9 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
     // Older than this, a balance needs a fresh figure before a forecast trusts it.
     public const int StaleBalanceDays = 35;
 
-    private static readonly JsonSerializerOptions Json = new();
+    // Fingerprints compare values, not how they were written: 9000.00 read back
+    // from whole cents is 9000, and must not look like an edit.
+    private static readonly JsonSerializerOptions Json = new() { Converters = { new NormalizedDecimal() } };
     private static readonly Provenance Neutral = new(SourceKind.Imported, DateOnly.MinValue, Confidence.NeedsReview);
 
     public ImportPlan Plan(ImportBatch batch)
@@ -472,6 +474,14 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
 
         private static readonly SourceRef Unknown = new("", "");
     }
+}
+
+internal sealed class NormalizedDecimal : System.Text.Json.Serialization.JsonConverter<decimal>
+{
+    public override decimal Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => reader.GetDecimal();
+
+    public override void Write(Utf8JsonWriter writer, decimal value, JsonSerializerOptions options) =>
+        writer.WriteNumberValue(value / 1.0000000000000000000000000000m);
 }
 
 internal static class ImportReport
