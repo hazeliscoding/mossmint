@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/Mossmint.Domain/Mossmint.Domain.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Engine/Mossmint.Engine.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Application/Mossmint.Application.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Connectors.Abstractions/Mossmint.Connectors.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Persistence/Mossmint.Persistence.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Import.Excel/Mossmint.Import.Excel.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Import.Transactions/Mossmint.Import.Transactions.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Desktop/Mossmint.Desktop.csproj" />
+  </ItemGroup>
+</Project>
