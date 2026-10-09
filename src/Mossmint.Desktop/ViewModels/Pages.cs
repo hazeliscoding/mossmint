@@ -77,6 +77,11 @@ public sealed partial class OverviewPageViewModel(AppServices services, IAppNavi
         var data = services.Context.Current.Data;
         var counts = data.Counts();
         Summary = $"{Plural(counts.Accounts, "account")}, {Plural(counts.Income, "paycheck")}, {Plural(counts.Bills, "bill")} and {Plural(counts.Debts, "debt")}, all stored encrypted on this PC.";
+        var open = services.Context.Current.Imports.ReviewItems().Count(r => r.Status == Application.Import.ReviewStatus.Open);
+        if (open > 0)
+        {
+            Summary += $" {Plural(open, "imported item")} {(open == 1 ? "is" : "are")} waiting for your review on the Imports page.";
+        }
         Accounts.Clear();
         foreach (var account in data.Accounts())
         {

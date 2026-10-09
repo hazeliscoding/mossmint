@@ -331,6 +331,7 @@
           "CommunityToolkit.Mvvm": "[8.4.2, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.12, )",
           "Mossmint.Application": "[0.1.0, )",
+          "Mossmint.Import.Excel": "[0.1.0, )",
           "Mossmint.Persistence": "[0.1.0, )",
           "Velopack": "[1.2.161, )"
         }
@@ -342,6 +343,12 @@
         "type": "Project",
         "dependencies": {
           "Mossmint.Domain": "[0.1.0, )"
+        }
+      },
+      "mossmint.import.excel": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Application": "[0.1.0, )"
         }
       },
       "mossmint.persistence": {

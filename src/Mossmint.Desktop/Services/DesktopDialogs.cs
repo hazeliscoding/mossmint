@@ -12,7 +12,10 @@ public interface IDesktopDialogs
 
     Task<string?> PickBackupSaveLocationAsync(string suggestedName);
 
-    Task<bool> SaveTextAsync(string suggestedName, string text);
+    Task<bool> SaveTextAsync(string suggestedName, string text, string title);
+
+    // Paths of the workbooks the user picked; empty when they cancel.
+    Task<IReadOnlyList<string>> PickWorkbooksAsync();
 
     Task CopyAsync(string text);
 }
@@ -20,6 +23,7 @@ public interface IDesktopDialogs
 internal sealed class AvaloniaDesktopDialogs : IDesktopDialogs
 {
     private static readonly FilePickerFileType Backup = new("Mossmint backup") { Patterns = ["*.mmbak"] };
+    private static readonly FilePickerFileType Workbook = new("Excel workbook") { Patterns = ["*.xlsx"] };
 
     public TopLevel? Owner { get; set; }
 
@@ -46,11 +50,22 @@ internal sealed class AvaloniaDesktopDialogs : IDesktopDialogs
         return file?.TryGetLocalPath();
     }
 
-    public async Task<bool> SaveTextAsync(string suggestedName, string text)
+    public async Task<IReadOnlyList<string>> PickWorkbooksAsync()
+    {
+        var files = await Storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Choose your workbooks",
+            FileTypeFilter = [Workbook],
+            AllowMultiple = true,
+        });
+        return [.. files.Select(f => f.TryGetLocalPath()).OfType<string>()];
+    }
+
+    public async Task<bool> SaveTextAsync(string suggestedName, string text, string title)
     {
         var file = await Storage.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Save your recovery key",
+            Title = title,
             SuggestedFileName = suggestedName,
             DefaultExtension = "txt",
         });

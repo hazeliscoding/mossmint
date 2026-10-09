@@ -182,6 +182,10 @@
     <Setter Property="Height" Value="1" />
     <Setter Property="Background" Value="{DynamicResource BorderHairline}" />
   </Style>
+  <Style Selector="Border.separator-top">
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderHairline}" />
+  </Style>
   <Style Selector="Border.tag">
     <Setter Property="Background" Value="{DynamicResource BgElevated}" />
     <Setter Property="CornerRadius" Value="2" />

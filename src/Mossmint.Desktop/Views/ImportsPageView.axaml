@@ -1,0 +1,142 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.ImportsPageView"
+             x:DataType="vm:ImportsPageViewModel">
+
+  <StackPanel Spacing="20" MaxWidth="980" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left"
+                   IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+    <!-- Step 1: pick workbooks. -->
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding !HasPreview}">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="Import workbooks" />
+        <TextBlock Classes="prose secondary"
+                   Text="Choose your budget workbook and any debt workbooks together. Mossmint reads a copy, shows you everything it would change, and saves nothing until you say so. Each value keeps its sheet and cell." />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Choose workbooks…" Command="{Binding ChooseWorkbooksCommand}" />
+        </StackPanel>
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Step 2: the dry run. -->
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding HasPreview}">
+      <StackPanel Spacing="16">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="section" Text="Dry run" />
+          <TextBlock Classes="prose secondary" Text="{Binding Preview.Verdict, FallbackValue=''}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Import" Command="{Binding ImportCommand}" />
+          <Button Content="Save report…" Command="{Binding SaveReportCommand}" />
+          <Button Classes="ghost" Content="Cancel" Command="{Binding CancelPreviewCommand}" />
+          <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="120" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Spacing="16" DataContext="{Binding Preview}" x:DataType="vm:ImportPreviewViewModel">
+          <ItemsControl ItemsSource="{Binding Files}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SourceFileRow">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="compact faint" Text="{Binding Shape}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Classes="mono compact faint" Text="{Binding Hash}" VerticalAlignment="Center" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+  
+          <Border Classes="separator" />
+          <ItemsControl ItemsSource="{Binding Changes}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ChangeSummaryRow">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                  <TextBlock Text="{Binding Label}" />
+                  <TextBlock Grid.Column="1" Classes="mono" Text="{Binding Count}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+  
+          <Border Classes="separator" />
+          <ItemsControl ItemsSource="{Binding Findings}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:FindingRow">
+                <Grid ColumnDefinitions="*,140" Margin="0,8">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Classes="compact secondary" Text="{Binding Detail}" TextWrapping="Wrap" />
+                    <TextBlock Classes="mono compact faint" Text="{Binding Sources}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <c:StatusBadge Grid.Column="1" Tone="{Binding Tone}" Text="{Binding Badge}" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- The review queue. -->
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="section" Text="To review" />
+            <TextBlock Classes="prose secondary" Text="{Binding ReviewSummary}" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowClosed}" OnContent="Showing settled" OffContent="Open only" VerticalAlignment="Top" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Review}" IsVisible="{Binding HasReview}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ReviewItemRow">
+              <Border Classes="separator-top" Padding="0,12,0,4">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Classes="compact secondary" Text="{Binding Detail}" TextWrapping="Wrap" />
+                    <TextBlock Classes="mono compact faint" Text="{Binding Sources}" TextWrapping="Wrap" IsVisible="{Binding HasSources}" />
+                  </StackPanel>
+                  <c:StatusBadge Grid.Column="1" Tone="{Binding Tone}" Text="{Binding Badge}" VerticalAlignment="Top" Margin="16,0,0,0" />
+                  <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                    <Button Content="Mark resolved" IsVisible="{Binding IsOpen}"
+                            Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).ResolveCommand}" CommandParameter="{Binding}" />
+                    <Button Classes="ghost" Content="Dismiss" IsVisible="{Binding IsOpen}"
+                            Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).DismissCommand}" CommandParameter="{Binding}" />
+                    <Button Classes="ghost" Content="Reopen" IsVisible="{Binding !IsOpen}"
+                            Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).ReopenCommand}" CommandParameter="{Binding}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding HasHistory}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="section" Text="Import history" />
+        <ItemsControl ItemsSource="{Binding History}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:HistoryRow">
+              <Grid ColumnDefinitions="170,*" Margin="0,3">
+                <TextBlock Classes="mono compact" Text="{Binding When}" />
+                <TextBlock Grid.Column="1" Classes="compact secondary" Text="{Binding Summary}" TextWrapping="Wrap" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

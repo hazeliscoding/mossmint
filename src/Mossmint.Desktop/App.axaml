@@ -50,6 +50,9 @@
     <DataTemplate DataType="vm:SetupViewModel">
       <views:SetupView />
     </DataTemplate>
+    <DataTemplate DataType="vm:ImportsPageViewModel">
+      <views:ImportsPageView />
+    </DataTemplate>
     <DataTemplate DataType="vm:OverviewPageViewModel">
       <views:OverviewPageView />
     </DataTemplate>

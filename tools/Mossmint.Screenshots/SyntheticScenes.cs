@@ -7,6 +7,7 @@ using Mossmint.Persistence.Backups;
 using Mossmint.Persistence.Profiles;
 using Mossmint.Persistence.Security;
 using Mossmint.Samples;
+using Mossmint.Samples.Workbooks;
 
 namespace Mossmint.Screenshots;
 
@@ -64,6 +65,35 @@ internal sealed class SyntheticScenes : IDisposable
         (setup.BillName, setup.BillAmount, setup.BillDueDay) = ("Phone", "45.00", 20);
     });
 
+    // A fresh profile on the Imports page with the synthetic workbooks picked:
+    // the dry run, or the review queue once it's imported.
+    public MainWindow Imports(bool commit)
+    {
+        var root = NewRoot();
+        var folder = Path.Combine(root, "workbooks");
+        Directory.CreateDirectory(folder);
+        var paths = SyntheticWorkbooks.All().Select(w =>
+        {
+            var path = Path.Combine(folder, w.FileName);
+            File.WriteAllBytes(path, w.Content);
+            return path;
+        }).ToList();
+        var services = Services(root, paths);
+        services.Context.Open(services.Profiles.Create(SyntheticProfile.Name, Passphrase, false).Session);
+        var window = Window(services);
+        var vm = (MainWindowViewModel)window.DataContext!;
+        vm.OpenApp(Destination.Imports);
+        var page = (ImportsPageViewModel)vm.Shell.CurrentPage!;
+        Wait(page.ChooseWorkbooksCommand.ExecuteAsync(null));
+        if (commit)
+        {
+            Wait(page.ImportCommand.ExecuteAsync(null));
+            page.Status = null;
+        }
+
+        return window;
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
@@ -88,13 +118,26 @@ internal sealed class SyntheticScenes : IDisposable
         return root;
     }
 
-    private static AppServices Services(string root)
+    // Commands run work on the thread pool and finish on the UI thread, so the
+    // dispatcher has to keep pumping while we wait.
+    private static void Wait(Task task)
+    {
+        while (!task.IsCompleted)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Thread.Sleep(5);
+        }
+
+        task.GetAwaiter().GetResult();
+    }
+
+    private static AppServices Services(string root, IReadOnlyList<string>? workbooks = null)
     {
         var locations = new ProfileLocations(root);
         return new AppServices(
             new ProfileStore(locations, TimeProvider.System, Fast),
             new BackupService(locations, TimeProvider.System),
-            new NoDialogs(),
+            new NoDialogs(workbooks ?? []),
             new ProfileContext(),
             TimeProvider.System);
     }
@@ -121,13 +164,15 @@ internal sealed class SyntheticScenes : IDisposable
 
     private static MainWindow Window(AppServices services) => new() { DataContext = new MainWindowViewModel(services) };
 
-    private sealed class NoDialogs : IDesktopDialogs
+    private sealed class NoDialogs(IReadOnlyList<string> workbooks) : IDesktopDialogs
     {
         public Task<string?> PickBackupToOpenAsync() => Task.FromResult<string?>(null);
 
         public Task<string?> PickBackupSaveLocationAsync(string suggestedName) => Task.FromResult<string?>(null);
 
-        public Task<bool> SaveTextAsync(string suggestedName, string text) => Task.FromResult(false);
+        public Task<bool> SaveTextAsync(string suggestedName, string text, string title) => Task.FromResult(false);
+
+        public Task<IReadOnlyList<string>> PickWorkbooksAsync() => Task.FromResult(workbooks);
 
         public Task CopyAsync(string text) => Task.CompletedTask;
     }

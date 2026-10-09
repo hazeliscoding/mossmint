@@ -352,6 +352,12 @@
           "Mossmint.Domain": "[0.1.0, )"
         }
       },
+      "mossmint.import.excel": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Application": "[0.1.0, )"
+        }
+      },
       "mossmint.persistence": {
         "type": "Project",
         "dependencies": {

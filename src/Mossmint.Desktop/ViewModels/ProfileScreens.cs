@@ -98,7 +98,7 @@ public sealed partial class RecoveryKeyViewModel(AppServices services, string re
             "This key unlocks your profile and its backups if you forget your passphrase.",
             "Keep it somewhere safe and offline, like a printed copy or a password manager.",
             "Anyone who has it and your profile can read your finances.");
-        Status = await services.Dialogs.SaveTextAsync("Mossmint recovery key.txt", text)
+        Status = await services.Dialogs.SaveTextAsync("Mossmint recovery key.txt", text, "Save your recovery key")
             ? "Saved. Move the file somewhere safe and offline."
             : null;
     }

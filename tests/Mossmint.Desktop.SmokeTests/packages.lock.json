@@ -442,6 +442,7 @@
           "CommunityToolkit.Mvvm": "[8.4.2, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.12, )",
           "Mossmint.Application": "[0.1.0, )",
+          "Mossmint.Import.Excel": "[0.1.0, )",
           "Mossmint.Persistence": "[0.1.0, )",
           "Velopack": "[1.2.161, )"
         }
@@ -455,6 +456,12 @@
           "Mossmint.Domain": "[0.1.0, )"
         }
       },
+      "mossmint.import.excel": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Application": "[0.1.0, )"
+        }
+      },
       "mossmint.persistence": {
         "type": "Project",
         "dependencies": {
@@ -463,6 +470,13 @@
           "NSec.Cryptography": "[26.4.0, )",
           "SQLite3MC.PCLRaw.bundle": "[2.4.0, )",
           "System.Security.Cryptography.ProtectedData": "[10.0.12, )"
+        }
+      },
+      "mossmint.samples": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Connectors.Abstractions": "[0.1.0, )",
+          "Mossmint.Engine": "[0.1.0, )"
         }
       },
       "Avalonia": {

@@ -49,6 +49,8 @@ var screens = new (string Name, Func<Window> Create)[]
     ("bills", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Bills))),
     ("debts", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Debts))),
     ("backups", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Backups))),
+    ("import-preview", () => scenes.Imports(commit: false)),
+    ("import-review", () => scenes.Imports(commit: true)),
     ("settings", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Settings))),
     ("connections", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Connections))),
     ("sidebar-collapsed", () => scenes.Unlocked(vm =>

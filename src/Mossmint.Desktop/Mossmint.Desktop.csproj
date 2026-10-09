@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="../Mossmint.Application/Mossmint.Application.csproj" />
     <ProjectReference Include="../Mossmint.Persistence/Mossmint.Persistence.csproj" />
+    <ProjectReference Include="../Mossmint.Import.Excel/Mossmint.Import.Excel.csproj" />
   </ItemGroup>
 
   <ItemGroup>
