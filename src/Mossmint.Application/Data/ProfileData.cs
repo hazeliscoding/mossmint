@@ -1,0 +1,51 @@
+using Mossmint.Domain;
+using Mossmint.Domain.Accounts;
+using Mossmint.Domain.Debts;
+using Mossmint.Domain.Planning;
+using Mossmint.Engine.CashFlow;
+
+namespace Mossmint.Application.Data;
+
+// Plan-wide settings that aren't tied to one account.
+public sealed record PlanSettings(
+    Currency Currency,
+    SavingsContributionTarget? SavingsTarget = null,
+    CashReserveFloor? ReserveFloor = null,
+    IReadOnlyList<SpendingAllowance>? Allowances = null)
+{
+    public static PlanSettings Empty(Currency currency) => new(currency);
+}
+
+// Row counts per record type: a restored backup must match its source exactly.
+public sealed record ProfileCounts(int Accounts, int BalanceSnapshots, int Bills, int Income, int Debts, int AuditEvents);
+
+// The profile's stored records. Every change is recorded in the audit trail.
+public interface IProfileData
+{
+    IReadOnlyList<Account> Accounts();
+
+    // Newest first.
+    IReadOnlyList<BalanceSnapshot> Balances(AccountId account);
+
+    void AddAccount(Account account, BalanceSnapshot? opening = null);
+
+    void RecordBalance(BalanceSnapshot snapshot);
+
+    IReadOnlyList<RecurringBill> Bills();
+
+    void SaveBill(RecurringBill bill);
+
+    IReadOnlyList<IncomeSchedule> Income();
+
+    void SaveIncome(IncomeSchedule income);
+
+    IReadOnlyList<DebtAccount> Debts();
+
+    void SaveDebt(DebtAccount debt);
+
+    PlanSettings Settings();
+
+    void SaveSettings(PlanSettings settings);
+
+    ProfileCounts Counts();
+}
