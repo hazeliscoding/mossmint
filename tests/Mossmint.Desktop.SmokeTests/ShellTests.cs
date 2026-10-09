@@ -1,9 +1,7 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Mossmint.Desktop.ViewModels;
 using Mossmint.Desktop.Views;
@@ -15,85 +13,150 @@ public class ShellTests
     [AvaloniaFact]
     public void A_clean_install_opens_on_the_welcome_screen()
     {
-        var (window, _) = OpenMainWindow();
+        using var app = new Harness();
+        var window = app.Open();
 
         window.GetVisualDescendants().OfType<WelcomeView>().Should().ContainSingle();
-        VisibleTexts(window).Should().Contain("Make room to grow.");
+        app.VisibleTexts().Should().Contain("Make room to grow.");
     }
 
     [AvaloniaTheory]
-    [InlineData("Start fresh", "Overview")]
-    [InlineData("Import my finances", "Imports")]
-    public void Each_welcome_choice_opens_its_page(string choice, string expectedTitle)
+    [InlineData("Start fresh")]
+    [InlineData("Import my finances")]
+    public void Both_welcome_choices_start_by_creating_a_profile(string choice)
     {
-        var (window, _) = OpenMainWindow();
+        using var app = new Harness();
+        var window = app.Open();
 
-        var button = window.GetVisualDescendants().OfType<Button>()
-            .Single(b => AutomationName(b) == choice);
-        button.Command!.Execute(null);
-        Dispatcher.UIThread.RunJobs();
+        window.GetVisualDescendants().OfType<Button>().Single(b => Visuals.AutomationName(b) == choice).Command!.Execute(null);
+        Harness.Pump();
 
-        PageTitle(window).Should().Be(expectedTitle);
+        app.ViewModel.CurrentScreen.Should().BeOfType<CreateProfileViewModel>();
+        app.PageTitle().Should().Be("Create your profile");
     }
 
     [AvaloniaFact]
-    public void Every_destination_navigates_and_renders_its_page()
+    public void With_a_profile_the_app_opens_on_the_unlock_screen()
     {
-        var (window, vm) = OpenMainWindow();
-        vm.OpenApp(Destination.Overview);
+        using var app = new Harness();
+        app.CreateProfile();
+        var window = app.Open();
 
-        foreach (var item in vm.Shell.NavItems)
+        window.GetVisualDescendants().OfType<UnlockView>().Should().ContainSingle();
+        app.Screen<UnlockViewModel>().Profiles.Single().Name.Should().Be("Juniper");
+        app.ViewModel.OpenAppCommand.CanExecute(Destination.Overview).Should().BeFalse();
+    }
+
+    [AvaloniaFact]
+    public async Task Every_destination_navigates_once_unlocked()
+    {
+        using var app = new Harness();
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        Harness.Pump();
+
+        foreach (var item in app.ViewModel.Shell.NavItems)
         {
-            vm.Shell.SelectedItem = item;
-            Dispatcher.UIThread.RunJobs();
-
-            PageTitle(window).Should().Be(item.Label);
+            app.ViewModel.Shell.SelectedItem = item;
+            Harness.Pump();
+            app.PageTitle().Should().Be(item.Label);
         }
 
-        vm.Shell.NavItems.Select(i => i.Destination).Should().BeEquivalentTo(Enum.GetValues<Destination>());
+        app.ViewModel.Shell.NavItems.Select(i => i.Destination).Should().BeEquivalentTo(Enum.GetValues<Destination>());
     }
 
     [AvaloniaFact]
-    public void Ctrl_number_shortcuts_switch_sections()
+    public async Task Ctrl_number_shortcuts_switch_sections_only_while_unlocked()
     {
-        var (window, vm) = OpenMainWindow();
-        vm.OpenApp(Destination.Overview);
-        window.Focus();
+        using var app = new Harness();
+        app.CreateProfile();
+        var window = app.Open();
 
         window.KeyPressQwerty(PhysicalKey.Digit3, RawInputModifiers.Control);
-        Dispatcher.UIThread.RunJobs();
+        Harness.Pump();
+        app.ViewModel.CurrentScreen.Should().BeOfType<UnlockViewModel>();
 
-        vm.Shell.SelectedItem!.Destination.Should().Be(Destination.Paychecks);
-        PageTitle(window).Should().Be("Paychecks");
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        Harness.Pump();
+        window.Focus();
+        window.KeyPressQwerty(PhysicalKey.Digit3, RawInputModifiers.Control);
+        Harness.Pump();
+
+        app.ViewModel.Shell.SelectedItem!.Destination.Should().Be(Destination.Paychecks);
+        app.PageTitle().Should().Be("Paychecks");
     }
 
     [AvaloniaFact]
-    public void The_sidebar_collapses_to_icons()
+    public async Task Locking_returns_to_the_unlock_screen_and_closes_the_profile()
     {
-        var (window, vm) = OpenMainWindow();
-        vm.OpenApp(Destination.Overview);
+        using var app = new Harness();
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        app.Services.Context.IsUnlocked.Should().BeTrue();
 
-        vm.Shell.ToggleSidebarCommand.Execute(null);
-        Dispatcher.UIThread.RunJobs();
+        app.ViewModel.Shell.LockCommand.Execute(null);
+        Harness.Pump();
 
-        var sidebar = window.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("sidebar"));
-        sidebar.Bounds.Width.Should().Be(48);
+        app.Services.Context.IsUnlocked.Should().BeFalse();
+        app.ViewModel.CurrentScreen.Should().BeOfType<UnlockViewModel>();
+        app.ViewModel.OpenAppCommand.CanExecute(Destination.Overview).Should().BeFalse();
     }
 
-    internal static (MainWindow Window, MainWindowViewModel ViewModel) OpenMainWindow()
+    [AvaloniaFact]
+    public async Task A_wrong_passphrase_says_so_and_stays_locked()
     {
-        var window = ((App)Avalonia.Application.Current!).CreateMainWindow();
-        window.Show();
-        Dispatcher.UIThread.RunJobs();
-        return (window, (MainWindowViewModel)window.DataContext!);
+        using var app = new Harness();
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = "moss under the old elm";
+
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        Harness.Pump();
+
+        unlock.Error.Should().Contain("doesn't match");
+        app.Services.Context.IsUnlocked.Should().BeFalse();
+        app.VisibleTexts().Should().Contain(unlock.Error);
     }
 
-    private static string? AutomationName(Control control) =>
-        Avalonia.Automation.AutomationProperties.GetName(control);
+    [AvaloniaFact]
+    public void This_pc_unlock_opens_a_single_profile_straight_away()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
 
-    private static IEnumerable<string?> VisibleTexts(Visual root) =>
-        root.GetVisualDescendants().OfType<TextBlock>().Where(t => t.IsEffectivelyVisible).Select(t => t.Text);
+        using var app = new Harness();
+        app.CreateProfile(thisDevice: true);
+        app.Open();
 
-    private static string? PageTitle(Visual root) =>
-        root.GetVisualDescendants().OfType<TextBlock>().SingleOrDefault(t => t.Classes.Contains("page-title"))?.Text;
+        app.Services.Context.IsUnlocked.Should().BeTrue();
+        app.ViewModel.CurrentScreen.Should().BeOfType<ShellViewModel>();
+    }
+
+    [AvaloniaFact]
+    public async Task The_sidebar_collapses_to_icons()
+    {
+        using var app = new Harness();
+        app.CreateProfile();
+        var window = app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+
+        app.ViewModel.Shell.ToggleSidebarCommand.Execute(null);
+        Harness.Pump();
+
+        window.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("sidebar")).Bounds.Width.Should().Be(48);
+    }
 }

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
 using Avalonia.Headless.XUnit;
-using Avalonia.Threading;
 using Mossmint.Desktop.ViewModels;
 
 namespace Mossmint.Desktop.SmokeTests;
@@ -11,16 +10,23 @@ namespace Mossmint.Desktop.SmokeTests;
 public class OfflineTests
 {
     [AvaloniaFact]
-    public void Opening_every_screen_makes_no_network_activity()
+    public async Task Creating_unlocking_backing_up_and_every_screen_make_no_network_activity()
     {
         using var monitor = new NetworkActivityMonitor();
+        using var app = new Harness();
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
 
-        var (_, vm) = ShellTests.OpenMainWindow();
         foreach (var destination in Enum.GetValues<Destination>())
         {
-            vm.OpenApp(destination);
-            Dispatcher.UIThread.RunJobs();
+            app.ViewModel.OpenApp(destination);
+            Harness.Pump();
         }
+
+        app.Services.Backups.CreateLocal(app.Services.Context.Current);
 
         monitor.Events.Should().BeEmpty();
     }
