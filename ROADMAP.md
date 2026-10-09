@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M3. The read-only workbook pipeline with synthetic workbook shapes, then the private handoff profile.
+**Next up:** M4. The dashboard and daily flows, starting with the Overview and Cash Flow pages.
 
 ## Decisions (2026-10-09)
 
@@ -57,6 +57,14 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 ## Decisions (2026-10-09, M3)
 
 - **Owner approval:** the real workbook data may be used for the importer and the handoff profile, and the workbooks' sheet names and labels may appear in importer code. The importer recognizes a workbook by its sheets and labels, never by its file name, so file and lender names stay out of the code. Values still never enter the repo, tests, screenshots or Discord, and the `.xlsx` files stay gitignored.
+- **A built-in `.xlsx` reader, no package.** It handles zip and XML only. It refuses DTDs and caps how much a file may expand to. It reads saved values, formulas, fills and number formats, and never evaluates a formula. It matched openpyxl on every cell of the real workbooks. ClosedXML and the Open XML SDK were heavier than the need.
+- **Imported figures are *Imported, needs review*** until the user confirms them. Connector figures are *Connector*, with the observation's own date.
+- **Re-imports match by stable keys** (`bill:mid:rent`). A record edited in Mossmint keeps the user's version. Records missing from the source stay and go to review. Findings are fingerprinted, so a dismissed item stays dismissed.
+- **A balance typed over a workbook's projection** is imported as its own snapshot. If it differs from the workbook's own projection for that payment, the gap goes to review. The workbooks' "Reconciliation Difference" cells can't show this, because their projection already uses the typed balance.
+- **Card due dates and minimum payment rules** aren't in the workbooks. Mossmint assumes 21 days after closing and the larger of $40 or 1% plus interest, and queues that assumption for review.
+- **Budget workbook:** upcoming paycheck blocks become income and bills, and past blocks stay as raw history. The newest past left-over becomes the checking balance, flagged as budget arithmetic rather than a bank figure.
+- **Each import takes an encrypted snapshot first**, and the five newest are kept.
+- **Handoff profile:** produced on 2026-10-09 with `tools/Mossmint.ImportTool`, verified by restoring its backup with both secrets. It's delivered as the backup file, with the secrets sent separately.
 
 ## M0: Skeleton and guardrails
 
@@ -106,12 +114,13 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 
 ## M3: Workbook import and reconciliation
 
-- [ ] Read-only pipeline: workbook reader → raw records with cell provenance → versioned mapper → draft → validation and reconciliation → one atomic commit after a snapshot.
-- [ ] Dry-run report, review queue, reimport diff, SHA-256 of each source file.
-- [ ] Synthetic workbook generator for the five known workbook shapes (a master budget workbook and four per-debt workbooks), including formulas, stale cached values, Google-only formulas, date serials and duplicates.
-- [ ] Mismatches (balances that differ from the lender, due day vs planned day) stay review items, never silent corrections.
-- [ ] Connector contract (`Mossmint.Connectors.Abstractions`) and fake connectors that feed the same normalization and reconciliation pipeline, with replay, tombstone and stale-data tests.
-- [ ] Handoff DB: run the importer locally on the real workbooks to produce the private user's encrypted profile, with every unresolved mismatch listed for review.
+- [x] Read-only pipeline: workbook reader → raw records with cell provenance → versioned mapper → draft → validation and reconciliation → one atomic commit after a snapshot.
+- [x] Dry-run report, review queue, reimport diff, SHA-256 of each source file.
+- [x] Synthetic workbook generator for the five known workbook shapes (a master budget workbook and four per-debt workbooks), including formulas, stale cached values, Google-only formulas, date serials and duplicates.
+- [x] Mismatches (balances that differ from the lender, due day vs planned day) stay review items, never silent corrections.
+- [x] Connector contract (`Mossmint.Connectors.Abstractions`) and fake connectors that feed the same normalization and reconciliation pipeline, with replay, tombstone and stale-data tests.
+- [x] Handoff DB: run the importer locally on the real workbooks to produce the private user's encrypted profile, with every unresolved mismatch listed for review.
+- [x] Imports page: pick workbooks, read the dry run, import, and work through the review queue.
 
 **Done when:** synthetic imports pass, a failed import leaves the profile untouched, and the handoff DB opens in Mossmint with its review queue intact.
 

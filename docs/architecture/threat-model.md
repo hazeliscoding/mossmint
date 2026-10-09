@@ -1,6 +1,6 @@
 # Threat model (draft)
 
-- **Status:** Draft, updated in M2 (encrypted profiles shipped). Revisit when M3 (imports) and M6 (releases) land.
+- **Status:** Draft, updated in M3 (workbook import shipped). Revisit when M6 (releases) lands.
 - **Date:** 2026-10-09
 
 ## What we protect
@@ -81,8 +81,10 @@ flowchart TB
 | Financial data in logs or crash output | No crash upload; redacting logger; no values, paths or tokens logged | AGENTS.md, M2 |
 | Network exfiltration by new code | Architecture test rejects networking assemblies; runtime monitor in smoke tests; review rule | M0 |
 | Real data committed to the public repo | `.gitignore`, CI private-file guard with positive control, secret scan of full history | M0 |
-| Import modifies or corrupts the original workbook | Read-only open, SHA-256 before and after, no writes to source paths | M3 |
-| Failed import leaves a half-written profile | Snapshot, then one atomic transaction | M3 |
+| Import modifies or corrupts the original workbook | Read-only open, then work on an in-memory copy; SHA-256 before and after; no writes to source paths | done in M3 |
+| Failed import leaves a half-written profile | Encrypted snapshot, then one transaction; a preview overtaken by another import is refused | done in M3 |
+| Hostile workbook (zip bomb, XML entity expansion) | Built-in reader refuses DTDs, caps expanded size per part and in total, reads no external references | done in M3 |
+| Import silently "fixes" a wrong figure | Mismatches become review items; imported figures stay *needs review* until confirmed | done in M3 |
 | Forecast reports a guess as fact | Provenance on every figure; *needs confirmation* and *never pays off* results | ADR-0002, M1 |
 | Malicious dependency or action | Central version pins, lock files, NuGet audit, Dependabot, actions pinned by SHA, checksummed tools | M0 |
 | Tampered installer | SHA-256 checksums now; code signing and signed update feed before public release | M6 |

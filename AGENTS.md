@@ -15,6 +15,7 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - Even with approval, read only what the task needs (structure before values) and never modify the originals. Real workbooks are migrated only by Mossmint's own code, on the owner's machine, read-only.
 - Fixtures, samples, tests and screenshots are synthetic and built in code. Never derive them from real files, not even anonymized. Values seen in a real file never go into the repo, commits, issues, Discord or chat summaries.
 - Notes about the real workbooks go in `private/` (gitignored), never in tracked docs.
+- Importer tests use the synthetic workbooks in `samples/Mossmint.Samples/Workbooks`. When the importer learns a new workbook quirk, add it there as a `WorkbookQuirks` switch.
 - Public files (code, docs, commits, issues, PRs) don't name the private user, their lenders or their workbook file names. Sheet names and column labels may appear in importer code; recognize workbooks by structure, never by file name.
 - Never use `git add -f`. `.gitignore` blocks spreadsheets and databases on purpose.
 
@@ -63,6 +64,7 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - `Mossmint.Desktop.exe --verify-encryption [report.json]` proves a build encrypts profiles (exit code 0 = pass). Run it against packaged builds.
 - `dotnet ef migrations add <Name> --project src/Mossmint.Persistence --startup-project src/Mossmint.Persistence --output-dir Data/Migrations --namespace Mossmint.Persistence.Data.Migrations` adds a schema migration.
 - Set `MOSSMINT_DATA_ROOT` to a temporary folder whenever you run the app for testing; never point tools at `%LOCALAPPDATA%\Mossmint`.
+- `dotnet run --project tools/Mossmint.ImportTool -- --data-root <folder> --profile <name> --secrets <file> --report <file> [--backup <file>] [--dry-run] <workbooks...>` imports workbooks into a new profile and backs it up. For real workbooks, every output path goes under `private/`.
 
 ## Working style
 
