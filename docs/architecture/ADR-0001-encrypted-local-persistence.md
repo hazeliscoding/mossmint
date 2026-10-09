@@ -1,7 +1,7 @@
 # ADR-0001: Encrypted local persistence
 
-- **Status:** Accepted for the approach; the encryption library is decided by the M2 spike.
-- **Date:** 2026-10-09
+- **Status:** Accepted. The M2 spike chose the library and cipher scheme (below).
+- **Date:** 2026-10-09, updated after the M2 spike the same day
 
 ## Context
 
@@ -12,15 +12,31 @@ EF Core 10 and `Microsoft.Data.Sqlite.Core` 10 still sit on SQLitePCLRaw 2.1.x. 
 ## Decision
 
 1. **SQLite through EF Core 10**, one database file per profile, with foreign keys on and every multi-row change in a transaction.
-2. **Page-level encryption from a SQLite build with a cipher**, chosen in the M2 spike from:
-   - SQLite3 Multiple Ciphers (MIT), via `SQLitePCLRaw.bundle_e_sqlite3mc` or `SQLite3MC.PCLRaw.bundle`. It can use the SQLCipher v4 format or ChaCha20-Poly1305.
-   - `SQLitePCLRaw.bundle_e_sqlcipher` 2.1.11 (SQLCipher community build, no longer updated).
+2. **SQLite3 Multiple Ciphers 2.4.0 (`SQLite3MC.PCLRaw.bundle`, MIT), writing the SQLCipher v4 file format** (`cipher = 'sqlcipher'`, `legacy = 4`) with the profile's 256-bit data key passed as a raw key (`x'…'`), so no second key-derivation step runs on open.
 
-   The spike must show, in an **installed Velopack build**, that the database opens with the key, that a plain `sqlite3` client and a hex dump can't read it, that the default `e_sqlite3` binary isn't also shipped, and that the cipher is active at startup. Without that proof no real data is imported.
-3. **Fail closed.** At open, Mossmint checks that the cipher is active (`PRAGMA cipher` / `cipher_version`) and that the key was accepted. If either fails it refuses to open the profile and says why. There is no plaintext mode.
+   The spike (self-contained win-x64 publish, EF Core 10) compared three builds:
+
+   | | `bundle_e_sqlite3mc` 2.1.11 | **`SQLite3MC.PCLRaw.bundle` 2.4.0** | `bundle_e_sqlcipher` 2.1.11 |
+   |---|---|---|---|
+   | SQLite inside | 3.49.1 | **3.53.4** | 3.39.2 (2022) |
+   | Cipher library | sqlite3mc 2.1.0 | **sqlite3mc 2.4.0** (July 2026) | SQLCipher 4.5.2 community |
+   | EF Core 10 create, write, reopen | yes | **yes** | yes |
+   | No `SQLite format 3` header, no plaintext canary in DB or WAL | yes | **yes** | yes |
+   | Wrong key / no key / Python's plain `sqlite3` refuse it | yes | **yes** | yes |
+   | Online backup API stays encrypted and readable | yes | **yes** | yes |
+   | Rekey in WAL mode | fails | **yes** | yes |
+   | Reopen time (raw key) | ~120 ms | **~40 ms** | ~720 ms (passphrase KDF) |
+   | Native SQLite binaries shipped | one | **one (`sqlite3mc.dll`)** | one |
+
+   A file written by sqlite3mc 2.4.0 in SQLCipher v4 format with a raw key was read back by the independent SQLCipher 4.5.2 build, so a user can open their own data in standard SQLCipher tools with the key. That keeps their data independent of Mossmint.
+
+   **Known risk:** the bundle depends on SQLitePCLRaw.core 3.0.2, while `Microsoft.Data.Sqlite.Core` 10 was built against 2.1.12. The spike and Mossmint's persistence tests run cleanly on it; versions are pinned, and this is re-checked when EF Core 11 (on SQLitePCLRaw 3) ships.
+
+   The remaining proof (the packaged Velopack build opens an encrypted profile and refuses plaintext) runs through the app's `--verify-encryption` self-check against the packaged build. Without it no real data is imported.
+3. **Fail closed.** At open, Mossmint runs the cipher pragmas, keys the connection, then checks `sqlite3mc_version()` and `PRAGMA cipher` report sqlite3mc in SQLCipher mode, and that the key was accepted (a read of `sqlite_master` succeeds). If any check fails it refuses to open the profile and says why. There is no plaintext mode.
 4. **Envelope keys.** Each profile has a random 256-bit data key. The database is keyed with it as a raw key. The data key is stored only in wrapped form, in `profile.json` beside the database:
-   - wrapped by a key derived from the **passphrase** with Argon2id (versioned parameters, starting at 64 MiB, 3 iterations, parallelism 1, tuned on low-end hardware in M2);
-   - wrapped by a **recovery key** (random, shown once as groups of characters to print or store; never saved by Mossmint);
+   - wrapped by a key derived from the **passphrase** with Argon2id via libsodium (`NSec.Cryptography`, MIT; libsodium, ISC), with versioned parameters starting at 64 MiB, 3 iterations, parallelism 1;
+   - wrapped by a key derived with HKDF-SHA256 from a **recovery key**: 160 random bits shown once as 32 Crockford base32 characters in groups of four (letters that look alike are read as the same character, dashes and spaces are ignored), never saved by Mossmint. A mistyped key simply fails to unwrap;
    - optionally wrapped with **Windows DPAPI** (current user) for convenience unlock on this PC.
 
    Wrapping uses AES-256-GCM with a fresh nonce. Changing the passphrase rewraps the data key without re-encrypting the database.
@@ -35,8 +51,8 @@ EF Core 10 and `Microsoft.Data.Sqlite.Core` 10 still sit on SQLitePCLRaw 2.1.x. 
 - The SQLite build is native code that Mossmint ships, so its version and checksum are part of the release checklist.
 - Tests need a real encrypted database: a check that a plain client can't read it, and wrong-key, corrupt-file and truncated-backup cases.
 
-## Open questions for M2
+## Resolved in M2
 
-- Which library, and which cipher scheme (SQLCipher v4 format for tool compatibility, or ChaCha20-Poly1305).
-- Argon2 implementation: a maintained, permissively licensed .NET package, or `libsodium` bindings.
-- Recovery key format and how it's checked when entered.
+- Library and scheme: SQLite3 Multiple Ciphers 2.4.0 in SQLCipher v4 format, raw key.
+- Argon2: libsodium through NSec (audited, constant-time, fast); a pure managed implementation would be slower for the same cost.
+- Recovery key: 160-bit Crockford base32, checked by unwrapping.
