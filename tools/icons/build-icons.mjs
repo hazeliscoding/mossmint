@@ -1,0 +1,117 @@
+// Converts Lucide icons (ISC) into Avalonia StreamGeometry resources.
+// Usage: node tools/icons/build-icons.mjs
+// Downloads from unpkg at a pinned version, so rerunning gives the same output.
+import { writeFileSync } from 'node:fs';
+
+const LUCIDE_VERSION = '0.460.0';
+const OUT = new URL('../../src/Mossmint.Desktop/Themes/Icons.axaml', import.meta.url);
+
+const ICONS = [
+  'layout-dashboard', 'waves', 'banknote', 'credit-card', 'receipt-text', 'piggy-bank', 'list',
+  'git-compare-arrows', 'file-spreadsheet', 'plug', 'settings-2', 'archive', 'panel-left', 'bell',
+  'search', 'plus', 'chevron-right', 'shield-check', 'folder-open', 'wifi-off', 'lock', 'info',
+  'circle-help', 'x', 'check', 'upload', 'refresh-cw', 'calendar', 'scale', 'landmark',
+  'triangle-alert', 'circle-alert', 'sprout',
+];
+
+const ARGS = { m: 2, l: 2, h: 1, v: 1, c: 6, s: 4, q: 4, t: 2, a: 7, z: 0 };
+
+// SVG allows "1.5.5" and glued arc flags ("a2 2 0 012 2"); Avalonia's parser
+// doesn't, so every path is re-emitted with explicit separators.
+function normalizePath(d) {
+  let i = 0;
+  const out = [];
+  const skip = () => { while (i < d.length && /[\s,]/.test(d[i])) i++; };
+  const number = () => {
+    skip();
+    const m = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?/.exec(d.slice(i));
+    if (!m) throw new Error(`Bad number at ${i} in "${d}"`);
+    i += m[0].length;
+    return m[0];
+  };
+  const flag = () => { skip(); const f = d[i++]; if (f !== '0' && f !== '1') throw new Error(`Bad flag in "${d}"`); return f; };
+  while (true) {
+    skip();
+    if (i >= d.length) break;
+    let cmd = d[i];
+    if (!/[a-zA-Z]/.test(cmd)) throw new Error(`Expected command at ${i} in "${d}"`);
+    // A path's leading "m" is absolute in SVG. Elements are joined into one
+    // geometry, so it must be written as "M" or it would chain off the previous element.
+    const written = out.length === 0 && cmd === 'm' ? 'M' : cmd;
+    i++;
+    const n = ARGS[cmd.toLowerCase()];
+    if (n === 0) { out.push(cmd); continue; }
+    let first = true;
+    do {
+      const args = [];
+      for (let k = 0; k < n; k++) args.push(cmd.toLowerCase() === 'a' && (k === 3 || k === 4) ? flag() : number());
+      // Implicit repeats after a moveto are linetos, relative if the moveto was.
+      const emitted = first ? written : cmd === 'm' ? 'l' : cmd === 'M' ? 'L' : cmd;
+      out.push(`${emitted} ${args.join(' ')}`);
+      first = false;
+      skip();
+    } while (i < d.length && /[-+.\d]/.test(d[i]));
+  }
+  return out.join(' ');
+}
+
+const num = (el, name) => parseFloat(attr(el, name) ?? '0');
+function attr(el, name) {
+  const m = new RegExp(`\\s${name}="([^"]*)"`).exec(el);
+  return m ? m[1] : undefined;
+}
+
+function elementToPath(el) {
+  const tag = /^<(\w+)/.exec(el)[1];
+  switch (tag) {
+    case 'path': return normalizePath(attr(el, 'd'));
+    case 'line': return `M ${num(el, 'x1')} ${num(el, 'y1')} L ${num(el, 'x2')} ${num(el, 'y2')}`;
+    case 'polyline':
+    case 'polygon': {
+      const p = attr(el, 'points').trim().split(/[\s,]+/);
+      const pairs = [];
+      for (let k = 0; k < p.length; k += 2) pairs.push(`${p[k]} ${p[k + 1]}`);
+      return `M ${pairs.join(' L ')}${tag === 'polygon' ? ' Z' : ''}`;
+    }
+    case 'circle': {
+      const cx = num(el, 'cx'), cy = num(el, 'cy'), r = num(el, 'r');
+      return `M ${cx - r} ${cy} A ${r} ${r} 0 1 0 ${cx + r} ${cy} A ${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
+    }
+    case 'ellipse': {
+      const cx = num(el, 'cx'), cy = num(el, 'cy'), rx = num(el, 'rx'), ry = num(el, 'ry');
+      return `M ${cx - rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx + rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx - rx} ${cy} Z`;
+    }
+    case 'rect': {
+      const x = num(el, 'x'), y = num(el, 'y'), w = num(el, 'width'), h = num(el, 'height');
+      const rx = Math.min(parseFloat(attr(el, 'rx') ?? attr(el, 'ry') ?? '0'), w / 2);
+      const ry = Math.min(parseFloat(attr(el, 'ry') ?? attr(el, 'rx') ?? '0'), h / 2);
+      if (!rx) return `M ${x} ${y} H ${x + w} V ${y + h} H ${x} Z`;
+      return [
+        `M ${x + rx} ${y}`, `H ${x + w - rx}`, `A ${rx} ${ry} 0 0 1 ${x + w} ${y + ry}`,
+        `V ${y + h - ry}`, `A ${rx} ${ry} 0 0 1 ${x + w - rx} ${y + h}`, `H ${x + rx}`,
+        `A ${rx} ${ry} 0 0 1 ${x} ${y + h - ry}`, `V ${y + ry}`, `A ${rx} ${ry} 0 0 1 ${x + rx} ${y}`, 'Z',
+      ].join(' ');
+    }
+    default: throw new Error(`Unsupported element <${tag}>`);
+  }
+}
+
+const pascal = (s) => s.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase());
+
+const entries = [];
+for (const name of ICONS) {
+  const res = await fetch(`https://unpkg.com/lucide-static@${LUCIDE_VERSION}/icons/${name}.svg`);
+  if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
+  const svg = await res.text();
+  const elements = svg.match(/<(path|line|polyline|polygon|circle|ellipse|rect)\b[^>]*\/?>/g) ?? [];
+  entries.push(`  <StreamGeometry x:Key="Icon${pascal(name)}">${elements.map(elementToPath).join(' ')}</StreamGeometry>`);
+}
+
+writeFileSync(OUT, `<!-- Generated by tools/icons/build-icons.mjs from Lucide ${LUCIDE_VERSION} (ISC, see Assets/Icons/LICENSE). Do not edit. -->
+<!-- Icons are 24x24 stroke outlines: draw them with a 2px round-capped stroke and no fill. -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+${entries.join('\n')}
+</ResourceDictionary>
+`);
+console.log(`Wrote ${entries.length} icons`);
