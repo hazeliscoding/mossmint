@@ -216,7 +216,7 @@ internal static class EnginePreviewWindow
 
     private static IBrush? Resource(string key)
     {
-        var app = Application.Current!;
+        var app = Avalonia.Application.Current!;
         return app.TryFindResource(key, app.ActualThemeVariant, out var value) ? value as IBrush : null;
     }
 }

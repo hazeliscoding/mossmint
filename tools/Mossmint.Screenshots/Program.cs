@@ -32,7 +32,7 @@ var outDir = Path.GetFullPath(args.Length > 0 ? args[0] : Path.Combine("artifact
 var only = args.Skip(1).ToHashSet(StringComparer.OrdinalIgnoreCase);
 Directory.CreateDirectory(outDir);
 
-var app = (App)Application.Current!;
+var app = (App)Avalonia.Application.Current!;
 
 Window AppAt(Action<MainWindowViewModel> show)
 {

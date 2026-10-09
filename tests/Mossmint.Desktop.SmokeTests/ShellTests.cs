@@ -82,7 +82,7 @@ public class ShellTests
 
     internal static (MainWindow Window, MainWindowViewModel ViewModel) OpenMainWindow()
     {
-        var window = ((App)Application.Current!).CreateMainWindow();
+        var window = ((App)Avalonia.Application.Current!).CreateMainWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
         return (window, (MainWindowViewModel)window.DataContext!);

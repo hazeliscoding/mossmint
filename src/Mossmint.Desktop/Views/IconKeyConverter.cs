@@ -12,7 +12,7 @@ public sealed class IconKeyConverter : IValueConverter
     public static readonly IconKeyConverter Instance = new();
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is string key && Application.Current?.TryFindResource(key, out var resource) == true
+        value is string key && Avalonia.Application.Current?.TryFindResource(key, out var resource) == true
             ? resource as Geometry
             : null;
 

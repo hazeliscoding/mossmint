@@ -7,7 +7,7 @@ using Mossmint.Desktop.Views;
 
 namespace Mossmint.Desktop;
 
-public partial class App : Application
+public partial class App : Avalonia.Application
 {
     public IServiceProvider Services { get; private set; } = null!;
 
