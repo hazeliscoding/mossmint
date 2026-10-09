@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M1. Money and source labels, then schedule rules, then the installment loan model.
+**Next up:** M2. The encryption spike (SQLite3 Multiple Ciphers vs the SQLCipher bundle) in an installed build, then the profile store and key envelopes.
 
 ## Decisions (2026-10-09)
 
@@ -16,7 +16,7 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **Reference loan model:** daily simple interest, Actual/365 by default (Actual/360 and lender-defined per loan). Payments go to fees, then interest, then principal unless the contract says otherwise. The credit card model is labelled an approximation until statements confirm it.
 - **The engine never invents certainty.** A payoff that can't converge returns *never pays off*, not a date. Safe to spend returns *needs confirmation* with the missing evidence when the opening balance is stale or a due bill has no amount.
 - **Tests:** xUnit v3, AwesomeAssertions (Apache-2.0; FluentAssertions 8 needs a commercial license) and FsCheck for property tests. Fixtures are synthetic and built in code.
-- **Private data never enters the repo.** `.gitignore` blocks spreadsheets and databases, and CI fails if one is tracked. Real workbooks are only ever read by local Mossmint code, after the owner approves it, read-only. They are never opened by an AI tool or uploaded anywhere.
+- **Private data never enters the repo.** `.gitignore` blocks spreadsheets and databases, and CI fails if one is tracked. Real workbooks are migrated only by local Mossmint code, read-only. Agents read them only with the owner's approval for a task (see below).
 - **Public files don't name the private user, their lenders or their workbook files.** The workbook layout is described generically until the owner confirms which sheet names may appear in importer code (M3).
 - **Encrypted storage comes before any real data.** EF Core 10 is still on SQLitePCLRaw 2.1.x, and `SQLitePCLRaw.bundle_e_sqlcipher` stopped at 2.1.11, so M2 opens with a spike: SQLite3 Multiple Ciphers vs the last SQLCipher bundle. ADR-0001 has the criteria and the key design. There is never a plaintext fallback.
 - **Status lives in this file.** It replaces the handoff's `implementation-status.md` and `START-HERE.md`. ADRs live in `docs/architecture/` and `docs/connectors/`.
@@ -30,6 +30,17 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **Tests run on Microsoft.Testing.Platform** (opted in through `global.json`). xUnit stays on 3.2.x because Avalonia.Headless.XUnit 12.1 fails test discovery on 4.x. FsCheck is used through its core API rather than its xUnit 4 integration.
 - **Owner approval (2026-10-09):** agents may read the private workbooks in the working tree to shape the domain model and the importer. Their values still never enter the repo, docs, commits, tests, screenshots or Discord.
 - **The handoff DB** for the private user is a real encrypted Mossmint profile, produced by running the M3 importer locally on the workbooks. There is no interim export format.
+
+## Decisions (2026-10-09, M1)
+
+- **Interest is charged when a payment pays it.** Loan interest stays exact until a payment that pays interest charges it, rounded to the cent. A principal-only extra charges none, so an extra payment never adds a rounding step or raises total interest (property-tested).
+- **Amortizing loans** round a derived level payment up to the cent, and the last payment of the term settles what per-period rounding leaves.
+- **Card results are Estimated at best.** Payments follow CARD Act ordering, interest is charged at statement close, and a payment that clears the card also pays interest accrued since the last statement.
+- **Within a day:** outflows, then inflows, then the savings contribution the paycheck funds. The day's low is the lowest running balance.
+- **Paycheck funding carries leftovers forward** (negative when short), the way the reference spreadsheets do. The savings target is reported separately from the reserve floor.
+- **Safe to spend** counts estimated bills at the top of their range; the horizon is the caller's choice (`DayBeforeNextPayday` is the usual one).
+- **US Federal Reserve holidays** are the default bank calendar for paydays, as a stated assumption; users can add closed days.
+- **Synthetic samples** live in `samples/Mossmint.Samples` (the *Juniper* profile), used by the screenshot tool's engine preview. Tests keep their own fixtures so sample changes can't move test expectations.
 
 ## M0: Skeleton and guardrails
 
@@ -49,20 +60,20 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 
 ## M1: Core financial engine
 
-- [ ] `Money`, `Currency`, rounding policy, with property tests.
-- [ ] Source and quality labels on every figure: confirmed, scheduled, estimated, imported, needs review; each with an as-of date.
-- [ ] Immutable domain records: account, balance snapshot, transaction, transfer group, recurring bill, income schedule, savings goal, reserve floor, debt account, APR period, planned payment.
-- [ ] Schedule rules: weekly, biweekly, semi-monthly (including 15th and last day), monthly, last business day, weekend and holiday adjustment, dated overrides.
-- [ ] Installment loan, daily simple interest: day-count conventions, allocation order, irregular dates, extra principal, prepayment fee, final-payment clamp, *never pays off*.
-- [ ] Amortizing installment loan: periodic rate, rate changes.
-- [ ] Credit card approximation: statement cycles, grace period, APR buckets, promo expiry, minimum payment; always labelled *approximate*.
-- [ ] Cash-flow simulator: deterministic daily events, lowest cash between paychecks, reserve floor, transfers that net to zero, card payments that aren't counted as spending twice, negative-cash warnings.
-- [ ] Paycheck funding: each bill is assigned to exactly one paycheck; the savings contribution target and the cash reserve floor are separate constraints.
-- [ ] Safe to spend: an amount, or *needs confirmation* with reasons.
-- [ ] Spending scenarios: base, cautious and stress, from user-entered ranges, labelled as assumptions.
-- [ ] Replay: engine inputs and outputs serialize to JSON and replay identically.
-- [ ] Hand-derived oracle fixtures and invariant property tests.
-- [ ] `docs/financial-models/`: interest, rounding and event-ordering rules.
+- [x] `Money`, `Currency`, rounding policy, with property tests.
+- [x] Source and quality labels on every figure: confirmed, scheduled, estimated, imported, needs review; each with an as-of date.
+- [x] Immutable domain records: account, balance snapshot, transaction, transfer group, recurring bill, income schedule, savings goal, reserve floor, debt account, APR period, planned payment.
+- [x] Schedule rules: weekly, biweekly, semi-monthly (including 15th and last day), monthly, last business day, weekend and holiday adjustment, dated overrides.
+- [x] Installment loan, daily simple interest: day-count conventions, allocation order, irregular dates, extra principal, prepayment fee, final-payment clamp, *never pays off*.
+- [x] Amortizing installment loan: periodic rate, rate changes.
+- [x] Credit card approximation: statement cycles, grace period, APR buckets, promo expiry, minimum payment; always labelled *approximate*.
+- [x] Cash-flow simulator: deterministic daily events, lowest cash between paychecks, reserve floor, transfers that net to zero, card payments that aren't counted as spending twice, negative-cash warnings.
+- [x] Paycheck funding: each bill is assigned to exactly one paycheck; the savings contribution target and the cash reserve floor are separate constraints.
+- [x] Safe to spend: an amount, or *needs confirmation* with reasons.
+- [x] Spending scenarios: base, cautious and stress, from user-entered ranges, labelled as assumptions.
+- [x] Replay: engine inputs and outputs serialize to JSON and replay identically.
+- [x] Hand-derived oracle fixtures and invariant property tests.
+- [x] `docs/financial-models/`: interest, rounding and event-ordering rules.
 
 **Done when:** every invariant and fixture passes, the same input always gives the same output, and no input can produce a payoff date it doesn't support.
 
