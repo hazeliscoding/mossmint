@@ -51,3 +51,7 @@ dotnet_naming_rule.constants.style = pascal
 dotnet_naming_rule.constants.severity = warning
 dotnet_naming_symbols.constants.applicable_kinds = field
 dotnet_naming_symbols.constants.required_modifiers = const
+
+# EF Core migrations are generated; keep them as the tool writes them.
+[src/**/Data/Migrations/*.cs]
+generated_code = true
