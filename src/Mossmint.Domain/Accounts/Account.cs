@@ -31,9 +31,11 @@ public enum ReconciliationState
 
 // What an account held on a date, as the institution reports it: liabilities
 // are the amount owed, as a positive number. A snapshot is evidence, never a
-// transaction, and a newer snapshot never rewrites the ledger.
+// transaction, and a newer snapshot never rewrites the ledger. Loans that report
+// unpaid interest separately put it in AccruedInterest; Balance is then principal.
 public sealed record BalanceSnapshot(
     AccountId Account,
     Money Balance,
     Provenance Provenance,
-    ReconciliationState State = ReconciliationState.Unreconciled);
+    ReconciliationState State = ReconciliationState.Unreconciled,
+    Money? AccruedInterest = null);

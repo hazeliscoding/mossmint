@@ -76,4 +76,4 @@ public sealed record CreditCardTerms(
     MinimumPaymentRule Minimum,
     DayCountConvention DayCount = DayCountConvention.Actual365Fixed,
     bool HasGracePeriod = true,
-    MidpointRounding InterestRounding = MidpointRounding.AwayFromZero);
+    MidpointRounding InterestRounding = MidpointRounding.AwayFromZero) : DebtTerms;

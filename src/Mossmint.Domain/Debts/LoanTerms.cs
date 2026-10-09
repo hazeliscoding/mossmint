@@ -1,6 +1,19 @@
+using System.Text.Json.Serialization;
+using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Scheduling;
 
 namespace Mossmint.Domain.Debts;
+
+// The contract terms of a debt; which model applies follows from the type.
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$terms")]
+[JsonDerivedType(typeof(SimpleInterestLoanTerms), "simple-interest-loan")]
+[JsonDerivedType(typeof(AmortizingLoanTerms), "amortizing-loan")]
+[JsonDerivedType(typeof(CreditCardTerms), "credit-card")]
+public abstract record DebtTerms;
+
+// A debt is a liability account plus its terms. Balances live in the account's
+// snapshots, so a lender statement and a projection are never mixed up.
+public sealed record DebtAccount(AccountId Account, DebtTerms Terms, Money? OriginalPrincipal = null, DateOnly? OpenedOn = null);
 
 // A loan whose interest accrues daily on principal only and is settled by each
 // payment. Unpaid interest is carried separately and never compounds.
@@ -12,8 +25,9 @@ public sealed record SimpleInterestLoanTerms(
     PaymentAllocation? Allocation = null,
     bool AllowsPrincipalOnlyPayments = true,
     PrepaymentPenalty? Penalty = null,
-    MidpointRounding InterestRounding = MidpointRounding.AwayFromZero)
+    MidpointRounding InterestRounding = MidpointRounding.AwayFromZero) : DebtTerms
 {
+    [JsonIgnore]
     public PaymentAllocation EffectiveAllocation => Allocation ?? PaymentAllocation.Standard;
 }
 
@@ -26,4 +40,4 @@ public sealed record AmortizingLoanTerms(
     Schedule PaymentDates,
     Money? ScheduledPayment = null,
     int? RemainingPayments = null,
-    MidpointRounding InterestRounding = MidpointRounding.AwayFromZero);
+    MidpointRounding InterestRounding = MidpointRounding.AwayFromZero) : DebtTerms;
