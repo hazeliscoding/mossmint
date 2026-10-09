@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Avalonia;
 using Avalonia.Media;
+using Mossmint.Persistence.Diagnostics;
 using Velopack;
 
 namespace Mossmint.Desktop;
@@ -13,6 +15,22 @@ internal static class Program
         // the installer. It must run before anything else; it never checks for
         // updates on its own.
         VelopackApp.Build().Run();
+
+        // `Mossmint.Desktop.exe --verify-encryption [report.json]` checks the build
+        // that is actually installed (ADR-0001) and exits 0 only if every check passes.
+        if (args is ["--verify-encryption", ..])
+        {
+            var report = EncryptionSelfCheck.Run();
+            var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+            if (args.Length > 1)
+            {
+                File.WriteAllText(args[1], json);
+            }
+
+            Console.WriteLine(json);
+            Environment.Exit(report.Passed ? 0 : 1);
+            return;
+        }
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }

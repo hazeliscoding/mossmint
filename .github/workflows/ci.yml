@@ -40,6 +40,15 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release --no-build
 
+      - name: Encryption self-check
+        shell: pwsh
+        run: |
+          # ADR-0001: the built app must prove profiles are encrypted, fail closed and ship one SQLite binary.
+          $exe = "src/Mossmint.Desktop/bin/Release/net10.0/Mossmint.Desktop.exe"
+          $process = Start-Process $exe -ArgumentList "--verify-encryption", "self-check.json" -Wait -PassThru -NoNewWindow
+          Get-Content self-check.json
+          if ($process.ExitCode -ne 0) { exit 1 }
+
       - name: Vulnerable packages
         shell: pwsh
         run: |
