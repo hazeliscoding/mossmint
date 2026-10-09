@@ -10,15 +10,26 @@ using Mossmint.Desktop.ViewModels;
 // Renders Mossmint screens to PNG without a visible window, through the real
 // Skia renderer. Screens only ever show synthetic data.
 // Usage: dotnet run --project tools/Mossmint.Screenshots -- [out-dir] [screen ...]
-var outDir = Path.GetFullPath(args.Length > 0 ? args[0] : Path.Combine("artifacts", "screenshots"));
-var only = args.Skip(1).ToHashSet(StringComparer.OrdinalIgnoreCase);
-Directory.CreateDirectory(outDir);
-
+//        dotnet run --project tools/Mossmint.Screenshots -- --icons src/Mossmint.Desktop/Assets
 AppBuilder.Configure<App>()
     .UseSkia()
     .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
     .WithMossmintFonts()
     .SetupWithoutStarting();
+
+if (args.Length == 2 && args[0] == "--icons")
+{
+    foreach (var file in AppIcon.Write(Path.GetFullPath(args[1])))
+    {
+        Console.WriteLine(file);
+    }
+
+    return;
+}
+
+var outDir = Path.GetFullPath(args.Length > 0 ? args[0] : Path.Combine("artifacts", "screenshots"));
+var only = args.Skip(1).ToHashSet(StringComparer.OrdinalIgnoreCase);
+Directory.CreateDirectory(outDir);
 
 var app = (App)Application.Current!;
 var screens = new (string Name, Action<MainWindowViewModel> Show)[]
