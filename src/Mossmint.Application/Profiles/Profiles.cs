@@ -1,5 +1,6 @@
 using System.Globalization;
 using Mossmint.Application.Data;
+using Mossmint.Application.Import;
 
 namespace Mossmint.Application.Profiles;
 
@@ -58,6 +59,8 @@ public interface IProfileSession : IDisposable
     ProfileSummary Profile { get; }
 
     IProfileData Data { get; }
+
+    IImportStore Imports { get; }
 
     void ChangePassphrase(string newPassphrase);
 

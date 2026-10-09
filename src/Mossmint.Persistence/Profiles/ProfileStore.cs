@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Microsoft.Data.Sqlite;
 using Mossmint.Application.Data;
+using Mossmint.Application.Import;
 using Mossmint.Application.Profiles;
 using Mossmint.Persistence.Data;
 using Mossmint.Persistence.Security;
@@ -204,12 +205,16 @@ internal sealed class ProfileSession : IProfileSession
     {
         (_directory, _manifest, _key, _connection, _argon2) = (directory, manifest, key, connection, argon2);
         _db = ProfileDbContext.For(connection);
-        Data = new ProfileStoreData(_db, clock);
+        var store = new ProfileStoreData(_db, clock, label => TakeSnapshot(label, clock));
+        Data = store;
+        Imports = store;
     }
 
     public ProfileSummary Profile => ProfileStore.Summary(_manifest);
 
     public IProfileData Data { get; }
+
+    public IImportStore Imports { get; }
 
     internal string Folder => _directory;
 
@@ -257,6 +262,21 @@ internal sealed class ProfileSession : IProfileSession
         _db.Dispose();
         _connection.Dispose();
         _key.Dispose();
+    }
+
+    // An encrypted copy before an import; only the newest few are kept.
+    private string TakeSnapshot(string label, TimeProvider clock)
+    {
+        var path = ProfileMigrator.Snapshot(_connection, _directory, _key, label, clock);
+        var older = Directory.GetFiles(Path.GetDirectoryName(path)!, $"*-{label}.db")
+            .OrderDescending(StringComparer.Ordinal)
+            .Skip(ProfileStoreData.ImportSnapshotsKept);
+        foreach (var file in older)
+        {
+            File.Delete(file);
+        }
+
+        return path;
     }
 
     private void Save(ProfileManifest manifest)

@@ -77,6 +77,74 @@ internal sealed class SettingsRow
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
+internal sealed class TransactionRow
+{
+    public Guid Id { get; set; }
+    public Guid AccountId { get; set; }
+    public DateOnly EffectiveDate { get; set; }
+    public DateOnly? PostedDate { get; set; }
+    public long AmountMinor { get; set; }
+    public string Currency { get; set; } = "";
+    public string Status { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string? Category { get; set; }
+    public Guid? TransferGroupId { get; set; }
+    public string ProvenanceJson { get; set; } = "";
+
+    // The source's own key ("<account key>|<external id>") for imported rows.
+    public string? SourceKey { get; set; }
+    public bool RemovedAtSource { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+internal sealed class ImportRunRow
+{
+    public Guid Id { get; set; }
+    public string Mapper { get; set; } = "";
+    public string Origin { get; set; } = "";
+    public DateTimeOffset At { get; set; }
+    public string FilesJson { get; set; } = "";
+    public string Report { get; set; } = "";
+}
+
+internal sealed class ImportLinkRow
+{
+    public string Entity { get; set; } = "";
+    public string Key { get; set; } = "";
+    public Guid EntityId { get; set; }
+    public string Scope { get; set; } = "";
+    public string Fingerprint { get; set; } = "";
+    public Guid RunId { get; set; }
+}
+
+internal sealed class ReviewItemRow
+{
+    public Guid Id { get; set; }
+    public Guid RunId { get; set; }
+    public string Code { get; set; } = "";
+    public string Severity { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Detail { get; set; } = "";
+    public string SourcesJson { get; set; } = "";
+    public string? SubjectKey { get; set; }
+    public string Fingerprint { get; set; } = "";
+    public string Status { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? ClosedAt { get; set; }
+    public string? Resolution { get; set; }
+}
+
+// A source row as read, before mapping: the trail from a figure to its cell.
+internal sealed class RawRecordRow
+{
+    public long Id { get; set; }
+    public Guid RunId { get; set; }
+    public string Kind { get; set; } = "";
+    public string File { get; set; } = "";
+    public string Location { get; set; } = "";
+    public string FieldsJson { get; set; } = "";
+}
+
 // What changed and when. Lives inside the encrypted profile, never in logs.
 internal sealed class AuditRow
 {
@@ -97,6 +165,11 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
     public DbSet<DebtRow> Debts => Set<DebtRow>();
     public DbSet<SettingsRow> Settings => Set<SettingsRow>();
     public DbSet<AuditRow> Audit => Set<AuditRow>();
+    public DbSet<TransactionRow> Transactions => Set<TransactionRow>();
+    public DbSet<ImportRunRow> ImportRuns => Set<ImportRunRow>();
+    public DbSet<ImportLinkRow> ImportLinks => Set<ImportLinkRow>();
+    public DbSet<ReviewItemRow> ReviewItems => Set<ReviewItemRow>();
+    public DbSet<RawRecordRow> RawRecords => Set<RawRecordRow>();
 
     public static ProfileDbContext For(SqliteConnection connection) =>
         new(new DbContextOptionsBuilder<ProfileDbContext>().UseSqlite(connection).Options);
@@ -159,6 +232,56 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
             e.ToTable("PlanSettings");
             e.HasKey(s => s.Id);
             e.Property(s => s.Currency).HasMaxLength(3);
+        });
+
+        model.Entity<TransactionRow>(e =>
+        {
+            e.ToTable("Transactions");
+            e.HasKey(t => t.Id);
+            e.HasOne<AccountRow>().WithMany().HasForeignKey(t => t.AccountId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(t => new { t.AccountId, t.EffectiveDate });
+            e.HasIndex(t => t.SourceKey).IsUnique();
+            e.Property(t => t.Currency).HasMaxLength(3);
+            e.Property(t => t.Status).HasMaxLength(40);
+            e.Property(t => t.Description).HasMaxLength(400);
+        });
+
+        model.Entity<ImportRunRow>(e =>
+        {
+            e.ToTable("ImportRuns");
+            e.HasKey(r => r.Id);
+            e.HasIndex(r => r.At);
+            e.Property(r => r.Mapper).HasMaxLength(80);
+            e.Property(r => r.Origin).HasMaxLength(40);
+        });
+
+        model.Entity<ImportLinkRow>(e =>
+        {
+            e.ToTable("ImportLinks");
+            e.HasKey(l => new { l.Entity, l.Key });
+            e.Property(l => l.Entity).HasMaxLength(40);
+            e.HasOne<ImportRunRow>().WithMany().HasForeignKey(l => l.RunId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        model.Entity<ReviewItemRow>(e =>
+        {
+            e.ToTable("ReviewItems");
+            e.HasKey(r => r.Id);
+            e.HasIndex(r => r.Fingerprint);
+            e.HasIndex(r => r.Status);
+            e.Property(r => r.Code).HasMaxLength(80);
+            e.Property(r => r.Severity).HasMaxLength(40);
+            e.Property(r => r.Status).HasMaxLength(40);
+            e.HasOne<ImportRunRow>().WithMany().HasForeignKey(r => r.RunId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        model.Entity<RawRecordRow>(e =>
+        {
+            e.ToTable("RawRecords");
+            e.HasKey(r => r.Id);
+            e.HasIndex(r => r.RunId);
+            e.Property(r => r.Kind).HasMaxLength(80);
+            e.HasOne<ImportRunRow>().WithMany().HasForeignKey(r => r.RunId).OnDelete(DeleteBehavior.Restrict);
         });
 
         model.Entity<AuditRow>(e =>

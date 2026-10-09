@@ -17,7 +17,17 @@ public sealed record PlanSettings(
 }
 
 // Row counts per record type: a restored backup must match its source exactly.
-public sealed record ProfileCounts(int Accounts, int BalanceSnapshots, int Bills, int Income, int Debts, int AuditEvents);
+// Later counts default to zero so backups written before they existed still verify.
+public sealed record ProfileCounts(
+    int Accounts,
+    int BalanceSnapshots,
+    int Bills,
+    int Income,
+    int Debts,
+    int AuditEvents,
+    int Transactions = 0,
+    int ReviewItems = 0,
+    int ImportRuns = 0);
 
 // The profile's stored records. Every change is recorded in the audit trail.
 public interface IProfileData

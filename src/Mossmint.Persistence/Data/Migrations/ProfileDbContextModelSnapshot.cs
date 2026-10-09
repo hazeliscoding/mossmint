@@ -194,6 +194,70 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.ToTable("Debts", (string)null);
                 });
 
+            modelBuilder.Entity("Mossmint.Persistence.Data.ImportLinkRow", b =>
+                {
+                    b.Property<string>("Entity")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Key")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Entity", "Key");
+
+                    b.HasIndex("RunId");
+
+                    b.ToTable("ImportLinks", (string)null);
+                });
+
+            modelBuilder.Entity("Mossmint.Persistence.Data.ImportRunRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("At")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FilesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Mapper")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Report")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("At");
+
+                    b.ToTable("ImportRuns", (string)null);
+                });
+
             modelBuilder.Entity("Mossmint.Persistence.Data.IncomeRow", b =>
                 {
                     b.Property<Guid>("Id")
@@ -237,6 +301,102 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.ToTable("IncomeSchedules", (string)null);
                 });
 
+            modelBuilder.Entity("Mossmint.Persistence.Data.RawRecordRow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FieldsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("File")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId");
+
+                    b.ToTable("RawRecords", (string)null);
+                });
+
+            modelBuilder.Entity("Mossmint.Persistence.Data.ReviewItemRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("ClosedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Detail")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourcesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SubjectKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fingerprint");
+
+                    b.HasIndex("RunId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ReviewItems", (string)null);
+                });
+
             modelBuilder.Entity("Mossmint.Persistence.Data.SettingsRow", b =>
                 {
                     b.Property<int>("Id")
@@ -263,6 +423,68 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PlanSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Mossmint.Persistence.Data.TransactionRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("AmountMinor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("PostedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProvenanceJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("RemovedAtSource")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TransferGroupId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceKey")
+                        .IsUnique();
+
+                    b.HasIndex("AccountId", "EffectiveDate");
+
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("Mossmint.Persistence.Data.BalanceRow", b =>
@@ -296,12 +518,48 @@ namespace Mossmint.Persistence.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Mossmint.Persistence.Data.ImportLinkRow", b =>
+                {
+                    b.HasOne("Mossmint.Persistence.Data.ImportRunRow", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Mossmint.Persistence.Data.IncomeRow", b =>
                 {
                     b.HasOne("Mossmint.Persistence.Data.AccountRow", null)
                         .WithMany()
                         .HasForeignKey("DepositAccountId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Mossmint.Persistence.Data.RawRecordRow", b =>
+                {
+                    b.HasOne("Mossmint.Persistence.Data.ImportRunRow", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Mossmint.Persistence.Data.ReviewItemRow", b =>
+                {
+                    b.HasOne("Mossmint.Persistence.Data.ImportRunRow", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Mossmint.Persistence.Data.TransactionRow", b =>
+                {
+                    b.HasOne("Mossmint.Persistence.Data.AccountRow", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
