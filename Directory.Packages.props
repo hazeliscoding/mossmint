@@ -15,7 +15,7 @@
   </ItemGroup>
   <ItemGroup Label="Tests">
     <!-- 3.2.x: Avalonia.Headless.XUnit 12.1 is built against it and fails discovery on 4.x. -->
-    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.2" />
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
     <PackageVersion Include="FsCheck" Version="3.4.0" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.4" />
