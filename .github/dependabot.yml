@@ -7,6 +7,10 @@ updates:
     groups:
       avalonia:
         patterns: ["Avalonia*"]
+    ignore:
+      # Avalonia.Headless.XUnit 12.1 fails test discovery on xUnit 4 (see ROADMAP).
+      - dependency-name: xunit.v3
+        versions: [">= 4.0.0"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
