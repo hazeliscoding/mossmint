@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.BackupsPageView"
+             x:DataType="vm:BackupsPageViewModel">
+
+  <StackPanel Spacing="20" MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="Back up to a place you choose" />
+        <TextBlock Classes="prose secondary"
+                   Text="A single encrypted .mmbak file. Put it on a USB drive or in a cloud folder: without your passphrase or recovery key it's unreadable, and nothing in it names you. Every backup is test-restored before Mossmint reports it." />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Back up now…" Command="{Binding BackUpNowCommand}" />
+          <Button Content="Keep a copy on this PC" Command="{Binding KeepLocalCopyCommand}" />
+        </StackPanel>
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left"
+                       IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <TextBlock Classes="hint" Text="Copies on this PC keep the newest five. They protect against mistakes, not against losing the PC." />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="section" Text="Restore" />
+        <TextBlock Classes="prose secondary" Text="A restored backup becomes its own profile, so nothing here is overwritten." />
+        <Button Content="Restore an encrypted backup…" Command="{Binding RestoreCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

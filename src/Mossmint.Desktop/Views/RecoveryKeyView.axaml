@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.RecoveryKeyView"
+             x:DataType="vm:RecoveryKeyViewModel">
+
+  <ScrollViewer>
+    <Border Classes="panel" MaxWidth="640" Margin="24,48" VerticalAlignment="Top">
+      <StackPanel Spacing="18">
+        <StackPanel Spacing="8">
+          <c:StatusBadge Tone="Warning" Text="Shown once" HorizontalAlignment="Left" />
+          <TextBlock Classes="page-title" Text="Save your recovery key" />
+          <TextBlock Classes="prose secondary"
+                     Text="If you forget your passphrase, this key is the only other way into your profile and its backups. Mossmint doesn't keep a copy. Print it, or store it in a password manager, somewhere other than this PC." />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Groups}" AutomationProperties.Name="Recovery key">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel ItemSpacing="8" LineSpacing="8" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <Border Classes="recovery-group">
+                <TextBlock Text="{Binding}" />
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Content="Save to a file…" Command="{Binding SaveToFileCommand}" />
+          <Button Classes="ghost" Content="Copy" Command="{Binding CopyCommand}" />
+        </StackPanel>
+        <TextBlock Classes="notice" Text="{Binding Status}" IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+        <Border Classes="separator" />
+        <CheckBox IsChecked="{Binding Stored}" Content="I've stored my recovery key somewhere safe" />
+        <Button Classes="primary" HorizontalAlignment="Right" Content="Continue" Command="{Binding ContinueCommand}" />
+      </StackPanel>
+    </Border>
+  </ScrollViewer>
+</UserControl>

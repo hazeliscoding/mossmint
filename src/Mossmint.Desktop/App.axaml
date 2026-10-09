@@ -32,8 +32,35 @@
     <DataTemplate DataType="vm:ShellViewModel">
       <views:ShellView />
     </DataTemplate>
-    <DataTemplate DataType="vm:PageViewModel">
+    <DataTemplate DataType="vm:PlaceholderPageViewModel">
       <views:PlaceholderPageView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:CreateProfileViewModel">
+      <views:CreateProfileView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:RecoveryKeyViewModel">
+      <views:RecoveryKeyView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:UnlockViewModel">
+      <views:UnlockView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:RestoreViewModel">
+      <views:RestoreView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SetupViewModel">
+      <views:SetupView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:OverviewPageViewModel">
+      <views:OverviewPageView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:RecordsPageViewModel">
+      <views:RecordsPageView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:BackupsPageViewModel">
+      <views:BackupsPageView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SettingsPageViewModel">
+      <views:SettingsPageView />
     </DataTemplate>
   </Application.DataTemplates>
 </Application>

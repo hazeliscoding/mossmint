@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.OverviewPageView"
+             x:DataType="vm:OverviewPageViewModel">
+
+  <StackPanel Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="12">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <c:StatusBadge Tone="Healthy" Text="Encrypted on this PC" />
+          <c:StatusBadge Tone="Info" Text="Dashboard arrives in M4" />
+        </StackPanel>
+        <TextBlock Classes="section" Text="Your profile" />
+        <TextBlock Classes="prose secondary" Text="{Binding Summary}" />
+        <Button Content="Add more with Start fresh" Command="{Binding RunSetupCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="card-title" Text="Accounts" />
+        <ItemsControl ItemsSource="{Binding Accounts}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:RecordRow">
+              <Grid ColumnDefinitions="*,Auto,140" Margin="0,6">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                  <TextBlock Classes="compact faint" Text="{Binding Detail}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Classes="mono" FontSize="14" Text="{Binding Amount}" VerticalAlignment="Center" Margin="16,0" />
+                <c:StatusBadge Grid.Column="2" Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

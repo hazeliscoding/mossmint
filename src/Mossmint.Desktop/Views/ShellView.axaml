@@ -71,6 +71,12 @@
         <DockPanel>
           <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
             <c:StatusBadge Tone="Neutral" Text="Offline · Manual" />
+            <Button Classes="ghost" Command="{Binding LockCommand}" ToolTip.Tip="Lock the profile" AutomationProperties.Name="Lock">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Width="14" Height="14" Data="{StaticResource IconLock}" />
+                <TextBlock Text="Lock" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
             <Button Classes="ghost icon" Command="{Binding ToggleSidebarCommand}"
@@ -82,7 +88,8 @@
                     BorderBrush="{DynamicResource BorderStrong}" Background="{DynamicResource BgElevated}">
               <c:Icon Width="12" Height="12" Data="{StaticResource IconLock}" Foreground="{DynamicResource TextFaint}" />
             </Border>
-            <TextBlock Classes="secondary" Text="No profile" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Context.ProfileName}" FontWeight="SemiBold" VerticalAlignment="Center"
+                       AutomationProperties.Name="Unlocked profile" />
             <Border Width="1" Height="18" Background="{DynamicResource BorderHairline}" />
             <TextBlock Classes="compact faint" Text="Forecast as of" VerticalAlignment="Center" />
             <TextBlock Classes="mono faint" Text="—" VerticalAlignment="Center"

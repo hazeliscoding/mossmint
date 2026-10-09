@@ -3,7 +3,7 @@
              xmlns:vm="using:Mossmint.Desktop.ViewModels"
              xmlns:c="using:Mossmint.Desktop.Controls"
              x:Class="Mossmint.Desktop.Views.PlaceholderPageView"
-             x:DataType="vm:PageViewModel">
+             x:DataType="vm:PlaceholderPageViewModel">
 
   <StackPanel Spacing="20">
     <StackPanel Spacing="4">

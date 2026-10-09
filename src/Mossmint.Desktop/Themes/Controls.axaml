@@ -322,6 +322,64 @@
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
+  <!-- Forms -->
+  <Style Selector="TextBlock.field-label">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+  </Style>
+  <Style Selector="TextBlock.hint">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.error">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource SignalCriticalText}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.notice">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="Foreground" Value="{DynamicResource SignalHealthyText}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBox">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="TextBox.money">
+    <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    <Setter Property="FontFeatures" Value="+tnum" />
+    <Setter Property="TextAlignment" Value="Right" />
+  </Style>
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource BgSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderHairline}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}" />
+    <Setter Property="Padding" Value="32,28" />
+  </Style>
+  <Style Selector="Border.recovery-group">
+    <Setter Property="Background" Value="{DynamicResource BgInset}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefault}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+  <Style Selector="Border.recovery-group > TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="1.5" />
+  </Style>
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="{DynamicResource SignalCriticalSubtle}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SignalCriticalBorder}" />
+    <Setter Property="Foreground" Value="{DynamicResource SignalCriticalText}" />
+  </Style>
+
   <Style Selector="c|Icon">
     <Setter Property="Width" Value="16" />
     <Setter Property="Height" Value="16" />

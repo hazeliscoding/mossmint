@@ -1,0 +1,211 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.SetupView"
+             x:DataType="vm:SetupViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.current">
+      <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="280,*">
+    <!-- Steps -->
+    <Border Background="{DynamicResource BgPanel}" BorderBrush="{DynamicResource BorderHairline}" BorderThickness="0,0,1,0" Padding="24,32">
+      <StackPanel Spacing="16">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <c:BrandMark Width="22" Height="22" />
+          <TextBlock Text="Start fresh" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock Classes="hint" Text="Each step can be skipped and changed later. Everything you enter is stored encrypted on this PC." />
+        <ItemsControl ItemsSource="{Binding Steps}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:SetupStepItem">
+              <TextBlock Text="{Binding Label}" Margin="0,6" Classes="secondary" Classes.current="{Binding IsCurrent}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Border Classes="separator" />
+        <TextBlock Classes="label" Text="ADDED SO FAR" />
+        <ItemsControl ItemsSource="{Binding Added}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,3">
+                <c:Icon Width="14" Height="14" Data="{StaticResource IconCheck}" Foreground="{DynamicResource SignalHealthy}" />
+                <TextBlock Classes="compact" Text="{Binding}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <!-- Current step -->
+    <ScrollViewer Grid.Column="1">
+      <StackPanel Spacing="18" Margin="48,40" MaxWidth="640" HorizontalAlignment="Left">
+        <TextBlock Classes="page-title" Text="{Binding StepTitle}" />
+
+        <!-- 1. Cash -->
+        <StackPanel Spacing="14" IsVisible="{Binding IsCash}">
+          <TextBlock Classes="prose secondary" Text="The account your paychecks land in and your bills come out of. Use today's balance from your bank, so the forecast starts from something confirmed." />
+          <StackPanel Spacing="4">
+            <TextBlock Classes="field-label" Text="Account name" />
+            <TextBox Text="{Binding CashName}" AutomationProperties.Name="Account name" />
+          </StackPanel>
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="Balance" />
+              <TextBox Classes="money" Text="{Binding CashBalance}" PlaceholderText="0.00" AutomationProperties.Name="Balance" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="field-label" Text="As of" />
+              <CalendarDatePicker SelectedDate="{Binding CashAsOf}" HorizontalAlignment="Stretch" AutomationProperties.Name="Balance as of" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+
+        <!-- 2. Paychecks -->
+        <StackPanel Spacing="14" IsVisible="{Binding IsPaychecks}">
+          <TextBlock Classes="prose secondary" Text="Your take-home pay, after taxes and deductions, and when it arrives." />
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="Name" />
+              <TextBox Text="{Binding PayName}" AutomationProperties.Name="Paycheck name" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="field-label" Text="Net pay" />
+              <TextBox Classes="money" Text="{Binding NetPay}" PlaceholderText="0.00" AutomationProperties.Name="Net pay" />
+            </StackPanel>
+          </Grid>
+          <StackPanel Spacing="4">
+            <TextBlock Classes="field-label" Text="How often" />
+            <ComboBox ItemsSource="{Binding Patterns}" SelectedItem="{Binding Pattern}" HorizontalAlignment="Stretch"
+                      PlaceholderText="Choose a schedule" AutomationProperties.Name="Pay schedule">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:PatternOption">
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Spacing="4" IsVisible="{Binding NeedsNextPayday}">
+            <TextBlock Classes="field-label" Text="Next payday" />
+            <CalendarDatePicker SelectedDate="{Binding NextPayday}" AutomationProperties.Name="Next payday" />
+          </StackPanel>
+          <StackPanel Spacing="4" IsVisible="{Binding NeedsPayDay}">
+            <TextBlock Classes="field-label" Text="Day of the month" />
+            <NumericUpDown Value="{Binding PayDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" Width="140" HorizontalAlignment="Left" />
+          </StackPanel>
+          <CheckBox IsChecked="{Binding PayEarly}" Content="Paid the business day before when payday falls on a weekend or bank holiday" />
+        </StackPanel>
+
+        <!-- 3. Bills -->
+        <StackPanel Spacing="14" IsVisible="{Binding IsBills}">
+          <TextBlock Classes="prose secondary" Text="Rent, utilities, phone, subscriptions. Add as many as you like; loan and card payments come in the next step." />
+          <Grid ColumnDefinitions="2*,16,*,16,*">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="Bill" />
+              <TextBox Text="{Binding BillName}" PlaceholderText="Rent" AutomationProperties.Name="Bill name" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="field-label" Text="Amount" />
+              <TextBox Classes="money" Text="{Binding BillAmount}" PlaceholderText="0.00" AutomationProperties.Name="Bill amount" />
+            </StackPanel>
+            <StackPanel Grid.Column="4" Spacing="4">
+              <TextBlock Classes="field-label" Text="Due day" />
+              <NumericUpDown Value="{Binding BillDueDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0"
+                             IsEnabled="{Binding !BillDueLastDay}" AutomationProperties.Name="Due day" />
+            </StackPanel>
+          </Grid>
+          <WrapPanel ItemSpacing="20">
+            <CheckBox IsChecked="{Binding BillDueLastDay}" Content="Due on the last day of the month" />
+            <CheckBox IsChecked="{Binding BillIsEstimate}" Content="The amount changes (estimate)" />
+          </WrapPanel>
+          <Grid ColumnDefinitions="*,16,*" IsVisible="{Binding BillIsEstimate}">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="Lowest usual amount" />
+              <TextBox Classes="money" Text="{Binding BillLow}" PlaceholderText="optional" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="field-label" Text="Highest usual amount" />
+              <TextBox Classes="money" Text="{Binding BillHigh}" PlaceholderText="optional" />
+            </StackPanel>
+          </Grid>
+          <Button Content="Add bill" Command="{Binding AddBillCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <!-- 4. Debts -->
+        <StackPanel Spacing="14" IsVisible="{Binding IsDebts}">
+          <TextBlock Classes="prose secondary" Text="Loans and credit cards. Their payments are added as bills that move money to the debt, so they're never counted as spending." />
+          <StackPanel Orientation="Horizontal" Spacing="20">
+            <RadioButton GroupName="debt-kind" IsChecked="{Binding DebtIsLoan}" Content="Loan" />
+            <RadioButton GroupName="debt-kind" IsChecked="{Binding DebtIsCard}" Content="Credit card" />
+          </StackPanel>
+          <Grid ColumnDefinitions="2*,16,*,16,*">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="Name" />
+              <TextBox Text="{Binding DebtName}" PlaceholderText="Car loan" AutomationProperties.Name="Debt name" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="field-label" Text="Balance owed" />
+              <TextBox Classes="money" Text="{Binding DebtBalance}" PlaceholderText="0.00" AutomationProperties.Name="Balance owed" />
+            </StackPanel>
+            <StackPanel Grid.Column="4" Spacing="4">
+              <TextBlock Classes="field-label" Text="APR %" />
+              <TextBox Classes="money" Text="{Binding DebtApr}" PlaceholderText="0.00" AutomationProperties.Name="APR percent" />
+            </StackPanel>
+          </Grid>
+          <Grid ColumnDefinitions="*,16,*,16,*">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="Monthly payment" />
+              <TextBox Classes="money" Text="{Binding DebtPayment}" PlaceholderText="0.00" AutomationProperties.Name="Monthly payment" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="field-label" Text="Due day" />
+              <NumericUpDown Value="{Binding DebtDueDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" />
+            </StackPanel>
+            <StackPanel Grid.Column="4" Spacing="4" IsVisible="{Binding DebtIsCard}">
+              <TextBlock Classes="field-label" Text="Statement closes on" />
+              <NumericUpDown Value="{Binding DebtClosingDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Classes="hint" IsVisible="{Binding DebtIsCard}"
+                     Text="Card forecasts are approximate until you enter statement details. The minimum payment assumes the common 1% plus interest, at least $35." />
+          <Button Content="Add debt" Command="{Binding AddDebtCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <!-- 5. Savings -->
+        <StackPanel Spacing="14" IsVisible="{Binding IsSavings}">
+          <TextBlock Classes="prose secondary" Text="Two separate things: how much you'd like to set aside from each paycheck, and the cushion that should always stay in checking. Meeting one never hides a shortfall in the other." />
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="Save from each paycheck" />
+              <TextBox Classes="money" Text="{Binding SavingsPerPaycheck}" PlaceholderText="0.00" AutomationProperties.Name="Savings per paycheck" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="field-label" Text="Cushion to keep in checking" />
+              <TextBox Classes="money" Text="{Binding Cushion}" PlaceholderText="0.00" AutomationProperties.Name="Cushion" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+
+        <!-- 6. Done -->
+        <StackPanel Spacing="14" IsVisible="{Binding IsDone}">
+          <TextBlock Classes="prose secondary" Text="Your profile is ready. The dashboard with Safe to spend and the daily forecast arrives in the next milestones; until then you can review what you entered on each page." />
+          <Button Classes="primary" Content="Go to Overview" Command="{Binding FinishCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" IsVisible="{Binding !IsDone}">
+          <Button Classes="ghost" Content="Back" Command="{Binding BackCommand}" />
+          <Button Classes="ghost" Content="Skip" Command="{Binding SkipCommand}" />
+          <Button Classes="primary" Content="Save and continue" Command="{Binding SaveAndContinueCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

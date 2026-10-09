@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.CreateProfileView"
+             x:DataType="vm:CreateProfileViewModel">
+
+  <ScrollViewer>
+    <Border Classes="panel" MaxWidth="560" Margin="24,48" VerticalAlignment="Top">
+      <StackPanel Spacing="18">
+        <StackPanel Spacing="8">
+          <c:BrandMark Width="32" Height="32" HorizontalAlignment="Left" />
+          <TextBlock Classes="page-title" Text="Create your profile" />
+          <TextBlock Classes="prose secondary"
+                     Text="Your profile is encrypted on this PC. Choose a passphrase you'll remember: without it, or the recovery key you'll get next, nobody can open it, including the people who make Mossmint." />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Classes="field-label" Text="Profile name" />
+          <TextBox Text="{Binding Name}" PlaceholderText="For example, your first name"
+                   AutomationProperties.Name="Profile name" />
+          <TextBlock Classes="hint" Text="Shown on the unlock screen, before anything is decrypted." />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Classes="field-label" Text="Passphrase" />
+          <TextBox Text="{Binding Passphrase}" PasswordChar="•" RevealPassword="False"
+                   AutomationProperties.Name="Passphrase" />
+          <TextBlock Classes="hint" Text="{Binding PassphraseHint}" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Classes="field-label" Text="Passphrase again" />
+          <TextBox Text="{Binding Confirm}" PasswordChar="•" AutomationProperties.Name="Confirm passphrase" />
+        </StackPanel>
+
+        <StackPanel Spacing="4" IsVisible="{Binding CanUseThisDevice}">
+          <CheckBox IsChecked="{Binding UnlockOnThisDevice}" Content="Unlock automatically on this PC" />
+          <TextBlock Classes="hint"
+                     Text="Windows protects the key for your account, so anyone who can sign in as you here can open the profile. Backups always need the passphrase or recovery key." />
+        </StackPanel>
+
+        <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+          <Button Classes="ghost" Content="Back" Command="{Binding BackCommand}" />
+          <Button Classes="primary" Content="Create profile" Command="{Binding CreateCommand}" IsDefault="True" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </ScrollViewer>
+</UserControl>

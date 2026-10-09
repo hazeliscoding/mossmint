@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.RestoreView"
+             x:DataType="vm:RestoreViewModel">
+
+  <ScrollViewer>
+    <Border Classes="panel" MaxWidth="600" Margin="24,48" VerticalAlignment="Top">
+      <StackPanel Spacing="18">
+        <StackPanel Spacing="8">
+          <c:Icon Width="28" Height="28" Data="{StaticResource IconArchive}" Foreground="{DynamicResource Accent}" HorizontalAlignment="Left" />
+          <TextBlock Classes="page-title" Text="Restore an encrypted backup" />
+          <TextBlock Classes="prose secondary"
+                     Text="The backup comes back as its own profile; nothing already on this PC is replaced. Use the passphrase or recovery key that were current when the backup was made." />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Classes="field-label" Text="Backup file" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Choose…" Command="{Binding PickFileCommand}" />
+            <TextBox Text="{Binding FilePath}" Classes="money" TextAlignment="Left" PlaceholderText="A .mmbak file"
+                     AutomationProperties.Name="Backup file" />
+          </DockPanel>
+        </StackPanel>
+
+        <StackPanel Spacing="4" IsVisible="{Binding !UseRecoveryKey}">
+          <TextBlock Classes="field-label" Text="Passphrase" />
+          <TextBox Text="{Binding Passphrase}" PasswordChar="•" AutomationProperties.Name="Passphrase" />
+        </StackPanel>
+        <StackPanel Spacing="4" IsVisible="{Binding UseRecoveryKey}">
+          <TextBlock Classes="field-label" Text="Recovery key" />
+          <TextBox Text="{Binding RecoveryKey}" Classes="money" TextAlignment="Left" PlaceholderText="ABCD-EFGH-…"
+                   AutomationProperties.Name="Recovery key" />
+        </StackPanel>
+        <CheckBox IsChecked="{Binding UseRecoveryKey}" Content="Use my recovery key instead" />
+
+        <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+          <Button Classes="ghost" Content="Back" Command="{Binding BackCommand}" />
+          <Button Classes="primary" Content="Restore" Command="{Binding RestoreCommand}" IsDefault="True" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </ScrollViewer>
+</UserControl>

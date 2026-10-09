@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Mossmint.Application/Mossmint.Application.csproj" />
+    <ProjectReference Include="../Mossmint.Persistence/Mossmint.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>

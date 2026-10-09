@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.RecordsPageView"
+             x:DataType="vm:RecordsPageViewModel">
+
+  <StackPanel Spacing="20" MaxWidth="980" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="prose secondary" Text="{Binding EmptyText}" IsVisible="{Binding IsEmpty}" />
+        <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding !IsEmpty}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:RecordRow">
+              <Grid ColumnDefinitions="*,Auto,140" Margin="0,8">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                  <TextBlock Classes="compact faint" Text="{Binding Detail}" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Classes="mono" FontSize="14" Text="{Binding Amount}" VerticalAlignment="Center" Margin="16,0" />
+                <c:StatusBadge Grid.Column="2" Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

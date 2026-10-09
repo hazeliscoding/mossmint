@@ -2,14 +2,14 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Mossmint.Desktop.ViewModels;
 
-public sealed partial class WelcomeViewModel(Action<Destination> openApp) : ViewModelBase
+public sealed partial class WelcomeViewModel(Action importMyFinances, Action startFresh, Action restoreBackup) : ViewModelBase
 {
     [RelayCommand]
-    private void ImportMyFinances() => openApp(Destination.Imports);
+    private void ImportMyFinances() => importMyFinances();
 
     [RelayCommand]
-    private void StartFresh() => openApp(Destination.Overview);
+    private void StartFresh() => startFresh();
 
     [RelayCommand]
-    private void RestoreBackup() => openApp(Destination.Backups);
+    private void RestoreBackup() => restoreBackup();
 }

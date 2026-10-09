@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.SettingsPageView"
+             x:DataType="vm:SettingsPageViewModel">
+
+  <StackPanel Spacing="20" MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left"
+                   IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="Passphrase" />
+        <TextBlock Classes="prose secondary" Text="Changing it takes effect immediately; the old one stops working. Backups you've already made still open with the passphrase from when they were made." />
+        <Grid ColumnDefinitions="*,16,*">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="field-label" Text="New passphrase" />
+            <TextBox Text="{Binding NewPassphrase}" PasswordChar="•" AutomationProperties.Name="New passphrase" />
+          </StackPanel>
+          <StackPanel Grid.Column="2" Spacing="4">
+            <TextBlock Classes="field-label" Text="Again" />
+            <TextBox Text="{Binding ConfirmPassphrase}" PasswordChar="•" AutomationProperties.Name="Confirm new passphrase" />
+          </StackPanel>
+        </Grid>
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <Button Content="Change passphrase" Command="{Binding ChangePassphraseCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="Recovery key" />
+        <TextBlock Classes="prose secondary" Text="Lost your recovery key, or worried someone saw it? Make a new one. The old key stops working straight away." />
+        <Button Content="Make a new recovery key" Command="{Binding ReplaceRecoveryKeyCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding CanUseThisDevice}">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="section" Text="This PC" />
+        <ToggleSwitch IsChecked="{Binding UnlockOnThisDevice}" OnContent="Unlocks automatically on this PC" OffContent="Asks for the passphrase on this PC" />
+        <TextBlock Classes="hint" Text="Windows protects the key for your account. Anyone who can sign in as you here can open the profile." />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="section" Text="Lock" />
+        <TextBlock Classes="prose secondary" Text="Closes the profile and clears its key from memory. Closing Mossmint does the same." />
+        <Button Content="Lock now" Command="{Binding LockCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20" BorderBrush="{DynamicResource SignalCriticalBorder}">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="section" Text="Delete this profile" />
+        <TextBlock Classes="prose secondary" Text="Removes the profile, its keys and its copies on this PC. Backups you saved elsewhere aren't touched. This can't be undone." />
+        <StackPanel Spacing="4">
+          <TextBlock Classes="field-label">
+            <Run Text="Type the profile name to confirm: " />
+            <Run Text="{Binding ProfileName}" FontWeight="Bold" />
+          </TextBlock>
+          <TextBox Text="{Binding DeleteConfirmation}" AutomationProperties.Name="Profile name to confirm deletion" />
+        </StackPanel>
+        <Button Classes="danger" Content="Delete profile" Command="{Binding DeleteProfileCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>
