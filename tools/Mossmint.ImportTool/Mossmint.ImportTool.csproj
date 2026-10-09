@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Mossmint.Persistence/Mossmint.Persistence.csproj" />
+    <ProjectReference Include="../../src/Mossmint.Import.Excel/Mossmint.Import.Excel.csproj" />
+  </ItemGroup>
+</Project>
