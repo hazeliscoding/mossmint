@@ -285,6 +285,12 @@
           "Mossmint.Domain": "[0.1.0, )"
         }
       },
+      "mossmint.import.excel": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Application": "[0.1.0, )"
+        }
+      },
       "mossmint.persistence": {
         "type": "Project",
         "dependencies": {
@@ -293,6 +299,12 @@
           "NSec.Cryptography": "[26.4.0, )",
           "SQLite3MC.PCLRaw.bundle": "[2.4.0, )",
           "System.Security.Cryptography.ProtectedData": "[10.0.12, )"
+        }
+      },
+      "mossmint.samples": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Engine": "[0.1.0, )"
         }
       },
       "Microsoft.EntityFrameworkCore.Sqlite.Core": {
