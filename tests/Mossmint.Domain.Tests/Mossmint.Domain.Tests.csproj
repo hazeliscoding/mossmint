@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="FsCheck" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Mossmint.Domain/Mossmint.Domain.csproj" />
+  </ItemGroup>
+</Project>
