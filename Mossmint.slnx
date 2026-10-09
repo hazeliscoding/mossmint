@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Mossmint.Application/Mossmint.Application.csproj" />
+    <Project Path="src/Mossmint.Connectors.Abstractions/Mossmint.Connectors.Abstractions.csproj" />
+    <Project Path="src/Mossmint.Desktop/Mossmint.Desktop.csproj" />
+    <Project Path="src/Mossmint.Domain/Mossmint.Domain.csproj" />
+    <Project Path="src/Mossmint.Engine/Mossmint.Engine.csproj" />
+    <Project Path="src/Mossmint.Import.Excel/Mossmint.Import.Excel.csproj" />
+    <Project Path="src/Mossmint.Import.Transactions/Mossmint.Import.Transactions.csproj" />
+    <Project Path="src/Mossmint.Persistence/Mossmint.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Mossmint.ArchitectureTests/Mossmint.ArchitectureTests.csproj" />
+    <Project Path="tests/Mossmint.Desktop.SmokeTests/Mossmint.Desktop.SmokeTests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Mossmint.Screenshots/Mossmint.Screenshots.csproj" />
+  </Folder>
+</Solution>
