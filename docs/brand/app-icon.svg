@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 16 16">
+  <title>Mossmint</title>
+  <rect width="16" height="16" rx="3.2" fill="#111A17"/>
+  <g transform="translate(1.6 0.9) scale(0.8)">
+    <circle cx="8" cy="10.5" r="4.5" fill="none" stroke="#96CCA7" stroke-width="1.6"/>
+    <path d="M8 11V4.5" fill="none" stroke="#96CCA7" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M8 6.5c0-1.8 1.4-3 3.2-3 0 1.8-1.4 3-3.2 3zM8 8.5c0-1.6-1.2-2.6-2.8-2.6 0 1.6 1.2 2.6 2.8 2.6z" fill="#96CCA7"/>
+  </g>
+</svg>
