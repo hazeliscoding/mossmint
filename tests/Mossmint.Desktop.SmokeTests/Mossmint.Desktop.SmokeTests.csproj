@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Mossmint.Desktop/Mossmint.Desktop.csproj" />
+  </ItemGroup>
+</Project>
