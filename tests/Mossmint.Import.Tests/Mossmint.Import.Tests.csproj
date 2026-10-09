@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/Mossmint.Import.Excel/Mossmint.Import.Excel.csproj" />
+    <ProjectReference Include="../../samples/Mossmint.Samples/Mossmint.Samples.csproj" />
+  </ItemGroup>
+</Project>
