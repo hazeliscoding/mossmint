@@ -3,6 +3,8 @@
 # profile, sample data or user file is ever copied into the publish folder.
 #
 # Usage: pwsh build/pack.ps1 [-Version 0.1.0]
+# Velopack refuses to pack a version at or below one already in
+# artifacts/releases: bump -Version, or delete that folder for a local rebuild.
 param(
     [string]$Version = "0.1.0"
 )
