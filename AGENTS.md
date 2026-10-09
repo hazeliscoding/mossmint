@@ -11,11 +11,11 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 
 ## Private financial data (hard rules)
 
-- **Don't open, read, parse, copy, summarize or upload real financial files** (`.xlsx`, `.csv`, `.ofx`, profile databases, backups), even if they sit in the working tree, unless the owner has approved it for the task at hand. Reading one with an agent tool sends it off the machine. The current approval is recorded in `ROADMAP.md` (2026-10-09: the workbooks, to shape the domain model and importer).
+- **Don't open, read, parse, copy, summarize or upload real financial files** (`.xlsx`, `.csv`, `.ofx`, profile databases, backups), even if they sit in the working tree, unless the owner has approved it for the task at hand. Reading one with an agent tool sends it off the machine. The current approvals are recorded in `ROADMAP.md` (2026-10-09: the workbooks may be read and used for the importer and the handoff profile).
 - Even with approval, read only what the task needs (structure before values) and never modify the originals. Real workbooks are migrated only by Mossmint's own code, on the owner's machine, read-only.
 - Fixtures, samples, tests and screenshots are synthetic and built in code. Never derive them from real files, not even anonymized. Values seen in a real file never go into the repo, commits, issues, Discord or chat summaries.
 - Notes about the real workbooks go in `private/` (gitignored), never in tracked docs.
-- Public files (code, docs, commits, issues, PRs) don't name the private user, their lenders or their workbook file names.
+- Public files (code, docs, commits, issues, PRs) don't name the private user, their lenders or their workbook file names. Sheet names and column labels may appear in importer code; recognize workbooks by structure, never by file name.
 - Never use `git add -f`. `.gitignore` blocks spreadsheets and databases on purpose.
 
 ## Privacy contract

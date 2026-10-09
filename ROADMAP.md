@@ -17,7 +17,7 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **The engine never invents certainty.** A payoff that can't converge returns *never pays off*, not a date. Safe to spend returns *needs confirmation* with the missing evidence when the opening balance is stale or a due bill has no amount.
 - **Tests:** xUnit v3, AwesomeAssertions (Apache-2.0; FluentAssertions 8 needs a commercial license) and FsCheck for property tests. Fixtures are synthetic and built in code.
 - **Private data never enters the repo.** `.gitignore` blocks spreadsheets and databases, and CI fails if one is tracked. Real workbooks are migrated only by local Mossmint code, read-only. Agents read them only with the owner's approval for a task (see below).
-- **Public files don't name the private user, their lenders or their workbook files.** The workbook layout is described generically until the owner confirms which sheet names may appear in importer code (M3).
+- **Public files don't name the private user, their lenders or their workbook files.** Sheet names and column labels may appear in importer code (owner approval, M3 below).
 - **Encrypted storage comes before any real data.** EF Core 10 is still on SQLitePCLRaw 2.1.x, and `SQLitePCLRaw.bundle_e_sqlcipher` stopped at 2.1.11, so M2 opens with a spike: SQLite3 Multiple Ciphers vs the last SQLCipher bundle. ADR-0001 has the criteria and the key design. There is never a plaintext fallback.
 - **Status lives in this file.** It replaces the handoff's `implementation-status.md` and `START-HERE.md`. ADRs live in `docs/architecture/` and `docs/connectors/`.
 - **Design:** the Mossmint mockup from Claude Design (Quorum component vocabulary, moss palette, dark first, light re-tuned). Notes are in `docs/design/`. The Quorum JS bundle isn't vendored, because its license isn't confirmed; views are rebuilt natively in Avalonia.
@@ -53,6 +53,10 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **`MOSSMINT_DATA_ROOT`** redirects the data folder; tests and the screenshot tool always use it, so they can't touch real profiles.
 - **Balances typed in** are UserConfirmed as of the date entered. Loan and card payments become debt-payment bills, so the forecast sees them and they never count as spending.
 - **Profile names show before unlock** (the unlock screen needs them); nothing else does.
+
+## Decisions (2026-10-09, M3)
+
+- **Owner approval:** the real workbook data may be used for the importer and the handoff profile, and the workbooks' sheet names and labels may appear in importer code. The importer recognizes a workbook by its sheets and labels, never by its file name, so file and lender names stay out of the code. Values still never enter the repo, tests, screenshots or Discord, and the `.xlsx` files stay gitignored.
 
 ## M0: Skeleton and guardrails
 
