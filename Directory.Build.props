@@ -17,6 +17,8 @@
     <IsPackable>false</IsPackable>
     <!-- Lock files make restores reproducible and let CI detect unexpected dependency drift. -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- Declared everywhere so plain and win-x64 publish restores write the same lock files. -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>low</NuGetAuditLevel>
