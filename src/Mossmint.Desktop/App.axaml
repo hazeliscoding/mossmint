@@ -1,0 +1,39 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:views="using:Mossmint.Desktop.Views"
+             x:Class="Mossmint.Desktop.App"
+             Name="Mossmint"
+             RequestedThemeVariant="Default">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://Mossmint.Desktop/Themes/Tokens.axaml" />
+        <ResourceInclude Source="avares://Mossmint.Desktop/Themes/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#96CCA7" RegionColor="#111A17" />
+        <ColorPaletteResources x:Key="Light" Accent="#346B4F" RegionColor="#F7F6F0" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Mossmint.Desktop/Themes/Controls.axaml" />
+  </Application.Styles>
+
+  <Application.DataTemplates>
+    <DataTemplate DataType="vm:WelcomeViewModel">
+      <views:WelcomeView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ShellViewModel">
+      <views:ShellView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:PageViewModel">
+      <views:PlaceholderPageView />
+    </DataTemplate>
+  </Application.DataTemplates>
+</Application>

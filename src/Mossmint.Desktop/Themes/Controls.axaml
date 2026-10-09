@@ -1,0 +1,329 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:Mossmint.Desktop.Controls">
+
+  <Styles.Resources>
+    <!-- Status shapes: colour is never the only signal, so each tone has its own shape. -->
+    <StreamGeometry x:Key="ShapeSquare">M 0 0 H 8 V 8 H 0 Z</StreamGeometry>
+    <StreamGeometry x:Key="ShapeCircle">M 0 4 A 4 4 0 1 0 8 4 A 4 4 0 1 0 0 4 Z</StreamGeometry>
+    <StreamGeometry x:Key="ShapeTriangle">M 4 0 L 8 8 H 0 Z</StreamGeometry>
+    <StreamGeometry x:Key="ShapeDiamond">M 4 0 L 8 4 L 4 8 L 0 4 Z</StreamGeometry>
+    <StreamGeometry x:Key="ShapeRing">F0 M 0 4 A 4 4 0 1 0 8 4 A 4 4 0 1 0 0 4 Z M 2 4 A 2 2 0 1 0 6 4 A 2 2 0 1 0 2 4 Z</StreamGeometry>
+
+    <ControlTheme x:Key="{x:Type c:StatusBadge}" TargetType="c:StatusBadge">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="Root" CornerRadius="3" BorderThickness="1" Padding="6,2">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Path Name="Shape" Width="7" Height="7" Stretch="Uniform" VerticalAlignment="Center" />
+              <TextBlock Name="Label" Text="{TemplateBinding Text}" FontSize="11.5" FontWeight="SemiBold"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+
+      <Style Selector="^ /template/ Border#Root">
+        <Setter Property="Background" Value="{DynamicResource SignalNeutralSubtle}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SignalNeutralBorder}" />
+      </Style>
+      <Style Selector="^ /template/ Path#Shape">
+        <Setter Property="Data" Value="{StaticResource ShapeSquare}" />
+        <Setter Property="Fill" Value="{DynamicResource SignalNeutral}" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#Label">
+        <Setter Property="Foreground" Value="{DynamicResource SignalNeutralText}" />
+      </Style>
+
+      <Style Selector="^:healthy">
+        <Style Selector="^ /template/ Border#Root">
+          <Setter Property="Background" Value="{DynamicResource SignalHealthySubtle}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource SignalHealthyBorder}" />
+        </Style>
+        <Style Selector="^ /template/ Path#Shape">
+          <Setter Property="Data" Value="{StaticResource ShapeCircle}" />
+          <Setter Property="Fill" Value="{DynamicResource SignalHealthy}" />
+        </Style>
+        <Style Selector="^ /template/ TextBlock#Label">
+          <Setter Property="Foreground" Value="{DynamicResource SignalHealthyText}" />
+        </Style>
+      </Style>
+
+      <Style Selector="^:warning">
+        <Style Selector="^ /template/ Border#Root">
+          <Setter Property="Background" Value="{DynamicResource SignalWarningSubtle}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource SignalWarningBorder}" />
+        </Style>
+        <Style Selector="^ /template/ Path#Shape">
+          <Setter Property="Data" Value="{StaticResource ShapeTriangle}" />
+          <Setter Property="Fill" Value="{DynamicResource SignalWarning}" />
+        </Style>
+        <Style Selector="^ /template/ TextBlock#Label">
+          <Setter Property="Foreground" Value="{DynamicResource SignalWarningText}" />
+        </Style>
+      </Style>
+
+      <Style Selector="^:critical">
+        <Style Selector="^ /template/ Border#Root">
+          <Setter Property="Background" Value="{DynamicResource SignalCriticalSubtle}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource SignalCriticalBorder}" />
+        </Style>
+        <Style Selector="^ /template/ Path#Shape">
+          <Setter Property="Data" Value="{StaticResource ShapeDiamond}" />
+          <Setter Property="Fill" Value="{DynamicResource SignalCritical}" />
+        </Style>
+        <Style Selector="^ /template/ TextBlock#Label">
+          <Setter Property="Foreground" Value="{DynamicResource SignalCriticalText}" />
+        </Style>
+      </Style>
+
+      <Style Selector="^:info">
+        <Style Selector="^ /template/ Border#Root">
+          <Setter Property="Background" Value="{DynamicResource SignalInfoSubtle}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource SignalInfoBorder}" />
+        </Style>
+        <Style Selector="^ /template/ Path#Shape">
+          <Setter Property="Data" Value="{StaticResource ShapeRing}" />
+          <Setter Property="Fill" Value="{DynamicResource SignalInfo}" />
+        </Style>
+        <Style Selector="^ /template/ TextBlock#Label">
+          <Setter Property="Foreground" Value="{DynamicResource SignalInfoText}" />
+        </Style>
+      </Style>
+
+      <Style Selector="^:accent">
+        <Style Selector="^ /template/ Border#Root">
+          <Setter Property="Background" Value="{DynamicResource AccentSubtle}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentBorder}" />
+        </Style>
+        <Style Selector="^ /template/ Path#Shape">
+          <Setter Property="Data" Value="{StaticResource ShapeCircle}" />
+          <Setter Property="Fill" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="^ /template/ TextBlock#Label">
+          <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+        </Style>
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+
+  <!-- Two-ring focus halo (canvas inside, accent outside) on every focusable element. -->
+  <Style Selector=":is(Control)">
+    <Setter Property="FocusAdorner">
+      <FocusAdornerTemplate>
+        <Border BorderThickness="2" BorderBrush="{DynamicResource Accent}" CornerRadius="6" Margin="-4">
+          <Border BorderThickness="2" BorderBrush="{DynamicResource BgCanvas}" CornerRadius="4" />
+        </Border>
+      </FocusAdornerTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Window">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="Background" Value="{DynamicResource BgCanvas}" />
+  </Style>
+
+  <!-- Type scale -->
+  <Style Selector="TextBlock.display">
+    <Setter Property="FontSize" Value="34" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="-0.7" />
+  </Style>
+  <Style Selector="TextBlock.page-title">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.section">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.card-title">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.compact">
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="TextBlock.label">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="0.66" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
+  </Style>
+  <Style Selector="TextBlock.secondary">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+  </Style>
+  <Style Selector="TextBlock.faint">
+    <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
+  </Style>
+  <Style Selector="TextBlock.prose">
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="LineHeight" Value="21" />
+  </Style>
+  <!-- Numbers, dates, IDs and paths: mono with tabular figures. -->
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    <Setter Property="FontFeatures" Value="+tnum" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <!-- Surfaces -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource BgSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderHairline}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusCard}" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+  <Style Selector="Border.separator">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource BorderHairline}" />
+  </Style>
+  <Style Selector="Border.tag">
+    <Setter Property="Background" Value="{DynamicResource BgElevated}" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Padding" Value="6,2" />
+  </Style>
+  <Style Selector="Border.tag > TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    <Setter Property="FontSize" Value="11.5" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+  </Style>
+
+  <!-- Buttons -->
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+    <Setter Property="Padding" Value="10,5" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="{DynamicResource BgSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefault}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgElevated}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrong}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+  <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgSelected}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrong}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+  <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderHairline}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
+  </Style>
+  <!-- Buttons never change size on press. -->
+  <Style Selector="Button:pressed">
+    <Setter Property="RenderTransform" Value="translateY(0.5px)" />
+  </Style>
+
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextInverse}" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentHover}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextInverse}" />
+  </Style>
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentActive}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentActive}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextInverse}" />
+  </Style>
+
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.icon">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Button.link">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentHover}" />
+  </Style>
+  <Style Selector="Button.link:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.option-card">
+    <Setter Property="Padding" Value="28,24" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.option-card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBorder}" />
+  </Style>
+
+  <!-- Sidebar navigation -->
+  <Style Selector="ListBox.nav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgElevated}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgSelected}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgSelected}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgSelected}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgSelected}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected TextBlock.nav-label">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="c|Icon">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+  </Style>
+</Styles>

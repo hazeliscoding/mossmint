@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Mossmint.Desktop.ViewModels"
+        xmlns:c="using:Mossmint.Desktop.Controls"
+        x:Class="Mossmint.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Mossmint"
+        Width="1440" Height="900" MinWidth="1024" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True">
+
+  <!-- On the window so they work wherever focus is, including the welcome screen. -->
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+D1" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Overview}" />
+    <KeyBinding Gesture="Ctrl+D2" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.CashFlow}" />
+    <KeyBinding Gesture="Ctrl+D3" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Paychecks}" />
+    <KeyBinding Gesture="Ctrl+D4" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Debts}" />
+    <KeyBinding Gesture="Ctrl+D5" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Bills}" />
+    <KeyBinding Gesture="Ctrl+D6" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Savings}" />
+    <KeyBinding Gesture="Ctrl+D7" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Transactions}" />
+    <KeyBinding Gesture="Ctrl+D8" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Scenarios}" />
+    <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenAppCommand}" CommandParameter="{x:Static vm:Destination.Settings}" />
+  </Window.KeyBindings>
+
+  <DockPanel>
+    <!-- Title bar: system caption buttons stay on the right (snap layouts, accessibility). -->
+    <Border DockPanel.Dock="Top"
+            Height="{StaticResource TitleBarHeight}"
+            Background="{DynamicResource BgPanel}"
+            BorderBrush="{DynamicResource BorderHairline}"
+            BorderThickness="0,0,0,1"
+            WindowDecorationProperties.ElementRole="TitleBar">
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,0" VerticalAlignment="Center">
+        <c:BrandMark Width="16" Height="16" />
+        <TextBlock Text="Mossmint" Classes="compact secondary" VerticalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <ContentControl Content="{Binding CurrentScreen}" />
+  </DockPanel>
+</Window>

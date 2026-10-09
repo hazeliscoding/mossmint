@@ -1,0 +1,89 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.WelcomeView"
+             x:DataType="vm:WelcomeViewModel">
+
+  <Grid ColumnDefinitions="*,*">
+    <!-- Left: promise and profile -->
+    <Border Grid.Column="0"
+            Background="{DynamicResource BgPanel}"
+            BorderBrush="{DynamicResource BorderHairline}"
+            BorderThickness="0,0,1,0"
+            Padding="64,72">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Spacing="10" MaxWidth="440" HorizontalAlignment="Left">
+          <TextBlock Classes="label" Text="YOUR PROFILE" />
+          <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+            <TextBlock Classes="compact secondary" Text="Profile" />
+            <TextBlock Grid.Column="1" Classes="compact" Text="None yet" />
+            <TextBlock Grid.Row="1" Classes="compact secondary" Text="Stored at" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono" Text="%LOCALAPPDATA%\Mossmint\Profiles" />
+            <TextBlock Grid.Row="2" Classes="compact secondary" Text="Unlock" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Classes="compact" Text="Passphrase, encrypted at rest (arrives in M2)" TextWrapping="Wrap" />
+          </Grid>
+        </StackPanel>
+
+        <StackPanel Spacing="20" MaxWidth="440" HorizontalAlignment="Left">
+          <c:BrandMark Width="44" Height="44" HorizontalAlignment="Left" />
+          <TextBlock Classes="display" Text="Make room to grow." />
+          <TextBlock Classes="prose secondary" FontSize="14" LineHeight="22"
+                     Text="Mossmint keeps your finances on this computer. There is no account to create, nothing to subscribe to, and no bank to connect. Choose how to begin; either path can be changed later." />
+          <WrapPanel ItemSpacing="12" LineSpacing="8">
+            <c:StatusBadge Tone="Neutral" Text="Offline · nothing leaves this device" />
+            <c:StatusBadge Tone="Neutral" Text="Open source · MIT" />
+          </WrapPanel>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- Right: how to begin -->
+    <StackPanel Grid.Column="1" Spacing="16" Margin="64,0" MaxWidth="600" VerticalAlignment="Center">
+      <Button Classes="option-card" Command="{Binding ImportMyFinancesCommand}"
+              AutomationProperties.Name="Import my finances">
+        <DockPanel>
+          <c:Icon DockPanel.Dock="Right" Data="{StaticResource IconChevronRight}"
+                  Foreground="{DynamicResource TextFaint}" VerticalAlignment="Top" />
+          <StackPanel Spacing="10">
+            <TextBlock Classes="section" FontSize="18" Text="Import my finances" />
+            <TextBlock Classes="prose secondary"
+                       Text="Bring in the spreadsheets you already keep (.xlsx). Mossmint previews everything before anything is saved, leaves your original files untouched, and asks about anything ambiguous instead of guessing." />
+            <WrapPanel ItemSpacing="6" LineSpacing="6">
+              <Border Classes="tag"><TextBlock Text="Preview first" /></Border>
+              <Border Classes="tag"><TextBlock Text="Originals preserved" /></Border>
+              <Border Classes="tag"><TextBlock Text="Multiple workbooks" /></Border>
+              <c:StatusBadge Tone="Info" Text="Arrives in M3" />
+            </WrapPanel>
+          </StackPanel>
+        </DockPanel>
+      </Button>
+
+      <Button Classes="option-card" Command="{Binding StartFreshCommand}"
+              AutomationProperties.Name="Start fresh">
+        <DockPanel>
+          <c:Icon DockPanel.Dock="Right" Data="{StaticResource IconChevronRight}"
+                  Foreground="{DynamicResource TextFaint}" VerticalAlignment="Top" />
+          <StackPanel Spacing="10">
+            <TextBlock Classes="section" FontSize="18" Text="Start fresh" />
+            <TextBlock Classes="prose secondary"
+                       Text="Add a cash account, your paychecks, recurring bills, debts and savings goals, one short step at a time. Every step can be skipped and revisited; the forecast works with whatever you have entered so far." />
+            <WrapPanel ItemSpacing="6" LineSpacing="6">
+              <Border Classes="tag"><TextBlock Text="Cash" /></Border>
+              <Border Classes="tag"><TextBlock Text="Paychecks" /></Border>
+              <Border Classes="tag"><TextBlock Text="Bills" /></Border>
+              <Border Classes="tag"><TextBlock Text="Debts" /></Border>
+              <Border Classes="tag"><TextBlock Text="Savings" /></Border>
+            </WrapPanel>
+          </StackPanel>
+        </DockPanel>
+      </Button>
+
+      <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,4,0,0">
+        <TextBlock Classes="compact faint" Text="Have a Mossmint backup from another PC?" VerticalAlignment="Center" />
+        <Button Classes="link" FontSize="12" Content="Restore an encrypted backup"
+                Command="{Binding RestoreBackupCommand}" />
+      </StackPanel>
+    </StackPanel>
+  </Grid>
+</UserControl>

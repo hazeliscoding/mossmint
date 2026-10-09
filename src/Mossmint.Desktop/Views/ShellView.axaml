@@ -1,0 +1,99 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:views="using:Mossmint.Desktop.Views"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.ShellView"
+             x:DataType="vm:ShellViewModel">
+
+
+  <UserControl.Styles>
+    <Style Selector="Border.sidebar">
+      <Setter Property="Width" Value="{StaticResource SidebarWidth}" />
+    </Style>
+    <Style Selector="Border.sidebar.collapsed">
+      <Setter Property="Width" Value="{StaticResource SidebarCollapsedWidth}" />
+    </Style>
+    <Style Selector="Border.sidebar.collapsed :is(TextBlock).hide-collapsed">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border.sidebar.collapsed Border.nav-row">
+      <Setter Property="Padding" Value="7,0" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="Auto,*">
+    <!-- Sidebar -->
+    <Border Grid.Column="0"
+            Classes="sidebar"
+            Classes.collapsed="{Binding IsSidebarCollapsed}"
+            Background="{DynamicResource BgPanel}"
+            BorderBrush="{DynamicResource BorderHairline}"
+            BorderThickness="0,0,1,0"
+            Padding="8,12">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="8,6,8,14">
+          <c:BrandMark Width="22" Height="22" />
+          <TextBlock Classes="hide-collapsed" Text="Mossmint" FontSize="15" FontWeight="Bold"
+                     LetterSpacing="-0.15" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <ListBox Classes="nav"
+                 ItemsSource="{Binding NavItems}"
+                 SelectedItem="{Binding SelectedItem}"
+                 AutomationProperties.Name="Primary navigation">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:NavItemViewModel">
+              <StackPanel ToolTip.Tip="{Binding ToolTip}">
+                <Border Classes="separator" Margin="2,8,2,8" IsVisible="{Binding StartsGroup}" />
+                <Border Classes="nav-row" Height="32" Padding="10,0" Background="Transparent"
+                        AutomationProperties.Name="{Binding Label}">
+                  <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <c:Icon Data="{Binding IconKey, Converter={x:Static views:IconKeyConverter.Instance}}" />
+                    <TextBlock Classes="nav-label hide-collapsed" Text="{Binding Label}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Top bar and page -->
+    <DockPanel Grid.Column="1">
+      <Border DockPanel.Dock="Top"
+              Height="{StaticResource TopBarHeight}"
+              Background="{DynamicResource BgPanel}"
+              BorderBrush="{DynamicResource BorderHairline}"
+              BorderThickness="0,0,0,1"
+              Padding="12,0,16,0">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+            <c:StatusBadge Tone="Neutral" Text="Offline · Manual" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+            <Button Classes="ghost icon" Command="{Binding ToggleSidebarCommand}"
+                    ToolTip.Tip="Collapse or expand the sidebar"
+                    AutomationProperties.Name="Toggle sidebar">
+              <c:Icon Data="{StaticResource IconPanelLeft}" />
+            </Button>
+            <Border Width="22" Height="22" CornerRadius="11" BorderThickness="1"
+                    BorderBrush="{DynamicResource BorderStrong}" Background="{DynamicResource BgElevated}">
+              <c:Icon Width="12" Height="12" Data="{StaticResource IconLock}" Foreground="{DynamicResource TextFaint}" />
+            </Border>
+            <TextBlock Classes="secondary" Text="No profile" VerticalAlignment="Center" />
+            <Border Width="1" Height="18" Background="{DynamicResource BorderHairline}" />
+            <TextBlock Classes="compact faint" Text="Forecast as of" VerticalAlignment="Center" />
+            <TextBlock Classes="mono faint" Text="—" VerticalAlignment="Center"
+                       ToolTip.Tip="No forecast yet: there is no confirmed balance to start from." />
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+      <ScrollViewer>
+        <ContentControl Content="{Binding CurrentPage}" Margin="24,20,24,24" />
+      </ScrollViewer>
+    </DockPanel>
+  </Grid>
+</UserControl>
