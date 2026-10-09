@@ -304,6 +304,7 @@
       "mossmint.samples": {
         "type": "Project",
         "dependencies": {
+          "Mossmint.Connectors.Abstractions": "[0.1.0, )",
           "Mossmint.Engine": "[0.1.0, )"
         }
       },
