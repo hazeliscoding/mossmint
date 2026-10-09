@@ -27,16 +27,19 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **Profile data** lives under `%LOCALAPPDATA%\Mossmint\Profiles\<profile-id>\`, never inside the Velopack install folder.
 - **Connectors:** abstractions and fakes only until after the MVP. No Plaid, bank logins or payments in the MVP.
 - **Progress posts** go to the project Discord channel when a milestone starts or finishes, with a synthetic screenshot.
+- **Tests run on Microsoft.Testing.Platform** (opted in through `global.json`). xUnit stays on 3.2.x because Avalonia.Headless.XUnit 12.1 fails test discovery on 4.x. FsCheck is used through its core API rather than its xUnit 4 integration.
+- **Owner approval (2026-10-09):** agents may read the private workbooks in the working tree to shape the domain model and the importer. Their values still never enter the repo, docs, commits, tests, screenshots or Discord.
+- **The handoff DB** for the private user is a real encrypted Mossmint profile, produced by running the M3 importer locally on the workbooks. There is no interim export format.
 
 ## M0: Skeleton and guardrails
 
-- [ ] Repo files: `README`, `ROADMAP`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `.editorconfig`, `.gitattributes`, `.gitignore`.
+- [x] Repo files: `README`, `ROADMAP`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `.editorconfig`, `.gitattributes`, `.gitignore`.
 - [ ] Brand: mark SVGs, plus app icon PNGs and `.ico` generated from the mark.
-- [ ] Solution: `Mossmint.slnx`, 8 `src` projects, 6 test projects, `global.json`, `Directory.Build.props` (nullable, warnings as errors), `Directory.Packages.props`.
-- [ ] Architecture test for the layering rule, with a positive control.
-- [ ] Avalonia shell that boots offline: custom title bar, sidebar with every destination, top bar with an *Offline* status, Welcome screen for a clean install, dark and light theme tokens, bundled fonts.
-- [ ] Headless smoke tests: the window opens, every destination navigates, nothing touches the network.
-- [ ] Screenshot tool: renders screens headlessly to PNG.
+- [x] Solution: `Mossmint.slnx`, 8 `src` projects, `global.json`, `Directory.Build.props` (nullable, warnings as errors, lock files), `Directory.Packages.props`. Test projects arrive with the code they test.
+- [x] Architecture test for the layering rule, with a positive control.
+- [x] Avalonia shell that boots offline: custom title bar, sidebar with every destination, top bar with an *Offline* status, Welcome screen for a clean install, dark and light theme tokens, bundled fonts.
+- [x] Headless smoke tests: the window opens, every destination navigates, nothing touches the network.
+- [x] Screenshot tool: renders screens headlessly to PNG.
 - [ ] Velopack: startup hook, `vpk` as a local tool, a pack script, and a proof-of-concept installer built from synthetic data.
 - [ ] CI on `windows-latest`: restore, format check, build, test, vulnerable-package check, secret scan, and a private-file guard.
 - [ ] `SECURITY.md`, `PRIVACY.md`, `CONTRIBUTING.md`.
@@ -80,9 +83,9 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - [ ] Dry-run report, review queue, reimport diff, SHA-256 of each source file.
 - [ ] Synthetic workbook generator for the five known workbook shapes (a master budget workbook and four per-debt workbooks), including formulas, stale cached values, Google-only formulas, date serials and duplicates.
 - [ ] Mismatches (balances that differ from the lender, due day vs planned day) stay review items, never silent corrections.
-- [ ] Owner-approved local migration of the real workbooks, run by Mossmint itself on the owner's machine.
+- [ ] Handoff DB: run the importer locally on the real workbooks to produce the private user's encrypted profile, with every unresolved mismatch listed for review.
 
-**Done when:** synthetic imports pass, a failed import leaves the profile untouched, and the private migration shows every unresolved mismatch.
+**Done when:** synthetic imports pass, a failed import leaves the profile untouched, and the handoff DB opens in Mossmint with its review queue intact.
 
 ## M4: Desktop dashboard and daily flows
 
