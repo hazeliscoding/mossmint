@@ -86,7 +86,8 @@
             </Button>
             <Border Width="22" Height="22" CornerRadius="11" BorderThickness="1"
                     BorderBrush="{DynamicResource BorderStrong}" Background="{DynamicResource BgElevated}">
-              <c:Icon Width="12" Height="12" Data="{StaticResource IconLock}" Foreground="{DynamicResource TextFaint}" />
+              <TextBlock Text="{Binding Context.ProfileInitial}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <TextBlock Text="{Binding Context.ProfileName}" FontWeight="SemiBold" VerticalAlignment="Center"
                        AutomationProperties.Name="Unlocked profile" />

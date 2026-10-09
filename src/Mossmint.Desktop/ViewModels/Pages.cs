@@ -40,6 +40,14 @@ public static class Describe
 
     public static string Day(DayOfMonth day) => day.IsLastDay ? "last day" : Ordinal(day.Day);
 
+    public static string Kind(Domain.Accounts.AccountKind kind) => kind switch
+    {
+        Domain.Accounts.AccountKind.InstallmentLoan => "Loan",
+        Domain.Accounts.AccountKind.CreditCard => "Credit card",
+        Domain.Accounts.AccountKind.TrackingOnly => "Tracking only",
+        _ => kind.ToString(),
+    };
+
     public static (string Status, StatusTone Tone) Confidence(Confidence confidence) => confidence switch
     {
         Domain.Confidence.Confirmed => ("Confirmed", StatusTone.Healthy),
@@ -76,7 +84,7 @@ public sealed partial class OverviewPageViewModel(AppServices services, IAppNavi
             var (status, tone) = latest is null ? ("No balance yet", StatusTone.Warning) : Describe.Confidence(latest.Provenance.Confidence);
             Accounts.Add(new RecordRow(
                 account.Name,
-                latest is null ? account.Kind.ToString() : $"{account.Kind} · as of {latest.Provenance.AsOf:d MMM yyyy}",
+                latest is null ? Describe.Kind(account.Kind) : $"{Describe.Kind(account.Kind)} · as of {latest.Provenance.AsOf:d MMM yyyy}",
                 latest is null ? "—" : Describe.Money(latest.Balance),
                 status,
                 tone));

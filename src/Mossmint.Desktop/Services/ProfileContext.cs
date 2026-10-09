@@ -8,12 +8,14 @@ namespace Mossmint.Desktop.Services;
 public sealed partial class ProfileContext : ObservableObject, IDisposable
 {
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsUnlocked), nameof(ProfileName))]
+    [NotifyPropertyChangedFor(nameof(IsUnlocked), nameof(ProfileName), nameof(ProfileInitial))]
     private IProfileSession? _session;
 
     public bool IsUnlocked => Session is not null;
 
     public string ProfileName => Session?.Profile.Name ?? "No profile";
+
+    public string ProfileInitial => ProfileName[..1].ToUpperInvariant();
 
     public IProfileSession Current => Session ?? throw new InvalidOperationException("No profile is unlocked.");
 

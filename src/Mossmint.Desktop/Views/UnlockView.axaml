@@ -26,10 +26,10 @@
 
       <StackPanel Spacing="6">
         <TextBlock Classes="field-label" Text="Profile" />
-        <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" AutomationProperties.Name="Profiles">
+        <ListBox Classes="nav" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" AutomationProperties.Name="Profiles">
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="p:ProfileSummary">
-              <StackPanel Orientation="Horizontal" Spacing="10" Margin="4,6">
+              <StackPanel Orientation="Horizontal" Spacing="10" Margin="12,9">
                 <c:Icon Data="{StaticResource IconLock}" Foreground="{DynamicResource TextFaint}" />
                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
               </StackPanel>

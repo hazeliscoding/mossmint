@@ -18,12 +18,12 @@
         <ItemsControl ItemsSource="{Binding Groups}" AutomationProperties.Name="Recovery key">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <WrapPanel ItemSpacing="8" LineSpacing="8" />
+              <UniformGrid Columns="4" HorizontalAlignment="Left" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="x:String">
-              <Border Classes="recovery-group">
+              <Border Classes="recovery-group" Margin="0,0,8,8">
                 <TextBlock Text="{Binding}" />
               </Border>
             </DataTemplate>
