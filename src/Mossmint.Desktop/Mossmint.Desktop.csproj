@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/mossmint.ico</ApplicationIcon>
     <AssemblyTitle>Mossmint</AssemblyTitle>
   </PropertyGroup>
 

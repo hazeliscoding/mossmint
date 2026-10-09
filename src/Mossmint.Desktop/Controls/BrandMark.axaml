@@ -1,15 +1,13 @@
-<!-- The Mossmint mark (docs/brand/mark.svg), drawn on its 16-unit grid. -->
+<!-- The Mossmint mark (docs/brand/mark.svg): a sprout knocked out of a filled coin,
+     drawn on its 16-unit grid with an even-odd fill so the sprout is a hole. -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Mossmint.Desktop.Controls.BrandMark"
              Width="16" Height="16" Focusable="False">
   <Viewbox Stretch="Uniform">
     <Canvas Width="16" Height="16">
-      <Ellipse Canvas.Left="3.5" Canvas.Top="6" Width="9" Height="9"
-               Stroke="{DynamicResource Accent}" StrokeThickness="1.4" />
-      <Path Data="M 8 11 V 4.5" Stroke="{DynamicResource Accent}" StrokeThickness="1.4" StrokeLineCap="Round" />
-      <Path Data="M 8 6.5 C 8 4.7 9.4 3.5 11.2 3.5 C 11.2 5.3 9.8 6.5 8 6.5 Z M 8 8.5 C 8 6.9 6.8 5.9 5.2 5.9 C 5.2 7.5 6.4 8.5 8 8.5 Z"
-            Fill="{DynamicResource Accent}" />
+      <Path Fill="{DynamicResource Accent}"
+            Data="F0 M 8 0.5 A 7.5 7.5 0 1 1 8 15.5 A 7.5 7.5 0 1 1 8 0.5 Z M 7 13 V 10 C 4.8 10 3 8.2 3 6 C 5.8 6 8 7.1 8 8.5 C 8 6 9.8 4 12 4 C 12 7 10.7 9 9 9 V 13 Z" />
     </Canvas>
   </Viewbox>
 </UserControl>

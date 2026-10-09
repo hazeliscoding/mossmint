@@ -7,6 +7,7 @@
         Title="Mossmint"
         Width="1440" Height="900" MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen"
+        Icon="/Assets/mossmint.ico"
         ExtendClientAreaToDecorationsHint="True">
 
   <!-- On the window so they work wherever focus is, including the welcome screen. -->
