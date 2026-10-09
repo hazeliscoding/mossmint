@@ -29,15 +29,43 @@
 
 ## Trust boundaries
 
-```text
-[ user ] -> [ Mossmint.Desktop process ] -> [ encrypted profile files ]  (%LOCALAPPDATA%\Mossmint)
-                    |                     -> [ backup files ]              (user-chosen location)
-                    |                     <- [ workbooks, read-only ]      (user-chosen files)
-                    +-- (opt-in, M6+) ----> [ GitHub Releases: update check ]
-                    +-- (opt-in, M7+) ----> [ connector provider or relay ]
+```mermaid
+flowchart LR
+    user([User])
+
+    subgraph pc["User's PC: Windows session"]
+        app["Mossmint.Desktop process"]
+        subgraph appdata["%LOCALAPPDATA%\Mossmint"]
+            db[("Encrypted profile DB")]
+            keys["profile.json<br/>wrapped keys"]
+        end
+        backups[("Encrypted backups<br/>user-chosen location")]
+        workbooks["Original workbooks<br/>read-only"]
+    end
+
+    subgraph net["Network: off unless the user opts in"]
+        releases["GitHub Releases<br/>update check, M6+"]
+        provider["Connector provider or relay<br/>M7+"]
+    end
+
+    user -- "passphrase, entries" --> app
+    app -- "read / write" --> db
+    app -- "unwrap data key" --> keys
+    app -- "write, verify, restore" --> backups
+    workbooks -- "read only, SHA-256 checked" --> app
+    app -. "opt-in only" .-> releases
+    app -. "opt-in only" .-> provider
 ```
 
-Nothing crosses the network boundary unless the user turned that feature on.
+Solid arrows stay on the PC. Dotted arrows cross the network boundary, and only after the user turns that feature on.
+
+```mermaid
+flowchart TB
+    A["Profile file copied<br/>(theft, sync folder, other account)"] --> B{"Has passphrase<br/>or recovery key?"}
+    B -- "no" --> C["Sees ciphertext only"]
+    B -- "yes" --> D["Can read the profile"]
+    E["Malware in the unlocked session"] --> F["Out of scope:<br/>can read the screen and use DPAPI as the user"]
+```
 
 ## Threats and mitigations
 

@@ -61,5 +61,6 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - **No AI attribution** in commits or PRs: no `Co-Authored-By` trailers, no "Generated with" lines, no session links.
 - **Checks:** automate acceptance checks. Every check for an absence gets a positive control.
 - **Docs:** short. Prefer editing `ROADMAP.md` over new planning documents.
+- **Diagrams** are Mermaid (flowcharts, sequence, state, ER) in fenced `mermaid` blocks, never ASCII art.
 - **Comments** explain why, not what: a constraint, a financial rule and its source, a workaround and its cause. No boilerplate XML docs, no commented-out code.
 - Local Playwright output goes to `.playwright-mcp/`, which git ignores.
