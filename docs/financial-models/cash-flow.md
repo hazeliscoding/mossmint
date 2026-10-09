@@ -1,0 +1,65 @@
+# Cash flow
+
+Code: `src/Mossmint.Engine/CashFlow/`. Tests: `tests/Mossmint.Engine.Tests/CashFlow/` (the synthetic *Juniper* profile).
+
+## From plan to forecast
+
+```mermaid
+flowchart LR
+    plan["CashFlowPlan<br/>opening balance, income schedules,<br/>bills, allowances, savings target,<br/>reserve floor, scenario"] --> expand["CashFlowPlanner.Expand<br/>dated CashEvents"]
+    expand --> sim["CashFlowSimulator<br/>day by day"]
+    expand --> fund["PaycheckFunding<br/>bills grouped by paycheck"]
+    sim --> forecast["CashFlowForecast<br/>daily opening, low, closing,<br/>lowest point, warnings"]
+    plan --> safe["SafeToSpend"]
+    safe --> result["SafeAmount, Shortfall<br/>or NeedsConfirmation"]
+```
+
+### Events
+
+- **Income:** each paycheck occurrence, at its net pay (or a one-off override for that paycheck).
+- **Bills:** each due-date occurrence not already marked paid. Fixed amounts are used as they are; estimates follow the scenario; a bill with no amount is listed as *unvalued* and left out, which drops the forecast's confidence to `NeedsReview`.
+- **Savings contribution:** the per-paycheck target, on each payday.
+- **Allowances:** the daily variable-spending allowance for each category, on every day.
+- **Stress one-offs:** extra expenses that apply only in the Stress scenario.
+
+Only expenses and allowances count as spending. Debt payments and transfers move money between the user's own accounts, so a card payment never counts twice.
+
+### Order within a day
+
+```mermaid
+flowchart LR
+    open["Opening balance"] --> out["Outflows<br/>bills, debt payments,<br/>transfers out, allowances"] --> in["Inflows<br/>paychecks, transfers in"] --> save["Savings contribution<br/>funded by that paycheck"] --> close["Closing balance"]
+```
+
+The day's **low** is the lowest running balance. Paying outflows before the paycheck lands is conservative: it shows the lowest point a day can reach when the deposit arrives later than the bills. The savings contribution comes after the paycheck because the paycheck triggers it.
+
+The forecast reports, for every day: opening, inflows, outflows, low, closing, whether the low is under the reserve floor or below zero, and the weakest confidence among that day's events. It also reports the lowest point overall, the first day under the floor and the first negative day. Negative cash is reported as it is, never floored at zero.
+
+## Scenarios
+
+Scenarios are assumptions, not probabilities.
+
+| Scenario | Estimated bills and allowances | One-off expenses |
+|---|---|---|
+| Base | expected amount | none |
+| Cautious | midpoint of expected and high | none |
+| Stress | high end of the range | included |
+
+Fixed amounts are the same in every scenario.
+
+## Paycheck funding
+
+Each obligation is funded by the **latest paycheck on or before its due date**, exactly once. Anything due before the first payday is funded by the cash on hand. Due dates never move.
+
+For each paycheck: available = carry-in + net pay; left before savings = available − obligations; contribution funded = the target, or whatever is left if less; leftover = what remains and carries into the next paycheck (negative when it fell short). A missed contribution is a shortfall against the savings **target**. It is separate from the reserve **floor**, which the daily forecast checks: a plan can fund every contribution and still dip under the floor between paydays, and both are reported.
+
+## Safe to spend
+
+An amount is given only when:
+
+1. the opening balance is `Confirmed` and no older than the freshness window (3 days by default), and
+2. every obligation in the horizon has an amount (estimates count at the top of their range).
+
+Otherwise the result is `NeedsConfirmation`, listing exactly what to confirm.
+
+Safe to spend = lowest projected cash through the horizon − reserve floor. Spending that much today keeps every later day at or above the floor. If the lowest point is already under the floor, the result is a `Shortfall` of the difference, not a negative safe amount. The horizon is chosen by the caller; `DayBeforeNextPayday` gives the usual one.
