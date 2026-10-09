@@ -13,6 +13,7 @@
     <Project Path="src/Mossmint.Persistence/Mossmint.Persistence.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Mossmint.Application.Tests/Mossmint.Application.Tests.csproj" />
     <Project Path="tests/Mossmint.ArchitectureTests/Mossmint.ArchitectureTests.csproj" />
     <Project Path="tests/Mossmint.Desktop.SmokeTests/Mossmint.Desktop.SmokeTests.csproj" />
     <Project Path="tests/Mossmint.Domain.Tests/Mossmint.Domain.Tests.csproj" />
