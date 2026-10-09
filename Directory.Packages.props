@@ -13,6 +13,15 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Velopack" Version="1.2.161" />
   </ItemGroup>
+  <ItemGroup Label="Persistence">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+    <!-- ADR-0001: SQLite3 Multiple Ciphers in SQLCipher v4 format. Never add Microsoft.Data.Sqlite
+         (non-Core) or another SQLitePCLRaw bundle: a second SQLite binary could open profiles unencrypted. -->
+    <PackageVersion Include="SQLite3MC.PCLRaw.bundle" Version="2.4.0" />
+    <PackageVersion Include="NSec.Cryptography" Version="26.4.0" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
+  </ItemGroup>
   <ItemGroup Label="Tests">
     <!-- 3.2.x: Avalonia.Headless.XUnit 12.1 is built against it and fails discovery on 4.x. -->
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

@@ -1,5 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" />
+    <PackageReference Include="SQLite3MC.PCLRaw.bundle" />
+    <PackageReference Include="NSec.Cryptography" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../Mossmint.Application/Mossmint.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mossmint.Persistence.Tests" />
   </ItemGroup>
 </Project>
