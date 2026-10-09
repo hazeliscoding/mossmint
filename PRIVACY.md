@@ -7,7 +7,9 @@ Mossmint is built so that your financial data never has to leave your computer. 
 - **Your profile:** accounts, balances, bills, income, debts, savings goals, transactions, scenarios, and where each value came from (typed in, a lender statement, an imported workbook cell). It lives in an encrypted database under `%LOCALAPPDATA%\Mossmint\Profiles\<profile-id>\`, outside the program folder, so updates never touch it.
 - **Import records:** the file name, a SHA-256 fingerprint and the sheet and cell of each imported value. Your original workbooks are opened read-only and never modified, moved or copied into Mossmint.
 - **Settings:** theme, layout and whether update checks are on.
-- **Backups:** encrypted files written only where you choose, or to a local rotation folder if you turn that on.
+- **Backups:** encrypted `.mmbak` files written only where you choose, plus up to five local copies in the profile's folder when you ask for them. A backup's readable header names no person and holds no data; everything else needs your passphrase or recovery key.
+- **What shows before unlocking:** only each profile's name, so you can pick one. Everything else stays encrypted until you unlock.
+- **Your recovery key** is shown once when you create a profile and never stored by Mossmint. Keep it somewhere safe and offline.
 
 ## What Mossmint never does
 
@@ -28,7 +30,7 @@ Backups are encrypted. An unencrypted CSV/JSON export is planned as a separate f
 
 ## Deleting your data
 
-Deleting a profile in Mossmint removes its database and keys after you type to confirm. Backups you saved elsewhere are yours to delete. Uninstalling the app removes the program, not your profiles, so a reinstall can open them again; delete `%LOCALAPPDATA%\Mossmint` to remove everything.
+Deleting a profile in Mossmint (Settings → Delete this profile) removes its database, keys and local copies after you type its name to confirm. Backups you saved elsewhere are yours to delete. Uninstalling the app removes the program, not your profiles, so a reinstall can open them again; delete `%LOCALAPPDATA%\Mossmint` to remove everything.
 
 ## Screenshots and examples
 

@@ -1,6 +1,6 @@
 # Threat model (draft)
 
-- **Status:** Draft, M0. Revisit when M2 (encrypted profiles), M3 (imports) and M6 (releases) land.
+- **Status:** Draft, updated in M2 (encrypted profiles shipped). Revisit when M3 (imports) and M6 (releases) land.
 - **Date:** 2026-10-09
 
 ## What we protect
@@ -71,10 +71,13 @@ flowchart TB
 
 | Threat | Mitigation | Where |
 |---|---|---|
-| Profile file copied and read | Page-level encryption, envelope keys, fail-closed open | ADR-0001, M2 |
-| Weak passphrase brute-forced offline | Argon2id with tuned memory cost; recovery key is high-entropy | ADR-0001 |
-| Plaintext fallback after a packaging mistake | Startup cipher check refuses to open; installed-build test | ADR-0001, M2, M6 |
-| Backup restored over the wrong profile | Restore into a new temporary profile, verify, then switch; never overwrite silently | ADR-0001, M2 |
+| Profile file copied and read | SQLCipher v4 page encryption with a random data key, envelope keys, fail-closed open | ADR-0001, done in M2 |
+| Weak passphrase brute-forced offline | Argon2id (64 MiB, 3 passes), 12-character minimum; the recovery key carries 160 random bits | ADR-0001, done in M2 |
+| Plaintext fallback after a packaging mistake | Open refuses unless sqlite3mc is loaded and the cipher is active; `--verify-encryption` checks the packaged build and CI runs it | ADR-0001, done in M2 |
+| Backup restored over the wrong profile | Restore into a new folder, verify, then make it a new profile; nothing is overwritten | ADR-0001, done in M2 |
+| Backup tampered with or truncated | Chunked AES-GCM bound to the header, index and final flag; hash, integrity check and row counts before use | done in M2 |
+| Old passphrase still works after a change | The passphrase envelope is replaced atomically; no previous copy of `profile.json` is kept | done in M2 |
+| Tests or tools touch a real profile | `MOSSMINT_DATA_ROOT` points every test and the screenshot tool at temporary folders | done in M2 |
 | Financial data in logs or crash output | No crash upload; redacting logger; no values, paths or tokens logged | AGENTS.md, M2 |
 | Network exfiltration by new code | Architecture test rejects networking assemblies; runtime monitor in smoke tests; review rule | M0 |
 | Real data committed to the public repo | `.gitignore`, CI private-file guard with positive control, secret scan of full history | M0 |
@@ -87,6 +90,5 @@ flowchart TB
 
 ## Open items
 
-- Choose and verify the encryption library (M2 spike).
 - Decide code-signing approach for Windows releases (M6).
 - Decide whether profiles auto-lock after idle time, and the default.

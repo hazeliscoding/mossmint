@@ -33,6 +33,12 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - Rounding happens at the documented step for each model, with an explicit `MidpointRounding`. Document every new rule in `docs/financial-models/`.
 - Every bug in debt payoff or cash-flow logic gets a regression test. Prefer hand-derived oracle fixtures over matching spreadsheet output.
 
+## Profiles and storage
+
+- Only `Mossmint.Persistence` talks to SQLite, and only through `EncryptedSqlite.Open`. Never add `Microsoft.Data.Sqlite` (non-Core) or another SQLitePCLRaw bundle: a second SQLite binary could open profiles unencrypted.
+- Every schema change is an EF Core migration; never edit the database by hand. A pre-migration snapshot is taken automatically.
+- Tests that need a profile use a temporary root and cheap Argon2 settings; production keeps `Argon2Settings.Default`.
+
 ## Architecture
 
 - `Desktop → Application → Domain + Engine`. Infrastructure projects implement Application ports. `Engine` references only `Domain`; `Domain` references nothing. `ArchitectureTests` enforces it.
@@ -53,7 +59,10 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - `dotnet run --project src/Mossmint.Desktop` runs the app.
 - `dotnet format --verify-no-changes` is the format check CI runs.
 - `dotnet run --project tools/Mossmint.Screenshots -- <out-dir>` renders synthetic screenshots.
-- `pwsh build/pack.ps1` publishes win-x64 and packs a Velopack installer into `artifacts/releases`.
+- `pwsh build/pack.ps1 [-Version x.y.z]` publishes win-x64 and packs a Velopack installer into `artifacts/releases`.
+- `Mossmint.Desktop.exe --verify-encryption [report.json]` proves a build encrypts profiles (exit code 0 = pass). Run it against packaged builds.
+- `dotnet ef migrations add <Name> --project src/Mossmint.Persistence --startup-project src/Mossmint.Persistence --output-dir Data/Migrations --namespace Mossmint.Persistence.Data.Migrations` adds a schema migration.
+- Set `MOSSMINT_DATA_ROOT` to a temporary folder whenever you run the app for testing; never point tools at `%LOCALAPPDATA%\Mossmint`.
 
 ## Working style
 

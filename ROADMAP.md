@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M2. The encryption spike (SQLite3 Multiple Ciphers vs the SQLCipher bundle) in an installed build, then the profile store and key envelopes.
+**Next up:** M3. The read-only workbook pipeline with synthetic workbook shapes, then the private handoff profile.
 
 ## Decisions (2026-10-09)
 
@@ -42,6 +42,18 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **US Federal Reserve holidays** are the default bank calendar for paydays, as a stated assumption; users can add closed days.
 - **Synthetic samples** live in `samples/Mossmint.Samples` (the *Juniper* profile), used by the screenshot tool's engine preview. Tests keep their own fixtures so sample changes can't move test expectations.
 
+## Decisions (2026-10-09, M2)
+
+- **Encryption:** SQLite3 Multiple Ciphers 2.4.0 writing the SQLCipher v4 format with a raw 256-bit data key (ADR-0001). It's current, MIT, reopens in about 40 ms, and standard SQLCipher tools can read a user's own data with their key. It pulls SQLitePCLRaw.core 3.x under EF Core 10; recheck when EF Core 11 ships.
+- **Key envelopes** live in `profile.json`: passphrase (Argon2id via libsodium/NSec, 64 MiB, 3 passes), recovery key (160 bits, Crockford base32, HKDF), and optional DPAPI. Passphrases are NFC-normalized UTF-8. AES-256-GCM binds each wrap to its kind and version.
+- **Passphrases** need at least 12 characters. "Unlock on this PC" is off by default; when it's on and there is one profile, the app unlocks at start.
+- **The recovery key is shown once** and the user must confirm they stored it before continuing. Replacing it retires the old one.
+- **Backups:** one `.mmbak` file, chunked AES-GCM bound to the header, with no personal metadata in clear. Every backup is test-restored before it's reported. Restores land in a new profile and never overwrite one. Local copies keep the newest five.
+- **Fail closed:** a profile opens only if the cipher library is sqlite3mc, the cipher is active, and the key works. `Mossmint.Desktop.exe --verify-encryption` proves it in any build, and CI runs it.
+- **`MOSSMINT_DATA_ROOT`** redirects the data folder; tests and the screenshot tool always use it, so they can't touch real profiles.
+- **Balances typed in** are UserConfirmed as of the date entered. Loan and card payments become debt-payment bills, so the forecast sees them and they never count as spending.
+- **Profile names show before unlock** (the unlock screen needs them); nothing else does.
+
 ## M0: Skeleton and guardrails
 
 - [x] Repo files: `README`, `ROADMAP`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `.editorconfig`, `.gitattributes`, `.gitignore`.
@@ -79,12 +91,12 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 
 ## M2: Encrypted profiles
 
-- [ ] Spike: SQLCipher bundle vs SQLite3 Multiple Ciphers on .NET 10 + EF Core 10, tested in an installed build. Record the result in ADR-0001.
-- [ ] Encrypted SQLite profile database, EF Core migrations, foreign keys on, backup before every schema change.
-- [ ] Unlock: passphrase plus a recovery key; optional DPAPI convenience unlock; portable backups that don't depend on DPAPI.
-- [ ] Multiple isolated profiles under `%LOCALAPPDATA%\Mossmint\Profiles\`.
-- [ ] Encrypted backup container (Argon2id + AES-GCM, versioned), restore into a temporary profile and verify before reporting success.
-- [ ] Manual entry of accounts, bills, income and debts.
+- [x] Spike: SQLCipher bundle vs SQLite3 Multiple Ciphers on .NET 10 + EF Core 10. SQLite3 Multiple Ciphers 2.4.0 won; results are in ADR-0001. The packaged Velopack build passes `--verify-encryption`.
+- [x] Encrypted SQLite profile database, EF Core migrations, foreign keys on, an encrypted snapshot before every schema change.
+- [x] Unlock: passphrase plus a recovery key; optional DPAPI convenience unlock; portable backups that don't depend on DPAPI.
+- [x] Multiple isolated profiles under `%LOCALAPPDATA%\Mossmint\Profiles\`.
+- [x] Encrypted backup container (versioned, chunked AES-GCM), test-restored before reporting success; restore lands in a new profile.
+- [x] Manual entry of accounts, bills, income and debts (the Start fresh setup).
 
 **Done when:** a plain SQLite client can't read a profile, wrong-password and corrupt-backup cases fail safely, and a restored backup matches its source.
 

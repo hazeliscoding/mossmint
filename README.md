@@ -4,7 +4,7 @@
 
 Mossmint is a local-first desktop app for paycheck forecasting and debt payoff planning. It tells you what is safe to spend before the next paycheck, which bills each paycheck has to cover, and what an extra debt payment really does to your cash. It works with the network off, it has no account to create, and nothing leaves your computer.
 
-> **Status:** early development. The app shell and the financial engine (loans, cards, daily cash flow, safe to spend) are in place; encrypted profiles come next (Milestone 2). Nothing here is ready to hold real financial data yet. See [ROADMAP.md](ROADMAP.md).
+> **Status:** early development. The financial engine (loans, cards, daily cash flow, safe to spend) and encrypted profiles with verified backups are in place; workbook import comes next (Milestone 3), then the dashboard (Milestone 4). See [ROADMAP.md](ROADMAP.md).
 
 ![Mossmint welcome screen in the dark theme](docs/screenshots/welcome-dark.png)
 
@@ -27,7 +27,7 @@ Mossmint is a local-first desktop app for paycheck forecasting and debt payoff p
 - No telemetry, crash upload or tracking.
 - Logs never contain balances, transaction names, account numbers or file paths.
 
-Details: [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md). How the numbers are computed: [docs/financial-models](docs/financial-models/README.md).
+Details: [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md). How the numbers are computed: [docs/financial-models](docs/financial-models/README.md). How profiles and backups work: [docs/operations](docs/operations/backup-and-restore.md).
 
 ## Build
 
