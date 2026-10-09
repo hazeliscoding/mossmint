@@ -37,7 +37,7 @@ A `BalanceSnapshot` records what an account held on a date. It is never booked a
 
 ### Event order within a day is conservative
 
-On one date, events apply in this order: opening position, outflows (bills, scheduled payments, transfers out, spending allowance), then inflows (paychecks, transfers in). This finds the lowest point a day can reach when a bill and a paycheck land on the same day and the deposit posts later. The order is a documented assumption that a later setting may relax; ties within a class sort by a stable key, never by insertion order.
+On one date, events apply in this order: opening position, outflows (bills, scheduled payments, transfers out, spending allowance), then inflows (paychecks, transfers in), then the savings contribution the paycheck funds. The day's low point is the lowest running balance. This finds the lowest point a day can reach when a bill and a paycheck land on the same day and the deposit posts later, without pretending a paycheck-triggered transfer leaves before the paycheck arrives. The order is a documented assumption that a later setting may relax; ties within a class sort by a stable key, never by insertion order.
 
 ### The cash-flow forecast watches the low point
 
