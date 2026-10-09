@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Mossmint.Domain/Mossmint.Domain.csproj" />
+  </ItemGroup>
+</Project>

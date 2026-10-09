@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "mossmint.application": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Connectors.Abstractions": "[0.1.0, )",
+          "Mossmint.Domain": "[0.1.0, )",
+          "Mossmint.Engine": "[0.1.0, )"
+        }
+      },
+      "mossmint.connectors.abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Domain": "[0.1.0, )"
+        }
+      },
+      "mossmint.domain": {
+        "type": "Project"
+      },
+      "mossmint.engine": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Domain": "[0.1.0, )"
+        }
+      },
+      "mossmint.import.excel": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Application": "[0.1.0, )"
+        }
+      }
+    }
+  }
+}
