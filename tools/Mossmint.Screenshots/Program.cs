@@ -6,12 +6,15 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Mossmint.Desktop;
 using Mossmint.Desktop.ViewModels;
+using Mossmint.Screenshots;
 using Mossmint.Screenshots.EnginePreview;
 
 // Renders Mossmint screens to PNG without a visible window, through the real
-// Skia renderer. Screens only ever show synthetic data.
+// Skia renderer. Screens only ever show synthetic data, from throwaway profiles
+// in a temporary folder; the app's own data root is pointed there as well.
 // Usage: dotnet run --project tools/Mossmint.Screenshots -- [out-dir] [screen ...]
 //        dotnet run --project tools/Mossmint.Screenshots -- --icons src/Mossmint.Desktop/Assets
+Environment.SetEnvironmentVariable(Mossmint.Desktop.Services.DataRoot.Variable, Path.Combine(Path.GetTempPath(), "mossmint-screenshots", "app-root"));
 AppBuilder.Configure<App>()
     .UseSkia()
     .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
@@ -33,26 +36,27 @@ var only = args.Skip(1).ToHashSet(StringComparer.OrdinalIgnoreCase);
 Directory.CreateDirectory(outDir);
 
 var app = (App)Avalonia.Application.Current!;
-
-Window AppAt(Action<MainWindowViewModel> show)
-{
-    var window = app.CreateMainWindow();
-    window.Show();
-    show((MainWindowViewModel)window.DataContext!);
-    return window;
-}
+using var scenes = new SyntheticScenes();
 
 var screens = new (string Name, Func<Window> Create)[]
 {
-    ("welcome", () => AppAt(_ => { })),
-    ("overview", () => AppAt(vm => vm.OpenApp(Destination.Overview))),
-    ("connections", () => AppAt(vm => vm.OpenApp(Destination.Connections))),
-    ("sidebar-collapsed", () => AppAt(vm =>
+    ("welcome", scenes.Empty),
+    ("create-profile", scenes.CreateProfile),
+    ("recovery-key", scenes.RecoveryKey),
+    ("unlock", scenes.Locked),
+    ("setup", scenes.Setup),
+    ("overview", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Overview))),
+    ("bills", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Bills))),
+    ("debts", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Debts))),
+    ("backups", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Backups))),
+    ("settings", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Settings))),
+    ("connections", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Connections))),
+    ("sidebar-collapsed", () => scenes.Unlocked(vm =>
     {
         vm.OpenApp(Destination.CashFlow);
         vm.Shell.IsSidebarCollapsed = true;
     })),
-    ("engine-preview", () => EnginePreviewWindow.Create()),
+    ("engine-preview", EnginePreviewWindow.Create),
 };
 
 foreach (var theme in new[] { ThemeVariant.Dark, ThemeVariant.Light })
