@@ -10,5 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Mossmint.Desktop/Mossmint.Desktop.csproj" />
+    <ProjectReference Include="../../samples/Mossmint.Samples/Mossmint.Samples.csproj" />
   </ItemGroup>
 </Project>

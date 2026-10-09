@@ -215,6 +215,12 @@
           "Mossmint.Domain": "[0.1.0, )"
         }
       },
+      "mossmint.samples": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Engine": "[0.1.0, )"
+        }
+      },
       "Avalonia": {
         "type": "CentralTransitive",
         "requested": "[12.1.4, )",
