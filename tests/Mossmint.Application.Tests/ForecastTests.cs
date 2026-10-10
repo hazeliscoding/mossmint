@@ -188,5 +188,26 @@ public class ForecastTests
         FluentActions.Invoking(() => _entry.ConfirmBalance(loan.Account, 9_500m, -1m)).Should().Throw<ArgumentException>();
     }
 
+    [Fact]
+    public void A_dated_goal_is_spread_over_the_paydays_before_it_rounded_up()
+    {
+        _entry.AddGoal("Car fund", 3_000m, 1_250.50m, new DateOnly(2027, 5, 1));
+        _entry.AddGoal("Someday", 500m);
+        var reached = _entry.AddGoal("Done", 100m, 100m);
+
+        var goals = Forecasts.Goals(_data, Today).ToDictionary(g => g.Goal.Name);
+
+        // 15 Oct to 30 Apr, moved off weekends and holidays (12 Feb for Presidents' Day): 14 paydays.
+        // 1,749.50 / 14 = 124.964..., rounded up to 124.97.
+        var car = goals["Car fund"];
+        (car.Left, car.PaydaysLeft, car.PerPaycheck).Should().Be((Money.Usd(1_749.50m), 14, (Money?)Money.Usd(124.97m)));
+        (goals["Someday"].PerPaycheck, goals["Someday"].IsReached).Should().Be(((Money?)null, false));
+        goals["Done"].IsReached.Should().BeTrue();
+
+        _entry.UpdateSaved(reached, 40m);
+        Forecasts.Goals(_data, Today).Single(g => g.Goal.Name == "Done").Left.Should().Be(Money.Usd(60m));
+        FluentActions.Invoking(() => _entry.AddGoal("Past", 100m, by: Today)).Should().Throw<ArgumentException>();
+    }
+
     private ProfileForecast Build() => Forecasts.Build(_data, Today).Should().BeOfType<ProfileForecast>().Subject;
 }

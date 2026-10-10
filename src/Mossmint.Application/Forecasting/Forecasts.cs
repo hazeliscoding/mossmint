@@ -68,6 +68,13 @@ public sealed record BillDue(DateOnly Date, DateOnly Nominal, Transaction? Payme
 
 public sealed record BillView(RecurringBill Bill, IReadOnlyList<BillDue> Upcoming);
 
+// A goal and what reaching it on time takes (docs/financial-models/cash-flow.md,
+// "Savings goals"). PerPaycheck is null without a date or a payday before it.
+public sealed record GoalView(SavingsGoal Goal, Money Left, int PaydaysLeft, Money? PerPaycheck)
+{
+    public bool IsReached => !Left.IsPositive;
+}
+
 public abstract record ForecastOutcome;
 
 public sealed record ForecastUnavailable(IReadOnlyList<string> Missing) : ForecastOutcome;
@@ -148,6 +155,28 @@ public static class Forecasts
             Paychecks(plan, PaycheckFunding.Plan(plan, expanded), forecastDays),
             [.. data.Debts().Select(d => Debt(d, data, accounts, bills))],
             entries.Count(e => RunningBalance.After(balance, e)));
+    }
+
+    public static IReadOnlyList<GoalView> Goals(IProfileData data, DateOnly today)
+    {
+        var calendar = Calendar.Build();
+        var income = data.Income();
+        return [.. data.Goals().Select(goal =>
+        {
+            var left = Money.Max(goal.Target - goal.Saved, Money.Zero(goal.Target.Currency));
+            if (goal.TargetDate is not { } by || left.IsZero)
+            {
+                return new GoalView(goal, left, 0, null);
+            }
+
+            var paydays = income.SelectMany(i => i.PayDates.Occurrences(today, by, calendar)).Select(o => o.Date)
+                .Where(d => d >= today && d <= by).Distinct().Count();
+
+            // Rounded up to the minor unit, so saving it every payday reaches the target.
+            Money? perPaycheck = paydays == 0 ? null
+                : new Money(Math.Round(left.Amount / paydays, left.Currency.MinorUnits, MidpointRounding.ToPositiveInfinity), left.Currency);
+            return new GoalView(goal, left, paydays, perPaycheck);
+        })];
     }
 
     // Each bill's due dates in the window, so a page can mark one paid.

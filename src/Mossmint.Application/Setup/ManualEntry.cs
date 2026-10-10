@@ -164,6 +164,22 @@ public sealed class ManualEntry(IProfileData data, TimeProvider clock)
         return snapshot;
     }
 
+    public SavingsGoal AddGoal(string name, decimal target, decimal saved = 0m, DateOnly? by = null)
+    {
+        Require(target > 0m, "The goal amount must be more than zero.");
+        Require(by is null || by > Today, "Pick a date after today, or leave it empty.");
+        var goal = new SavingsGoal(new GoalId(NewId()), Clean(name), Cents(target), Saved(saved), Provenance.UserConfirmed(Today), by);
+        data.SaveGoal(goal);
+        return goal;
+    }
+
+    public SavingsGoal UpdateSaved(SavingsGoal goal, decimal saved)
+    {
+        var updated = goal with { Saved = Saved(saved), SavedProvenance = Provenance.UserConfirmed(Today) };
+        data.SaveGoal(updated);
+        return updated;
+    }
+
     // Pays one bill occurrence, today, from the account the bill is funded from.
     // The payment comes off that balance until a newer one is confirmed, and the
     // occurrence leaves the forecast (docs/financial-models/cash-flow.md).
@@ -181,6 +197,12 @@ public sealed class ManualEntry(IProfileData data, TimeProvider clock)
     }
 
     public void Undo(Transaction entry) => data.VoidTransaction(entry.Id);
+
+    private Money Saved(decimal saved)
+    {
+        Require(saved >= 0m, "The amount saved can't be negative.");
+        return Cents(saved);
+    }
 
     // Amounts are typed in currency units; anything finer than the currency's
     // minor unit is a typo, not a value to round silently.

@@ -66,6 +66,12 @@ Each obligation is funded by the **latest paycheck on or before its due date**, 
 
 For each paycheck: available = carry-in + net pay; left before savings = available − obligations; contribution funded = the target, or whatever is left if less; leftover = what remains and carries into the next paycheck (negative when it fell short). A missed contribution is a shortfall against the savings **target**. It is separate from the reserve **floor**, which the daily forecast checks: a plan can fund every contribution and still dip under the floor between paydays, and both are reported.
 
+## Savings goals
+
+A goal is a target, an amount saved (as the user last confirmed it) and an optional date. For a dated goal, the amount needed per paycheck is what's left divided by the paydays from today through that date. Paydays are those of every income schedule, moved off weekends and holidays, each counted once. The amount is rounded **up** to the minor unit (`MidpointRounding.ToPositiveInfinity`), so saving it every payday reaches the target.
+
+Goals don't move money in the forecast. The per-paycheck savings target does, and the Savings page compares the two: when the dated goals together need more per paycheck than the target sets aside, it says by how much. A goal without a date, or with no payday left before it, has no per-paycheck amount.
+
 ## Safe to spend
 
 An amount is given only when:
