@@ -13,7 +13,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 | [0.3.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.3.0) | M0–M3: skeleton, financial engine, encrypted profiles, workbook import | Released 2026-10-09 |
 | 0.4 | M4: dashboard and daily flows | Next |
 | 0.5 | M5: scenarios and debt planning | Planned |
-| 0.6 | M6: Windows release (update check, signing, upgrade test, user docs) | Planned |
+| 0.6 | M6: Windows release (update check, export, signing, upgrade test, user docs) | Planned |
 | 0.7 | M7: bank data in (CSV, OFX/QFX, SimpleFIN) | Planned |
 | 0.8 | M8: matching real activity to the plan | Planned |
 | 0.9 | M9: learning from history | Planned |
@@ -97,6 +97,17 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **1.0 is the promise release:** compatibility from 1.0 on, tested upgrades from every release, audits, and betas first, the way Prompuff did it.
 - **1.0 launches with a video and a landing page,** the way Prompuff did. The video is made with the `/brag` skill from Mossmint's own tokens, fonts and copy ("Make room to grow."), and shows only the synthetic *Juniper* household. The landing page is a static site on GitHub Pages that keeps the app's promise: no analytics or trackers, nothing loaded from other sites, and nothing that asks for financial data.
 - **The opt-in update check moves into 0.6,** because a real user now installs releases and shouldn't have to download each one by hand.
+- **Research on user value and feasibility (2026-10-10) reshaped 0.6 to 0.9:**
+  - Export moves up to 0.6. Pre-1.0 users need a way out, and the JSON export doubles as the reference for the 1.0 compatibility tests.
+  - Automated accessibility checks run from 0.4 on, so the 1.0 audit confirms rather than discovers.
+  - In 0.7 the bank-reported balance matters most: a fresh balance clears *needs confirmation*.
+  - Until 0.8 detects duplicates, each account has one transaction source.
+  - Forecasts are journaled from 0.7, so 0.9 can backtest against what was really forecast.
+  - The OFX and CSV parsers are written in-house, like the `.xlsx` reader. The .NET OFX libraries haven't been maintained since 2023.
+  - SimpleFIN is synced by hand: it allows 24 requests a day and 90 days per request. That's also why 0.7 imports other apps' exports, to give 0.9 a year of history.
+  - Seasonal estimates wait for 13 months of history.
+- **A profile or backup saved by a newer Mossmint is refused,** untouched, with a message to update (done 2026-10-10). Betas and downgrades can't misread data they don't understand.
+- **Bank logins:** Mossmint never asks for them. A bank feed such as SimpleFIN is a separate service the user signs up and pays for, and it holds the bank login. There is still no Mossmint account.
 
 ## M0: Skeleton and guardrails (v0.3.0)
 
@@ -161,6 +172,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [ ] Overview, Cash Flow, Paychecks, Debts, Bills, Savings, Transactions, following the mockup.
 - [ ] Manual ledger entry, mark paid with undo, balance reconciliation.
 - [ ] Every chart has a table twin; keyboard-only paths; 125–200% scaling; dark, light and high contrast.
+- [ ] Automated accessibility checks in CI: every focusable control has an accessible name, and the theme's colour pairs meet contrast ratios. A Narrator pass by hand each milestone from here on.
 - [ ] Generic onboarding for a user with no spreadsheets.
 
 **Done when:** a new user can onboard with no spreadsheet, an imported user can trace every record to its source, and no screen needs the network.
@@ -177,7 +189,9 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 ## M6: Windows release (v0.6)
 
 - [x] Velopack installer, release CI on tags, checksums (moved up for the handoff; see the releases decisions).
-- [ ] Opt-in update check in Settings: Mossmint asks GitHub Releases for a newer version only when the user asks, or while the setting is on. Offline use never depends on it. It needs its own ADR, since it's the first network call.
+- [ ] Opt-in update check in Settings: **Check now**, plus an optional daily check that's off by default. It asks GitHub Releases only, through an explicit `GithubSource`, never Velopack's hosted service. Download and restart are separate steps, never during a backup or an import. Offline use never depends on it. Its ADR lists what GitHub sees.
+- [ ] JSON and CSV export, with an explicit warning. Exported CSV is escaped so a spreadsheet can't run it as formulas, and the importer undoes the escaping.
+- [ ] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
 - [ ] Code signing through Azure Artifact Signing.
 - [ ] Upgrade test: install, create a profile, back up, update, restore.
 - [ ] User docs and a sample-data generator.
@@ -186,35 +200,51 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 ## M7: Bank data in (v0.7)
 
-- [ ] CSV with column mapping: date and amount formats, sign conventions, encodings, a saved mapping per source.
-- [ ] OFX/QFX statement files.
-- [ ] SimpleFIN adapter: the user claims a setup token, and the access URL lives only in the encrypted profile.
+- [ ] CSV with column mapping, through a hand-written parser:
+  - UTF-8 first, then Windows-1252 with a preview;
+  - delimiters and date formats detected;
+  - sign conventions and split debit/credit columns handled;
+  - mappings saved by the header row's fingerprint;
+  - presets for exports from YNAB, Monarch, Actual and Mint, so history comes along.
+- [ ] OFX/QFX statement files through a hand-written, hardened parser (SGML 1.x and XML 2.x). Duplicates are caught by the bank's transaction ID.
+- [ ] SimpleFIN adapter:
+  - The user claims a setup token once. The credentials live only in the encrypted profile, never in a URL.
+  - Syncing is manual, with **Sync now**. Request windows overlap, and errors are shown per account.
+- [ ] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*.
+- [ ] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted.
+- [ ] A forecast journal: each forecast is kept as it was made, for 0.9's backtests.
 
 **Done when:** every offline workflow still works with any connector unconfigured, stale or offline.
 
 ## M8: Matching real activity to the plan (v0.8)
 
-- [ ] Suggested matches: a transaction that looks like a bill payment or a paycheck is offered as a match. The user confirms it, and the bill is marked paid. Nothing is matched silently.
+- [ ] Suggested matches: a transaction that looks like a bill payment or a paycheck is offered as a match. The user confirms it, and the bill is marked paid. Nothing is matched silently. When two candidates are close, Mossmint suggests neither and raises a review item. The matching rules are written down in `docs/financial-models/`.
+- [ ] Manual match, merge and unmatch. A transfer between the user's own accounts pairs both sides, so it never counts as spending.
+- [ ] Pending transactions:
+  - Each is linked to its posted version, whose amount may differ (a tip, for example).
+  - One still unposted after 14 days goes to review.
+  - Pending debits count against safe to spend.
 - [ ] Balance reconciliation against the bank's reported balance; drift becomes a review item.
-- [ ] Duplicate detection when sources overlap, such as a CSV and SimpleFIN covering the same days.
-- [ ] Categories and simple payee rules, applied as suggestions that keep their source.
+- [ ] Duplicate detection when sources overlap, such as a CSV and SimpleFIN covering the same days. Duplicates are linked, never deleted.
+- [ ] Connection health: the last sync, errors and stale data for each connected account.
+- [ ] Categories and simple payee rules, applied as suggestions that keep their source. Only the categories 0.9 needs; rules can be turned off.
+- [ ] Low-point alerts as local Windows notifications, with no amounts on the lock screen.
 
 **Done when:** a month of synthetic feed data reconciles to the plan with every match confirmed or explained, and no transaction counts twice.
 
 ## M9: Learning from history (v0.9)
 
-- [ ] Spending ranges from categorized history feed the base, cautious and stress scenarios, labelled with the period they came from.
-- [ ] Seasonal estimates for categories that change month to month.
-- [ ] Forecast backtesting: past forecasts compared with what happened, as a table and a chart.
-- [ ] Unencrypted JSON and CSV export, with an explicit warning.
+- [ ] Spending ranges per pay period feed the scenarios: the median for base, the upper quartile for cautious, the maximum for stress. Each is labelled with how many periods it came from and how often such a range holds.
+- [ ] Seasonal estimates, only with 13 or more months of history; otherwise *not enough history*.
+- [ ] Forecast backtesting from the journal: error by days ahead, bias, and error in the lowest point before payday, as a table and a chart. A reconstructed past forecast is labelled as one.
 
-**Done when:** a scenario says which history it learned from, backtests on synthetic history give known answers, and an export round-trips.
+**Done when:** a scenario says which history it learned from, and backtests on synthetic history give known answers.
 
 ## 1.0: The promise release
 
-- [ ] Compatibility promise: every later version opens 1.0 profiles and backups and imports the same workbook shapes, checked against recorded fixtures pinned by checksum.
+- [ ] Compatibility promise: every later version opens 1.0 profiles and backups and imports the same workbook shapes, checked against recorded fixtures pinned by checksum. The fixtures are synthetic, generated by each release's own code, and need a narrow exception to the no-`.mmbak`/`.db` rule. Decide it before 0.6, so 0.3.0's fixture can be captured.
 - [ ] Migration tests from every released schema.
-- [ ] Accessibility audit: keyboard paths, screen readers, contrast and scaling.
+- [ ] Accessibility audit that confirms the automated checks: Narrator and NVDA scripts, keyboard-only use, 200% scaling and high contrast.
 - [ ] Threat model refresh and complete user docs.
 - [ ] Betas on the `win-beta` channel before the release.
 - [ ] Protect `main` with a ruleset like Prompuff's; every change lands through a pull request.
