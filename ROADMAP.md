@@ -72,7 +72,8 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **Release tags can't be moved or deleted** (the `release tags` ruleset). Only `v*` tags can use the `release` environment.
 - **Versions follow milestones until 1.0:** 0.3.0 is the first release, with M0–M3. A tag with a pre-release suffix (`v0.4.0-beta.1`) packs to the `win-beta` channel and becomes a GitHub pre-release.
 - **Release files:** `Mossmint-Setup.exe`, `Mossmint-win-x64-Portable.zip`, the Velopack update files and `SHA256SUMS`.
-- **Signing** uses Azure Artifact Signing the way Prompuff does, and switches on once the `release` environment has the Azure variables and a federated credential trusts it. Until then builds are unsigned, and SmartScreen warns on first launch.
+- **Signing** uses Azure Artifact Signing the way Prompuff does, and switches on once the `release` environment has the Azure variables and a federated credential trusts it. Until then builds are unsigned, and SmartScreen warns on first launch. Signing waits until later (owner's call).
+- **Direct pushes to `main` are fine until 1.0.** From 1.0 on, `main` takes changes only through pull requests, protected the way Prompuff's is: no deletion or force-push, linear history, rebase merges, and CI required and up to date before merging.
 
 ## M0: Skeleton and guardrails
 
@@ -172,6 +173,7 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - Seasonal spending estimates and backtesting, once enough categorized history exists.
 - macOS and Linux builds.
 - Unencrypted JSON/CSV export, with an explicit warning.
+- At 1.0: protect `main` with a ruleset like Prompuff's and land every change through a pull request.
 
 ## Not planned
 
