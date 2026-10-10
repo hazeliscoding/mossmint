@@ -93,8 +93,8 @@
                        AutomationProperties.Name="Unlocked profile" />
             <Border Width="1" Height="18" Background="{DynamicResource BorderHairline}" />
             <TextBlock Classes="compact faint" Text="Forecast as of" VerticalAlignment="Center" />
-            <TextBlock Classes="mono faint" Text="—" VerticalAlignment="Center"
-                       ToolTip.Tip="No forecast yet: there is no confirmed balance to start from." />
+            <TextBlock Classes="mono faint" Text="{Binding ForecastAsOf}" VerticalAlignment="Center"
+                       ToolTip.Tip="{Binding ForecastAsOfTip}" AutomationProperties.HelpText="{Binding ForecastAsOfTip}" />
           </StackPanel>
         </DockPanel>
       </Border>

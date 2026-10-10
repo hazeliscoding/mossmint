@@ -83,6 +83,10 @@ public class ProfileFlowTests
         var counts = app.Services.Context.Current.Data.Counts();
         (counts.Accounts, counts.Income, counts.Bills, counts.Debts).Should().Be((3, 1, 4, 2));
         app.PageTitle().Should().Be("Overview");
+        var overview = (OverviewPageViewModel)app.ViewModel.Shell.CurrentPage!;
+        overview.Metrics.Select(m => m.Label).Should().HaveCount(4).And.Contain(l => l.StartsWith("SAFE TO SPEND", StringComparison.Ordinal));
+        overview.Forecast!.AccountName.Should().Be("Everyday");
+        app.ViewModel.Shell.ForecastAsOf.Should().NotBe("—");
 
         app.ViewModel.Shell.Navigate(Destination.Bills);
         Harness.Pump();

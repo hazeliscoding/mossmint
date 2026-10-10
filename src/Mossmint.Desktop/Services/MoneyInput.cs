@@ -34,9 +34,9 @@ public static class MoneyInput
     public static decimal Required(string? text, CultureInfo culture, string field) =>
         Optional(text, culture, field) ?? throw new ArgumentException($"{field}: enter an amount.");
 
-    public static string Format(Domain.Money money, CultureInfo culture)
+    public static string Format(Domain.Money money, CultureInfo culture, bool wholeUnits = false)
     {
-        var number = money.Abs().Amount.ToString("N" + money.Currency.MinorUnits, culture);
+        var number = money.Abs().Amount.ToString("N" + (wholeUnits ? 0 : money.Currency.MinorUnits), culture);
         return (money.IsNegative ? "−" : "") + (money.Currency.Code == "USD" ? "$" : money.Currency.Code + " ") + number;
     }
 }

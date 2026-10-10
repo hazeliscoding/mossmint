@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mossmint.Application.Forecasting;
 using Mossmint.Desktop.Services;
 
 namespace Mossmint.Desktop.ViewModels;
@@ -8,10 +10,11 @@ namespace Mossmint.Desktop.ViewModels;
 public sealed partial class ShellViewModel : ViewModelBase
 {
     private readonly IAppNavigator _navigator;
+    private readonly AppServices _services;
 
     public ShellViewModel(AppServices services, IAppNavigator navigator)
     {
-        (Context, _navigator) = (services.Context, navigator);
+        (Context, _navigator, _services) = (services.Context, navigator, services);
         var context = services.Context;
         NavItems =
         [
@@ -72,9 +75,29 @@ public sealed partial class ShellViewModel : ViewModelBase
     [RelayCommand]
     private void Lock() => _navigator.Lock();
 
-    partial void OnSelectedItemChanged(NavItemViewModel? value) => value?.Page.OnNavigatedTo();
+    // The top bar's "Forecast as of": the date of the balance the forecast starts from.
+    [ObservableProperty]
+    private string _forecastAsOf = "—";
 
-    public void Refresh() => SelectedItem?.Page.OnNavigatedTo();
+    [ObservableProperty]
+    private string _forecastAsOfTip = "";
+
+    partial void OnSelectedItemChanged(NavItemViewModel? value) => Refresh();
+
+    public void Refresh()
+    {
+        SelectedItem?.Page.OnNavigatedTo();
+        var outcome = Context.IsUnlocked
+            ? Forecasts.Build(Context.Current.Data, DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime))
+            : new ForecastUnavailable(["Unlock a profile."]);
+        (ForecastAsOf, ForecastAsOfTip) = outcome switch
+        {
+            ProfileForecast f => (f.OpeningProvenance.AsOf.ToString("d MMM yyyy", CultureInfo.CurrentCulture),
+                $"Starts from the {f.AccountName} balance of {Describe.Money(f.Opening)} as of {f.OpeningProvenance.AsOf:d MMM yyyy} ({Describe.Confidence(f.OpeningProvenance.Confidence).Status})."),
+            ForecastUnavailable u => ("—", "No forecast yet: " + string.Join(" ", u.Missing)),
+            _ => ("—", ""),
+        };
+    }
 
     private static PlaceholderPageViewModel Placeholder(Destination destination, string title, string milestone, string purpose, string emptyTitle, string emptyBody) =>
         new(destination, title, purpose, milestone, emptyTitle, emptyBody);

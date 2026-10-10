@@ -5,20 +5,61 @@
              x:Class="Mossmint.Desktop.Views.OverviewPageView"
              x:DataType="vm:OverviewPageViewModel">
 
-  <StackPanel Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
     <StackPanel Spacing="4">
       <TextBlock Classes="page-title" Text="{Binding Title}" />
       <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
     </StackPanel>
 
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding Unavailable, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="10">
+        <c:StatusBadge Tone="Warning" Text="No forecast yet" HorizontalAlignment="Left" />
+        <TextBlock Classes="prose" Text="{Binding Unavailable}" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <ItemsControl ItemsSource="{Binding Metrics}" IsVisible="{Binding HasForecast}" Margin="0,0,-12,0">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Columns="4" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:MetricCard">
+          <Border Classes="card" Margin="0,0,12,0" Padding="16,14" AutomationProperties.Name="{Binding AccessibleName}">
+            <StackPanel Spacing="6">
+              <DockPanel>
+                <c:StatusBadge DockPanel.Dock="Right" Tone="{Binding Tone}" Text="{Binding Status}" VerticalAlignment="Top" />
+                <TextBlock Classes="label" Text="{Binding Label}" TextWrapping="Wrap" Margin="0,0,8,0" />
+              </DockPanel>
+              <TextBlock Classes="card-title" Text="{Binding Headline}" TextWrapping="Wrap" />
+              <TextBlock Classes="mono" FontSize="28" Foreground="{DynamicResource AccentText}" Text="{Binding Value}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Value}" />
+              <ItemsControl ItemsSource="{Binding Facts}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Classes="mono faint" Text="{Binding}" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Border Classes="card" Padding="16,14" IsVisible="{Binding HasForecast}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="card-title" Text="{Binding ChartTitle}" />
+        <TextBlock Classes="compact secondary" Text="Line: closing balance, dipping to each day's low · dashed: the cushion · PAY: paydays" TextWrapping="Wrap" />
+        <c:ForecastChart Forecast="{Binding Forecast}" Height="250" AutomationProperties.Name="{Binding ChartDescription}" />
+      </StackPanel>
+    </Border>
+
     <Border Classes="card" Padding="24,20">
       <StackPanel Spacing="12">
-        <StackPanel Orientation="Horizontal" Spacing="10">
-          <c:StatusBadge Tone="Healthy" Text="Encrypted on this PC" />
-          <c:StatusBadge Tone="Info" Text="Dashboard arrives in M4" />
-        </StackPanel>
+        <c:StatusBadge Tone="Healthy" Text="Encrypted on this PC" HorizontalAlignment="Left" />
         <TextBlock Classes="section" Text="Your profile" />
-        <TextBlock Classes="prose secondary" Text="{Binding Summary}" />
+        <TextBlock Classes="prose secondary" Text="{Binding Summary}" TextWrapping="Wrap" />
         <Button Content="Add more with Start fresh" Command="{Binding RunSetupCommand}" HorizontalAlignment="Left" />
       </StackPanel>
     </Border>

@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mossmint.Application.Data;
+using Mossmint.Application.Forecasting;
 using Mossmint.Application.Profiles;
 using Mossmint.Desktop.Controls;
 using Mossmint.Desktop.Services;
@@ -14,6 +15,12 @@ using Mossmint.Domain.Scheduling;
 namespace Mossmint.Desktop.ViewModels;
 
 public sealed record RecordRow(string Name, string Detail, string Amount, string Status, StatusTone Tone);
+
+// A metric card: a label, the value, a one-line headline, a status and a few mono facts.
+public sealed record MetricCard(string Label, string Value, string Headline, string Status, StatusTone Tone, IReadOnlyList<string> Facts)
+{
+    public string AccessibleName => $"{Label}: {Value}. {Headline}. {Status}.";
+}
 
 // Words for schedules and amounts, shared by the record pages.
 public static class Describe
@@ -67,6 +74,23 @@ public sealed partial class OverviewPageViewModel(AppServices services, IAppNavi
     [ObservableProperty]
     private string _summary = "";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasForecast), nameof(ChartTitle), nameof(ChartDescription))]
+    private ProfileForecast? _forecast;
+
+    [ObservableProperty]
+    private string? _unavailable;
+
+    public ObservableCollection<MetricCard> Metrics { get; } = [];
+
+    public bool HasForecast => Forecast is not null;
+
+    public string ChartTitle => Forecast is { } f ? $"{f.AccountName} balance · next {f.Days.Count} days" : "";
+
+    public string ChartDescription => Forecast is { } f
+        ? $"Lowest {Describe.Money(f.Lowest)} on {f.LowestDate:ddd d MMM}; cushion {Describe.Money(f.Cushion)}. The line dips to each day's low before it closes; paydays are marked. Cash Flow has the same numbers as a table."
+        : "";
+
     public override void OnNavigatedTo()
     {
         if (!services.Context.IsUnlocked)
@@ -75,6 +99,22 @@ public sealed partial class OverviewPageViewModel(AppServices services, IAppNavi
         }
 
         var data = services.Context.Current.Data;
+        var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);
+        Metrics.Clear();
+        (Forecast, Unavailable) = Forecasts.Build(data, today) switch
+        {
+            ProfileForecast f => (f, (string?)null),
+            ForecastUnavailable u => (null, string.Join(" ", u.Missing)),
+            _ => (null, null),
+        };
+        if (Forecast is { } forecast)
+        {
+            foreach (var card in OverviewCards.For(forecast))
+            {
+                Metrics.Add(card);
+            }
+        }
+
         var counts = data.Counts();
         Summary = $"{Plural(counts.Accounts, "account")}, {Plural(counts.Income, "paycheck")}, {Plural(counts.Bills, "bill")} and {Plural(counts.Debts, "debt")}, all stored encrypted on this PC.";
         var open = services.Context.Current.Imports.ReviewItems().Count(r => r.Status == Application.Import.ReviewStatus.Open);
@@ -98,6 +138,57 @@ public sealed partial class OverviewPageViewModel(AppServices services, IAppNavi
 
     [RelayCommand]
     private void RunSetup() => navigator.StartSetup();
+
+    private static string Plural(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
+}
+
+// The four Overview cards. Every figure says where it comes from; nothing shows a
+// number the forecast couldn't support (ADR-0002).
+public static class OverviewCards
+{
+    public static IEnumerable<MetricCard> For(ProfileForecast f)
+    {
+        var cushion = Describe.Money(f.Cushion);
+        var safe = f.SafeToSpend;
+        yield return safe.State switch
+        {
+            SafeToSpendState.Safe => new MetricCard(
+                $"SAFE TO SPEND UNTIL {safe.Through:d MMM}".ToUpperInvariant(), Describe.Money(safe.Amount!.Value),
+                $"After bills and the {cushion} cushion", Status(safe.Confidence!.Value).Status, Status(safe.Confidence!.Value).Tone,
+                [$"through {safe.Through:ddd d MMM}", $"{cushion} cushion kept", "estimated bills at the top of their range"]),
+            SafeToSpendState.Shortfall => new MetricCard(
+                "SAFE TO SPEND", "−" + Describe.Money(safe.Amount!.Value), $"Short of the {cushion} cushion", "Shortfall", StatusTone.Critical,
+                [$"by {safe.Through:ddd d MMM}", "even with no extra spending"]),
+            _ => new MetricCard("SAFE TO SPEND", "—", "Needs confirmation", "Needs review", StatusTone.Warning, safe.Reasons),
+        };
+
+        var below = f.Lowest < f.Cushion;
+        yield return new MetricCard(
+            $"LOWEST POINT · NEXT {f.Days.Count} DAYS", Describe.Money(f.Lowest),
+            below ? $"Dips below the {cushion} cushion" : $"Stays above the {cushion} cushion",
+            below ? "Below cushion" : "Above cushion", below ? StatusTone.Critical : StatusTone.Healthy,
+            [$"{f.LowestDate:ddd d MMM}", $"from {Describe.Money(f.Opening)} as of {f.OpeningProvenance.AsOf:d MMM}", $"{f.Days.Count} days simulated"]);
+
+        yield return f.Paychecks.FirstOrDefault(p => p.Payday is not null) is { Payday: { } payday } next
+            ? new MetricCard(
+                $"NEXT PAYCHECK · {payday:d MMM}".ToUpperInvariant(), Describe.Money(next.NetPay),
+                $"Covers {Plural(next.BillCount, "bill")}, leaves {Describe.Money(next.Leftover)}", "Scheduled", StatusTone.Info,
+                [$"bills {Describe.Money(next.Bills)}", $"savings {Describe.Money(next.SavingsFunded)} of {Describe.Money(next.SavingsTarget)}"])
+            : new MetricCard("NEXT PAYCHECK", "—", $"None in the next {f.Days.Count} days", "None scheduled", StatusTone.Neutral, ["add one on Paychecks"]);
+
+        yield return f.Debts.Count == 0
+            ? new MetricCard("DEBT-FREE FORECAST", "—", "No debts recorded", "Nothing owed", StatusTone.Neutral, [])
+            : f.DebtFree is { } free
+                ? new MetricCard(
+                    "DEBT-FREE FORECAST", free.ToString("MMM yyyy", CultureInfo.CurrentCulture),
+                    f.Debts.Any(d => d.IsApproximate) ? "Card payoffs are approximations" : "With regular payments only", "Estimated", StatusTone.Info,
+                    [.. f.Debts.Take(3).Select(d => $"{d.Name} {d.PayoffDate:MMM yyyy}")])
+                : new MetricCard(
+                    "DEBT-FREE FORECAST", "—", "No date yet", "Needs review", StatusTone.Warning,
+                    [.. f.Debts.Where(d => d.Problem is not null).Take(3).Select(d => $"{d.Name}: {d.Problem}")]);
+    }
+
+    private static (string Status, StatusTone Tone) Status(Confidence confidence) => Describe.Confidence(confidence);
 
     private static string Plural(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
 }
