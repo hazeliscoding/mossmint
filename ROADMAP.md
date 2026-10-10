@@ -228,6 +228,10 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - macOS and Linux builds.
 - Plaid relay (a stretch goal after 1.0), only if demand justifies it, behind its own ADR and threat model.
 
+## Maybe later
+
+- **A mobile companion, Android first, with no accounts.** It starts read-mostly, opening the same encrypted `.mmbak` backups. It could later sync through a cloud folder the user already has: the PC stays the source of truth, and phone entries (mark paid, a quick expense) go to an encrypted inbox that the desktop merges through the review queue. Direct phone-to-PC sync over Wi-Fi and an iOS app (which needs an Apple Developer account) depend on demand. A Mossmint-run sync server stays out: it would break the no-accounts promise.
+
 ## Not planned
 
 - Angular, an ASP.NET server, or any mandatory cloud backend.
