@@ -108,11 +108,12 @@
     </ControlTheme>
   </Styles.Resources>
 
-  <!-- Two-ring focus halo (canvas inside, accent outside) on every focusable element. -->
+  <!-- Two-ring focus halo (canvas inside, accent outside) on every focusable element.
+       The halo sits outside the control, and adorners are clipped to it by default. -->
   <Style Selector=":is(Control)">
     <Setter Property="FocusAdorner">
       <FocusAdornerTemplate>
-        <Border BorderThickness="2" BorderBrush="{DynamicResource Accent}" CornerRadius="6" Margin="-4">
+        <Border BorderThickness="2" BorderBrush="{DynamicResource Accent}" CornerRadius="6" Margin="-4" AdornerLayer.IsClipEnabled="False">
           <Border BorderThickness="2" BorderBrush="{DynamicResource BgCanvas}" CornerRadius="4" />
         </Border>
       </FocusAdornerTemplate>
