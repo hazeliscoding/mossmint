@@ -11,7 +11,7 @@
       <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
     </StackPanel>
 
-    <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left"
+    <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left" AutomationProperties.LiveSetting="Polite"
                    IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
     <Border Classes="card" Padding="24,20">
@@ -66,7 +66,7 @@
           <TextBlock Classes="mono" Text="{Binding Version}" VerticalAlignment="Center" />
         </StackPanel>
         <TextBlock Classes="hint" Text="Updates work in the installed app. This copy runs from source." IsVisible="{Binding !IsInstalled}" />
-        <c:StatusBadge Tone="{Binding UpdateTone}" Text="{Binding UpdateStatus}" HorizontalAlignment="Left"
+        <c:StatusBadge Tone="{Binding UpdateTone}" Text="{Binding UpdateStatus}" HorizontalAlignment="Left" AutomationProperties.LiveSetting="Polite"
                        IsVisible="{Binding UpdateStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <ProgressBar Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" IsVisible="{Binding IsUpdating}"
                      IsIndeterminate="{Binding AvailableVersion, Converter={x:Static ObjectConverters.IsNull}}"

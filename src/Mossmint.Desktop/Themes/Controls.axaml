@@ -356,13 +356,16 @@
     <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
+  <!-- Errors and notices appear after an action, so Narrator announces them as they change. -->
   <Style Selector="TextBlock.error">
+    <Setter Property="AutomationProperties.LiveSetting" Value="Assertive" />
     <Setter Property="FontSize" Value="12.5" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource SignalCriticalText}" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
   <Style Selector="TextBlock.notice">
+    <Setter Property="AutomationProperties.LiveSetting" Value="Polite" />
     <Setter Property="FontSize" Value="12.5" />
     <Setter Property="Foreground" Value="{DynamicResource SignalHealthyText}" />
     <Setter Property="TextWrapping" Value="Wrap" />

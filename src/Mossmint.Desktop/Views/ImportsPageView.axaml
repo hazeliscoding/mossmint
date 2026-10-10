@@ -11,7 +11,7 @@
       <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
     </StackPanel>
 
-    <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left"
+    <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left" AutomationProperties.LiveSetting="Polite"
                    IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
     <!-- Step 1: pick workbooks. -->

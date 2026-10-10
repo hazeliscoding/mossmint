@@ -127,11 +127,11 @@
           <Grid ColumnDefinitions="*,16,*" IsVisible="{Binding BillIsEstimate}">
             <StackPanel Spacing="4">
               <TextBlock Classes="field-label" Text="Lowest usual amount" />
-              <TextBox Classes="money" Text="{Binding BillLow}" PlaceholderText="optional" />
+              <TextBox Classes="money" Text="{Binding BillLow}" PlaceholderText="optional" AutomationProperties.Name="Lowest usual amount" />
             </StackPanel>
             <StackPanel Grid.Column="2" Spacing="4">
               <TextBlock Classes="field-label" Text="Highest usual amount" />
-              <TextBox Classes="money" Text="{Binding BillHigh}" PlaceholderText="optional" />
+              <TextBox Classes="money" Text="{Binding BillHigh}" PlaceholderText="optional" AutomationProperties.Name="Highest usual amount" />
             </StackPanel>
           </Grid>
           <Button Content="Add bill" Command="{Binding AddBillCommand}" HorizontalAlignment="Left" />
