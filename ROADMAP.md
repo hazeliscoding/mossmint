@@ -13,8 +13,11 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 | [0.3.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.3.0) | M0–M3: skeleton, financial engine, encrypted profiles, workbook import | Released 2026-10-09 |
 | 0.4 | M4: dashboard and daily flows | Next |
 | 0.5 | M5: scenarios and debt planning | Planned |
-| 0.6 | M6: Windows release (signing, upgrade test, user docs) | Planned |
-| 0.7 | M7: optional connectors | After the MVP |
+| 0.6 | M6: Windows release (update check, signing, upgrade test, user docs) | Planned |
+| 0.7 | M7: bank data in (CSV, OFX/QFX, SimpleFIN) | Planned |
+| 0.8 | M8: matching real activity to the plan | Planned |
+| 0.9 | M9: learning from history | Planned |
+| 1.0 | The promise release: compatibility, audits, betas | Planned |
 
 ## Decisions (2026-10-09)
 
@@ -86,6 +89,13 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Release files:** `Mossmint-Setup.exe`, `Mossmint-win-x64-Portable.zip`, the Velopack update files and `SHA256SUMS`.
 - **Signing** uses Azure Artifact Signing the way Prompuff does, and switches on once the `release` environment has the Azure variables and a federated credential trusts it. Until then builds are unsigned, and SmartScreen warns on first launch. Signing waits until later (owner's call).
 - **Direct pushes to `main` are fine until 1.0.** From 1.0 on, `main` takes changes only through pull requests, protected the way Prompuff's is: no deletion or force-push, linear history, rebase merges, and CI required and up to date before merging.
+
+## Decisions (2026-10-10, road to 1.0)
+
+- **Bank data before 1.0:** CSV with column mapping, OFX/QFX and a SimpleFIN adapter are wanted, in 0.7. **Plaid moves after 1.0** as a stretch goal, still behind its own ADR and threat model.
+- **0.8 matches real activity to the plan,** and **0.9 learns from history** (the seasonal estimates and backtesting that were under Later, plus export). Both need the transactions 0.7 brings in.
+- **1.0 is the promise release:** compatibility from 1.0 on, tested upgrades from every release, audits, and betas first, the way Prompuff did it.
+- **The opt-in update check moves into 0.6,** because a real user now installs releases and shouldn't have to download each one by hand.
 
 ## M0: Skeleton and guardrails (v0.3.0)
 
@@ -166,26 +176,54 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 ## M6: Windows release (v0.6)
 
 - [x] Velopack installer, release CI on tags, checksums (moved up for the handoff; see the releases decisions).
+- [ ] Opt-in update check in Settings: Mossmint asks GitHub Releases for a newer version only when the user asks, or while the setting is on. Offline use never depends on it. It needs its own ADR, since it's the first network call.
 - [ ] Code signing through Azure Artifact Signing.
 - [ ] Upgrade test: install, create a profile, back up, update, restore.
 - [ ] User docs and a sample-data generator.
 
 **Done when:** clean install → new or imported profile → backup → update → restore passes, and the public repo holds no private financial content.
 
-## M7: Optional connectors (v0.7, after the MVP)
+## M7: Bank data in (v0.7)
 
-- [ ] CSV with column mapping; OFX/QFX if feasible.
-- [ ] SimpleFIN adapter.
-- [ ] Plaid relay, only if demand justifies it, behind its own ADR and threat model.
+- [ ] CSV with column mapping: date and amount formats, sign conventions, encodings, a saved mapping per source.
+- [ ] OFX/QFX statement files.
+- [ ] SimpleFIN adapter: the user claims a setup token, and the access URL lives only in the encrypted profile.
 
 **Done when:** every offline workflow still works with any connector unconfigured, stale or offline.
 
+## M8: Matching real activity to the plan (v0.8)
+
+- [ ] Suggested matches: a transaction that looks like a bill payment or a paycheck is offered as a match. The user confirms it, and the bill is marked paid. Nothing is matched silently.
+- [ ] Balance reconciliation against the bank's reported balance; drift becomes a review item.
+- [ ] Duplicate detection when sources overlap, such as a CSV and SimpleFIN covering the same days.
+- [ ] Categories and simple payee rules, applied as suggestions that keep their source.
+
+**Done when:** a month of synthetic feed data reconciles to the plan with every match confirmed or explained, and no transaction counts twice.
+
+## M9: Learning from history (v0.9)
+
+- [ ] Spending ranges from categorized history feed the base, cautious and stress scenarios, labelled with the period they came from.
+- [ ] Seasonal estimates for categories that change month to month.
+- [ ] Forecast backtesting: past forecasts compared with what happened, as a table and a chart.
+- [ ] Unencrypted JSON and CSV export, with an explicit warning.
+
+**Done when:** a scenario says which history it learned from, backtests on synthetic history give known answers, and an export round-trips.
+
+## 1.0: The promise release
+
+- [ ] Compatibility promise: every later version opens 1.0 profiles and backups and imports the same workbook shapes, checked against recorded fixtures pinned by checksum.
+- [ ] Migration tests from every released schema.
+- [ ] Accessibility audit: keyboard paths, screen readers, contrast and scaling.
+- [ ] Threat model refresh and complete user docs.
+- [ ] Betas on the `win-beta` channel before the release.
+- [ ] Protect `main` with a ruleset like Prompuff's; every change lands through a pull request.
+
+**Done when:** a profile from any 0.x release upgrades cleanly to 1.0, the betas surface no data-loss bugs, and the promise is written in the README.
+
 ## Later
 
-- Seasonal spending estimates and backtesting, once enough categorized history exists.
 - macOS and Linux builds.
-- Unencrypted JSON/CSV export, with an explicit warning.
-- At 1.0: protect `main` with a ruleset like Prompuff's and land every change through a pull request.
+- Plaid relay (a stretch goal after 1.0), only if demand justifies it, behind its own ADR and threat model.
 
 ## Not planned
 
