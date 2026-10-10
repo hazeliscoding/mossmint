@@ -1,4 +1,5 @@
 using Mossmint.Application.Data;
+using Mossmint.Application.Forecasting;
 using Mossmint.Domain;
 using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Debts;
@@ -150,6 +151,24 @@ public sealed class ManualEntry(IProfileData data, TimeProvider clock)
         data.SaveSettings(settings);
         return settings;
     }
+
+    // Pays one bill occurrence, today, from the account the bill is funded from.
+    // The payment comes off that balance until a newer one is confirmed, and the
+    // occurrence leaves the forecast (docs/financial-models/cash-flow.md).
+    public Transaction MarkPaid(RecurringBill bill, DateOnly nominal)
+    {
+        Require(bill.Amount.Expected is not null, $"Enter the amount of {bill.Name} before marking it paid.");
+        var account = bill.FundingAccount ?? Forecasts.SpendingAccount(data.Accounts(), data.Income())?.Id;
+        Require(account is not null, "Add the checking account bills are paid from.");
+        var paid = new PaidBill(bill.Id, nominal);
+        Require(!data.Transactions(account!.Value).Any(t => t.Pays == paid && t.Status != TransactionStatus.Void), $"{bill.Name} is already marked paid.");
+        var payment = new Transaction(new TransactionId(NewId()), account.Value, Today, -bill.Amount.Expected!.Value, TransactionStatus.Posted,
+            bill.Name, Provenance.UserConfirmed(Today), Pays: paid, RecordedAt: clock.GetUtcNow());
+        data.RecordTransaction(payment);
+        return payment;
+    }
+
+    public void Undo(Transaction entry) => data.VoidTransaction(entry.Id);
 
     // Amounts are typed in currency units; anything finer than the currency's
     // minor unit is a typo, not a value to round silently.

@@ -62,6 +62,11 @@ public sealed record DebtView(
     Confidence Confidence,
     bool IsApproximate);
 
+// One due date in the window, with the entry that paid it, if any.
+public sealed record BillDue(DateOnly Date, DateOnly Nominal, Transaction? Payment);
+
+public sealed record BillView(RecurringBill Bill, IReadOnlyList<BillDue> Upcoming);
+
 public abstract record ForecastOutcome;
 
 public sealed record ForecastUnavailable(IReadOnlyList<string> Missing) : ForecastOutcome;
@@ -76,7 +81,8 @@ public sealed record ProfileForecast(
     Money Lowest,
     SafeToSpendView SafeToSpend,
     IReadOnlyList<PaycheckView> Paychecks,
-    IReadOnlyList<DebtView> Debts) : ForecastOutcome
+    IReadOnlyList<DebtView> Debts,
+    int EntriesSince = 0) : ForecastOutcome
 {
     // Only when every debt has a payoff date; one that never pays off means no date at all.
     public DateOnly? DebtFree => Debts.Count > 0 && Debts.All(d => d.PayoffDate is not null) ? Debts.Max(d => d.PayoffDate) : null;
@@ -105,16 +111,19 @@ public static class Forecasts
 
         var bills = data.Bills();
         var settings = data.Settings();
+        var entries = data.Transactions(account.Id);
+        var opening = RunningBalance.From(balance, entries);
         var plan = new CashFlowPlan(
             today,
             today.AddDays(days - 1),
-            new OpeningBalance(balance.Balance, balance.Provenance),
+            opening,
             [.. income.Where(i => (i.DepositAccount ?? account.Id) == account.Id)],
             [.. bills.Where(b => (b.FundingAccount ?? account.Id) == account.Id)],
             Calendar,
             settings.Allowances,
             settings.SavingsTarget,
-            settings.ReserveFloor);
+            settings.ReserveFloor,
+            PaidBills: [.. entries.Where(e => e.Status != TransactionStatus.Void).Select(e => e.Pays).OfType<PaidBill>()]);
         var expanded = CashFlowPlanner.Expand(plan);
         var forecast = CashFlowSimulator.Run(plan, expanded);
         var paydays = expanded.Paydays.ToHashSet();
@@ -128,7 +137,7 @@ public static class Forecasts
 
         return new ProfileForecast(
             account.Name,
-            balance.Balance,
+            opening.Amount,
             balance.Provenance,
             settings.ReserveFloor?.Minimum ?? Money.Zero(balance.Balance.Currency),
             forecastDays,
@@ -136,7 +145,19 @@ public static class Forecasts
             forecast.Lowest.Amount,
             Safe(plan),
             Paychecks(plan, PaycheckFunding.Plan(plan, expanded), forecastDays),
-            [.. data.Debts().Select(d => Debt(d, data, accounts, bills))]);
+            [.. data.Debts().Select(d => Debt(d, data, accounts, bills))],
+            entries.Count(e => RunningBalance.After(balance, e)));
+    }
+
+    // Each bill's due dates in the window, so a page can mark one paid.
+    public static IReadOnlyList<BillView> UpcomingBills(IProfileData data, DateOnly today, int days = DefaultDays)
+    {
+        var calendar = Calendar.Build();
+        var payments = data.Accounts().SelectMany(a => data.Transactions(a.Id))
+            .Where(t => t.Status != TransactionStatus.Void && t.Pays is not null)
+            .ToLookup(t => t.Pays!);
+        return [.. data.Bills().Select(b => new BillView(b, [.. b.DueDates.Occurrences(today, today.AddDays(days - 1), calendar)
+            .Select(o => new BillDue(o.Date, o.Nominal, payments[new PaidBill(b.Id, o.Nominal)].FirstOrDefault()))]))];
     }
 
     private static List<PaycheckView> Paychecks(CashFlowPlan plan, IReadOnlyList<FundingPeriod> periods, List<ForecastDay> days)
@@ -176,7 +197,7 @@ public static class Forecasts
     }
 
     // The account paychecks land in; without one, the first checking, then cash, account.
-    private static Account? SpendingAccount(IReadOnlyList<Account> accounts, IReadOnlyList<IncomeSchedule> income) =>
+    internal static Account? SpendingAccount(IReadOnlyList<Account> accounts, IReadOnlyList<IncomeSchedule> income) =>
         income.Select(i => i.DepositAccount).OfType<AccountId>()
             .Select(id => accounts.FirstOrDefault(a => a.Id == id)).FirstOrDefault(a => a is not null)
         ?? accounts.FirstOrDefault(a => a.Kind == AccountKind.Checking)

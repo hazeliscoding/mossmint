@@ -139,5 +139,29 @@ public class ForecastTests
         forecast.DebtFree.Should().BeNull();
     }
 
+    [Fact]
+    public void Marking_a_bill_paid_takes_it_off_the_balance_and_out_of_the_forecast_until_undone()
+    {
+        var rent = Forecasts.UpcomingBills(_data, Today).Single(b => b.Bill.Name == "Rent");
+        rent.Upcoming.Select(d => d.Nominal).Should().Equal(new DateOnly(2026, 11, 1));
+
+        var payment = _entry.MarkPaid(rent.Bill, rent.Upcoming[0].Nominal);
+
+        // Paid today, after the 8 Oct balance: 1,240 − 1,150 leaves 90, under the 300 cushion.
+        payment.Amount.Should().Be(Money.Usd(-1_150m));
+        var paid = Build();
+        (paid.Opening, paid.EntriesSince).Should().Be((Money.Usd(90m), 1));
+        paid.Days.SelectMany(d => d.Events).Should().NotContain(e => e.Label == "Rent");
+        (paid.SafeToSpend.State, paid.SafeToSpend.Amount).Should().Be((SafeToSpendState.Shortfall, Money.Usd(210m)));
+        Forecasts.UpcomingBills(_data, Today).Single(b => b.Bill.Name == "Rent").Upcoming[0].Payment.Should().Be(payment);
+        FluentActions.Invoking(() => _entry.MarkPaid(rent.Bill, rent.Upcoming[0].Nominal)).Should().Throw<ArgumentException>().WithMessage("*already*");
+
+        _entry.Undo(payment);
+
+        var undone = Build();
+        (undone.Opening, undone.EntriesSince).Should().Be((Money.Usd(1_240m), 0));
+        undone.Days.SelectMany(d => d.Events).Should().Contain(e => e.Label == "Rent");
+    }
+
     private ProfileForecast Build() => Forecasts.Build(_data, Today).Should().BeOfType<ProfileForecast>().Subject;
 }

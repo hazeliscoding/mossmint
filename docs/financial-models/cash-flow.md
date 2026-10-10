@@ -14,6 +14,19 @@ flowchart LR
     safe --> result["SafeAmount, Shortfall<br/>or NeedsConfirmation"]
 ```
 
+### Opening balance
+
+The forecast starts from the spending account's latest balance (`RunningBalance`), plus the entries the user has recorded since:
+
+- An entry dated after the balance's date counts.
+- An entry dated the same day counts only if it was recorded after the balance was entered. A balance typed in is taken to include everything entered before it.
+- An entry dated before the balance never counts; the balance already includes it.
+- Void entries and imported or connector entries never count. An imported balance already reflects its own source's transactions.
+
+The opening keeps the balance's provenance and as-of date, so Safe to spend still asks for a fresh confirmed balance. Confirming a new one absorbs the entries before it.
+
+**Mark paid** records one such entry: the bill's expected amount, out of the account it's funded from, dated the day it's marked. The entry names the occurrence it pays (bill and nominal due date), and the planner drops that occurrence, so the payment is never counted twice. For a debt payment only the checking side is recorded: the loan or card projection already applies its scheduled payments after its own balance date. Undo voids the entry; nothing is deleted.
+
 ### Events
 
 - **Income:** each paycheck occurrence, at its net pay (or a one-off override for that paycheck).
