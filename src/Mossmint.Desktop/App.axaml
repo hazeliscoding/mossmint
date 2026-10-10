@@ -71,6 +71,9 @@
     <DataTemplate DataType="vm:SavingsPageViewModel">
       <views:SavingsPageView />
     </DataTemplate>
+    <DataTemplate DataType="vm:TransactionsPageViewModel">
+      <views:TransactionsPageView />
+    </DataTemplate>
     <DataTemplate DataType="vm:BackupsPageViewModel">
       <views:BackupsPageView />
     </DataTemplate>

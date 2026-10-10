@@ -172,6 +172,7 @@ internal sealed class SyntheticScenes : IDisposable
         entry.AddGoal("Car fund", 3_000m, 1_250m, new DateOnly(2027, 5, 1));
         entry.AddGoal("Holiday trip", 900m, 120m, new DateOnly(2026, 12, 18));
         entry.AddGoal("New laptop", 1_400m, 1_400m);
+        entry.RecordEntry(checking.Id, "Groceries", -64.20m, asOf, "groceries");
         return session;
     }
 

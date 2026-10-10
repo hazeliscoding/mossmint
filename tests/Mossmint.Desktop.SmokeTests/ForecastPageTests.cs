@@ -114,6 +114,38 @@ public class ForecastPageTests
     }
 
     [AvaloniaFact]
+    public async Task Entries_change_todays_cash_and_reconciling_keeps_the_difference()
+    {
+        using var app = await Unlocked();
+        new ManualEntry(app.Services.Context.Current.Data, TimeProvider.System).AddCashAccount("Checking", 1_000m);
+        app.ViewModel.Shell.Navigate(Destination.Transactions);
+        var ledger = (TransactionsPageViewModel)app.ViewModel.Shell.CurrentPage!;
+        ledger.Account!.Name.Should().Be("Checking");
+
+        ledger.StartAddCommand.Execute(null);
+        (ledger.EntryDescription, ledger.EntryAmount) = ("Groceries", "115");
+        ledger.SaveEntryCommand.Execute(null);
+
+        ledger.Notice.Should().Contain("$885.00");
+        Opening(app).Should().Be("$885.00");
+        app.ViewModel.Shell.Navigate(Destination.Transactions);
+        ledger.Rows.First().Should().Match<LedgerRow>(r => r.Description == "Groceries" && r.Amount == "−$115.00" && r.CanVoid);
+
+        ledger.StartReconcileCommand.Execute(null);
+        ledger.ExpectedText.Should().Contain("$885.00");
+        ledger.BankBalance = "863.50";
+        ledger.SaveReconcileCommand.Execute(null);
+
+        ledger.Notice.Should().Contain("$21.50 less");
+        ledger.Rows.First().Status.Should().Be("Differs");
+        Opening(app).Should().Be("$863.50");
+
+        app.ViewModel.Shell.Navigate(Destination.Transactions);
+        ledger.VoidCommand.Execute(ledger.Rows.Single(r => r.Description == "Groceries"));
+        ledger.Rows.Single(r => r.Description == "Groceries").Status.Should().Be("Void");
+    }
+
+    [AvaloniaFact]
     public async Task Without_a_cash_account_the_forecast_pages_say_what_to_add()
     {
         using var app = await Unlocked();
@@ -131,11 +163,12 @@ public class ForecastPageTests
         paychecks.Unavailable.Should().Contain("checking account");
     }
 
+    // Steps away first: navigating to the page already open doesn't refresh it.
     private static string Opening(Harness app)
     {
+        app.ViewModel.Shell.Navigate(Destination.Overview);
         app.ViewModel.Shell.Navigate(Destination.CashFlow);
         var opening = ((CashFlowPageViewModel)app.ViewModel.Shell.CurrentPage!).Forecast!.Opening;
-        app.ViewModel.Shell.Navigate(Destination.Bills);
         return Describe.Money(opening);
     }
 
