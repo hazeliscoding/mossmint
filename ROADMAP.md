@@ -97,6 +97,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **1.0 is the promise release:** compatibility from 1.0 on, tested upgrades from every release, audits, and betas first, the way Prompuff did it.
 - **1.0 launches with a video and a landing page,** the way Prompuff did. The video is made with the `/brag` skill from Mossmint's own tokens, fonts and copy ("Make room to grow."), and shows only the synthetic *Juniper* household. The landing page is a static site on GitHub Pages that keeps the app's promise: no analytics or trackers, nothing loaded from other sites, and nothing that asks for financial data.
 - **The opt-in update check moves into 0.6,** because a real user now installs releases and shouldn't have to download each one by hand.
+- **Check now moves ahead of M4** (owner's request), so that user can update from Settings straight away. Check, download and restart are separate steps, and the restart waits for a running backup or import. The optional daily check stays in 0.6. [ADR-0003](docs/architecture/ADR-0003-update-check.md) lists what GitHub sees.
 - **Research on user value and feasibility (2026-10-10) reshaped 0.6 to 0.9:**
   - Export moves up to 0.6. Pre-1.0 users need a way out, and the JSON export doubles as the reference for the 1.0 compatibility tests.
   - Automated accessibility checks run from 0.4 on, so the 1.0 audit confirms rather than discovers.
@@ -189,7 +190,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 ## M6: Windows release (v0.6)
 
 - [x] Velopack installer, release CI on tags, checksums (moved up for the handoff; see the releases decisions).
-- [ ] Opt-in update check in Settings: **Check now**, plus an optional daily check that's off by default. It asks GitHub Releases only, through an explicit `GithubSource`, never Velopack's hosted service. Download and restart are separate steps, never during a backup or an import. Offline use never depends on it. Its ADR lists what GitHub sees.
+- [x] Opt-in update check in Settings: **Check now**. It asks GitHub Releases only, through an explicit `GithubSource`, never Velopack's hosted service. Download and restart are separate steps, never during a backup or an import. Offline use never depends on it. ADR-0003 lists what GitHub sees. (Moved up ahead of M4; see the 2026-10-10 decisions.)
+- [ ] An optional daily update check, off by default.
 - [ ] JSON and CSV export, with an explicit warning. Exported CSV is escaped so a spreadsheet can't run it as formulas, and the importer undoes the escaping.
 - [ ] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
 - [ ] Code signing through Azure Artifact Signing.
