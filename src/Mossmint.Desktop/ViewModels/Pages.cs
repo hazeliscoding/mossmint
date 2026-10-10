@@ -193,64 +193,6 @@ public static class OverviewCards
     private static string Plural(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
 }
 
-// Debts in M2: what was entered, read back from the profile.
-// Payoff details for each debt come later in M4.
-public sealed class RecordsPageViewModel(
-    Destination destination,
-    string title,
-    string purpose,
-    string emptyText,
-    ProfileContext context,
-    Func<IProfileData, IEnumerable<RecordRow>> rows) : PageViewModel(destination, title, purpose)
-{
-    public ObservableCollection<RecordRow> Rows { get; } = [];
-
-    public string EmptyText { get; } = emptyText;
-
-    public bool IsEmpty => Rows.Count == 0;
-
-    public override void OnNavigatedTo()
-    {
-        Rows.Clear();
-        if (context.IsUnlocked)
-        {
-            foreach (var row in rows(context.Current.Data))
-            {
-                Rows.Add(row);
-            }
-        }
-
-        OnPropertyChanged(nameof(IsEmpty));
-    }
-
-    public static IEnumerable<RecordRow> Paychecks(IProfileData data) =>
-        data.Income().Select(i => Row(i.Name, Describe.Schedule(i.PayDates), Describe.Money(i.NetPay), i.Provenance.Confidence));
-
-    public static IEnumerable<RecordRow> Debts(IProfileData data)
-    {
-        var accounts = data.Accounts().ToDictionary(a => a.Id);
-        foreach (var debt in data.Debts())
-        {
-            var name = accounts.TryGetValue(debt.Account, out var account) ? account.Name : "Debt";
-            var latest = data.Balances(debt.Account).FirstOrDefault();
-            var model = debt.Terms switch
-            {
-                SimpleInterestLoanTerms t => $"Loan · daily interest at {t.Rates.Segments[^1].Rate} · {Describe.Money(t.RegularPayment)} on the {Describe.Day(((MonthlyRule)t.PaymentDates.Rule).Day)}",
-                CreditCardTerms c => $"Card · {c.Buckets[0].Rates.Segments[^1].Rate} APR · closes on the {Describe.Day(c.StatementClosingDay)} · forecasts are approximate",
-                AmortizingLoanTerms a => $"Amortizing loan · {a.Rates.Segments[^1].Rate}",
-                _ => "Debt",
-            };
-            yield return Row(name, model, latest is null ? "—" : Describe.Money(latest.Balance), latest?.Provenance.Confidence ?? Confidence.NeedsReview);
-        }
-    }
-
-    private static RecordRow Row(string name, string detail, string amount, Confidence confidence)
-    {
-        var (status, tone) = Describe.Confidence(confidence);
-        return new RecordRow(name, detail, amount, status, tone);
-    }
-}
-
 public sealed partial class BackupsPageViewModel(AppServices services, IAppNavigator navigator)
     : PageViewModel(Destination.Backups, "Backups", "Encrypted backups you can restore on any PC.")
 {

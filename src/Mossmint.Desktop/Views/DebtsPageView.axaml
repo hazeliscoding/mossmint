@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.DebtsPageView"
+             x:DataType="vm:DebtsPageViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="ListBox.debts">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBox.debts ListBoxItem">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,12,12" />
+      <Setter Property="CornerRadius" Value="{StaticResource RadiusCard}" />
+    </Style>
+    <Style Selector="ListBox.debts ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox.debts ListBoxItem:pointerover Border.card">
+      <Setter Property="Background" Value="{DynamicResource BgElevated}" />
+    </Style>
+    <!-- Selection is a thicker accent border: a change of shape, not only of colour. -->
+    <Style Selector="ListBox.debts ListBoxItem:selected Border.card">
+      <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+      <TextBlock Classes="mono compact secondary" Text="{Binding Summary}" IsVisible="{Binding !IsEmpty}" />
+    </StackPanel>
+
+    <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding IsEmpty}">
+      <TextBlock Classes="prose secondary" Text="No debts yet. Add loans and cards with the Start fresh setup on the Overview page." TextWrapping="Wrap" />
+    </Border>
+
+    <ListBox Classes="debts" ItemsSource="{Binding Debts}" SelectedItem="{Binding Selected}" IsVisible="{Binding !IsEmpty}"
+             AutomationProperties.Name="Debts" Margin="0,0,-12,-12">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <WrapPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:DebtCard">
+          <Border Classes="card" Width="284" Padding="14" AutomationProperties.Name="{Binding AccessibleName}">
+            <StackPanel Spacing="8">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Classes="label" Text="{Binding Type}" VerticalAlignment="Center" />
+                <TextBlock Classes="card-title" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" Margin="0,0,8,0" />
+              </DockPanel>
+              <TextBlock Classes="mono" FontSize="24" Text="{Binding Balance}" />
+              <c:StatusBadge Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Left" />
+              <ProgressBar Minimum="0" Maximum="1" Value="{Binding PaidShare}" IsVisible="{Binding HasProgress}" Height="5" MinHeight="5"
+                           AutomationProperties.Name="{Binding PaidText}" ToolTip.Tip="{Binding PaidText}" />
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                <TextBlock Classes="compact secondary" Text="Rate" />
+                <TextBlock Grid.Column="1" Classes="mono compact" Text="{Binding Rate}" TextAlignment="Right" />
+                <TextBlock Grid.Row="1" Classes="compact secondary" Text="Payment" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono compact" Text="{Binding Payment}" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Payment}" Margin="12,0,0,0" />
+                <TextBlock Grid.Row="2" Classes="compact secondary" Text="Payoff" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Classes="mono compact" Text="{Binding Payoff}" TextAlignment="Right" />
+                <TextBlock Grid.Row="3" Classes="compact secondary" Text="Balance" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Classes="mono compact" Text="{Binding AsOf}" TextAlignment="Right" />
+              </Grid>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <Border Classes="card" Padding="20,16" IsVisible="{Binding HasSelection}">
+      <StackPanel Spacing="14">
+        <DockPanel>
+          <Button DockPanel.Dock="Right" Content="Confirm balance" VerticalAlignment="Top"
+                  Command="{Binding StartConfirmCommand}" IsVisible="{Binding !IsConfirming}" />
+          <StackPanel Spacing="2">
+            <TextBlock Classes="section" Text="{Binding Selected.Name, FallbackValue=''}" />
+            <TextBlock Classes="compact secondary" Text="{Binding Selected.Source, FallbackValue=''}" TextWrapping="Wrap" />
+          </StackPanel>
+        </DockPanel>
+
+        <Border Classes="separator-top" Padding="0,12,0,0" IsVisible="{Binding Selected.HasWarning, FallbackValue=False}">
+          <StackPanel Spacing="6">
+            <c:StatusBadge Tone="Warning" Text="Check the balance" HorizontalAlignment="Left" />
+            <TextBlock Classes="prose" Text="{Binding Selected.Warning, FallbackValue=''}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <ItemsControl ItemsSource="{Binding Selected.Facts, FallbackValue={x:Null}}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Columns="3" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DebtFact">
+              <StackPanel Spacing="3" Margin="0,0,16,14">
+                <TextBlock Classes="label" Text="{Binding Label}" />
+                <TextBlock Classes="mono" FontSize="18" Text="{Binding Value}" />
+                <TextBlock Classes="compact faint" Text="{Binding Note}" TextWrapping="Wrap" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Border Classes="separator-top" Padding="0,14,0,0" IsVisible="{Binding IsConfirming}">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="card-title" Text="Confirm the balance you see today" />
+            <TextBlock Classes="compact secondary" Text="Use the figure your lender or card shows now. It becomes the latest balance, and the payoff date starts from it." TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <StackPanel Spacing="4" Width="180">
+                <TextBlock Classes="field-label" Text="Balance owed" />
+                <TextBox Classes="money" Text="{Binding BalanceText}" PlaceholderText="0.00" AutomationProperties.Name="Balance owed" />
+              </StackPanel>
+              <StackPanel Spacing="4" Width="180" IsVisible="{Binding Selected.IsLoan, FallbackValue=False}">
+                <TextBlock Classes="field-label" Text="Unpaid interest (optional)" />
+                <TextBox Classes="money" Text="{Binding InterestText}" PlaceholderText="0.00" AutomationProperties.Name="Unpaid interest" />
+              </StackPanel>
+            </StackPanel>
+            <TextBlock Classes="error" Text="{Binding FormError}" TextWrapping="Wrap" IsVisible="{Binding FormError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="primary" Content="Save balance" Command="{Binding SaveBalanceCommand}" />
+              <Button Classes="ghost" Content="Cancel" Command="{Binding CancelConfirmCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

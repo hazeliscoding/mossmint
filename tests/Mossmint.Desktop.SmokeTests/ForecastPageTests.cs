@@ -63,6 +63,33 @@ public class ForecastPageTests
     }
 
     [AvaloniaFact]
+    public async Task Confirming_a_debt_balance_replaces_an_old_one()
+    {
+        using var app = await Unlocked();
+        var entry = new ManualEntry(app.Services.Context.Current.Data, TimeProvider.System);
+        var checking = entry.AddCashAccount("Checking", 1_000m);
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        entry.AddLoan(new LoanEntry("Car loan", 9_800m, today.AddDays(-60), 7.4m, 285m, 28), checking.Id);
+        app.ViewModel.Shell.Navigate(Destination.Debts);
+        var debts = (DebtsPageViewModel)app.ViewModel.Shell.CurrentPage!;
+
+        debts.Selected!.Status.Should().Be("Stale");
+        debts.Selected.HasWarning.Should().BeTrue();
+        debts.StartConfirmCommand.Execute(null);
+        debts.BalanceText = "nine thousand";
+        debts.SaveBalanceCommand.Execute(null);
+        debts.FormError.Should().Contain("Balance owed");
+
+        debts.BalanceText = "9,500.00";
+        debts.InterestText = "12.40";
+        debts.SaveBalanceCommand.Execute(null);
+
+        (debts.Selected!.Balance, debts.Selected.Status, debts.Selected.HasWarning, debts.IsConfirming).Should().Be(("$9,500.00", "Confirmed", false, false));
+        debts.Selected.Facts.Should().Contain(f => f.Label == "Unpaid interest" && f.Value == "$12.40");
+        debts.Notice.Should().Contain("Car loan");
+    }
+
+    [AvaloniaFact]
     public async Task Without_a_cash_account_the_forecast_pages_say_what_to_add()
     {
         using var app = await Unlocked();

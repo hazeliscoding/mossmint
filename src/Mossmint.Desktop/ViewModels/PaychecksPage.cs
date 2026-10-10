@@ -50,9 +50,10 @@ public sealed partial class PaychecksPageViewModel(AppServices services)
         if (services.Context.IsUnlocked)
         {
             var data = services.Context.Current.Data;
-            foreach (var row in RecordsPageViewModel.Paychecks(data))
+            foreach (var income in data.Income())
             {
-                Schedules.Add(row);
+                var (status, tone) = Describe.Confidence(income.Provenance.Confidence);
+                Schedules.Add(new RecordRow(income.Name, Describe.Schedule(income.PayDates), Describe.Money(income.NetPay), status, tone));
             }
 
             var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);

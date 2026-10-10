@@ -15,14 +15,12 @@ public sealed partial class ShellViewModel : ViewModelBase
     public ShellViewModel(AppServices services, IAppNavigator navigator)
     {
         (Context, _navigator, _services) = (services.Context, navigator, services);
-        var context = services.Context;
         NavItems =
         [
             Nav(new OverviewPageViewModel(services, navigator), "IconLayoutDashboard", "Ctrl+1"),
             Nav(new CashFlowPageViewModel(services), "IconWaves", "Ctrl+2"),
             Nav(new PaychecksPageViewModel(services), "IconBanknote", "Ctrl+3"),
-            Nav(new RecordsPageViewModel(Destination.Debts, "Debts", "Balances and terms. Payoff plans and extra-payment comparisons arrive in M5.",
-                "No debts yet. Add loans and cards with the Start fresh setup on the Overview page.", context, RecordsPageViewModel.Debts), "IconCreditCard", "Ctrl+4"),
+            Nav(new DebtsPageViewModel(services), "IconCreditCard", "Ctrl+4"),
             Nav(new BillsPageViewModel(services), "IconReceiptText", "Ctrl+5"),
             Nav(Placeholder(Destination.Savings, "Savings", "M4",
                 "Savings goals and the cash reserve floor, tracked separately.",
