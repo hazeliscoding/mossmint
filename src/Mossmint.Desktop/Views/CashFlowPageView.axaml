@@ -1,0 +1,92 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.CashFlowPageView"
+             x:DataType="vm:CashFlowPageViewModel">
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+    <DockPanel>
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+        <TextBlock Classes="compact secondary" Text="Days ahead" VerticalAlignment="Center" />
+        <ListBox ItemsSource="{Binding Ranges}" SelectedItem="{Binding Days}" AutomationProperties.Name="Days ahead">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="x:Int32">
+              <TextBlock Classes="mono" Text="{Binding}" Margin="6,0" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </StackPanel>
+      <StackPanel Spacing="4">
+        <TextBlock Classes="page-title" Text="{Binding Title}" />
+        <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+      </StackPanel>
+    </DockPanel>
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding Unavailable, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="10">
+        <c:StatusBadge Tone="Warning" Text="No forecast yet" HorizontalAlignment="Left" />
+        <TextBlock Classes="prose" Text="{Binding Unavailable}" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="16,14" IsVisible="{Binding HasForecast}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="card-title" Text="{Binding Summary}" TextWrapping="Wrap" />
+        <TextBlock Classes="compact secondary" Text="Line: closing balance, dipping to each day's low · dashed: the cushion · PAY: paydays" TextWrapping="Wrap" />
+        <c:ForecastChart Forecast="{Binding Forecast}" Height="260" AutomationProperties.Name="{Binding ChartDescription}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="16,14" IsVisible="{Binding HasForecast}">
+      <StackPanel Spacing="4" Grid.IsSharedSizeScope="True">
+        <Grid Margin="0,0,0,4">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition SharedSizeGroup="date" Width="Auto" MinWidth="110" />
+            <ColumnDefinition Width="*" MinWidth="320" />
+            <ColumnDefinition SharedSizeGroup="in" Width="Auto" MinWidth="110" />
+            <ColumnDefinition SharedSizeGroup="out" Width="Auto" MinWidth="110" />
+            <ColumnDefinition SharedSizeGroup="low" Width="Auto" MinWidth="120" />
+            <ColumnDefinition SharedSizeGroup="close" Width="Auto" MinWidth="120" />
+            <ColumnDefinition SharedSizeGroup="status" Width="Auto" MinWidth="130" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Classes="label" Text="DATE" />
+          <TextBlock Grid.Column="1" Classes="label" Text="WHAT HAPPENS" />
+          <TextBlock Grid.Column="2" Classes="label" Text="IN" TextAlignment="Right" />
+          <TextBlock Grid.Column="3" Classes="label" Text="OUT" TextAlignment="Right" />
+          <TextBlock Grid.Column="4" Classes="label" Text="LOW" TextAlignment="Right" />
+          <TextBlock Grid.Column="5" Classes="label" Text="CLOSING" TextAlignment="Right" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CashFlowRow">
+              <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition SharedSizeGroup="date" Width="Auto" />
+                  <ColumnDefinition Width="*" MinWidth="320" />
+                  <ColumnDefinition SharedSizeGroup="in" Width="Auto" />
+                  <ColumnDefinition SharedSizeGroup="out" Width="Auto" />
+                  <ColumnDefinition SharedSizeGroup="low" Width="Auto" />
+                  <ColumnDefinition SharedSizeGroup="close" Width="Auto" />
+                  <ColumnDefinition SharedSizeGroup="status" Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Classes="mono" Text="{Binding Date}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Classes="compact" Text="{Binding Events}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Events}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBlock Grid.Column="2" Classes="mono" Text="{Binding In}" TextAlignment="Right" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Classes="mono" Text="{Binding Out}" TextAlignment="Right" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" Classes="mono" Text="{Binding Low}" TextAlignment="Right" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="5" Classes="mono" Text="{Binding Closing}" TextAlignment="Right" VerticalAlignment="Center" />
+                <c:StatusBadge Grid.Column="6" Tone="{Binding Tone}" Text="{Binding Status}" IsVisible="{Binding HasStatus}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

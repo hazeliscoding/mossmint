@@ -19,10 +19,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         NavItems =
         [
             Nav(new OverviewPageViewModel(services, navigator), "IconLayoutDashboard", "Ctrl+1"),
-            Nav(Placeholder(Destination.CashFlow, "Cash Flow", "M4",
-                "A day-by-day checking forecast with the cushion line and every scheduled event.",
-                "The forecast view arrives with the dashboard",
-                "The engine already simulates every day, not just paydays, so a bill due the day before payday can't hide behind a healthy month-end total. Every chart here will have a table twin."), "IconWaves", "Ctrl+2"),
+            Nav(new CashFlowPageViewModel(services), "IconWaves", "Ctrl+2"),
             Nav(new RecordsPageViewModel(Destination.Paychecks, "Paychecks", "When you get paid, and how much lands each time.",
                 "No paychecks yet. Add one with the Start fresh setup on the Overview page.", context, RecordsPageViewModel.Paychecks), "IconBanknote", "Ctrl+3"),
             Nav(new RecordsPageViewModel(Destination.Debts, "Debts", "Balances and terms. Payoff plans and extra-payment comparisons arrive in M5.",
