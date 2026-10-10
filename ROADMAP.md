@@ -109,6 +109,9 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - Seasonal estimates wait for 13 months of history.
 - **A profile or backup saved by a newer Mossmint is refused,** untouched, with a message to update (done 2026-10-10). Betas and downgrades can't misread data they don't understand.
 - **Bank logins:** Mossmint never asks for them. A bank feed such as SimpleFIN is a separate service the user signs up and pays for, and it holds the bank login. There is still no Mossmint account.
+- **M4 pages leave some mockup parts for later.** The stress slider, the late-paycheck toggle and the extra-payment comparison come with Scenarios in M5. Ledger search and duplicate flags come with bank data (0.7 and 0.8). The add-entry form's live Safe to spend preview and Paychecks' *Override a date* are under Later. Goals show a progress bar instead of a ring.
+- **Reconciling keeps the difference on the balance.** The bank's figure becomes the latest balance, marked *Differs* when it doesn't match what Mossmint expected; no balancing entry is invented and nothing is deleted. Entries typed in are dated today or earlier, since money still to come belongs in Bills.
+- **Savings goals don't move money.** A dated goal shows what's left divided over the paydays before its date, rounded up, and the Savings page says when the goals together need more than each paycheck sets aside. The rule is in `docs/financial-models/cash-flow.md`.
 - **Mark paid records a payment entry** (M4). The forecast starts from the latest confirmed balance plus the manual entries recorded after it, so a paid bill comes off the balance at once and its due date leaves the forecast. Imported entries don't move it: an imported balance already includes them. Undo stays on the row with no time limit, instead of the mockup's 10-second toast, so nobody has to beat a timer (WCAG 2.2.1). The rules are in `docs/financial-models/cash-flow.md`.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -171,8 +174,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 ## M4: Desktop dashboard and daily flows (v0.4)
 
-- [ ] Overview, Cash Flow, Paychecks, Debts, Bills, Savings, Transactions, following the mockup.
-- [ ] Manual ledger entry, mark paid with undo, balance reconciliation.
+- [x] Overview, Cash Flow, Paychecks, Debts, Bills, Savings, Transactions, following the mockup. (What waits is listed in the M4 decisions.)
+- [x] Manual ledger entry, mark paid with undo, balance reconciliation.
 - [ ] Every chart has a table twin; keyboard-only paths; 125–200% scaling; dark, light and high contrast.
 - [ ] Automated accessibility checks in CI: every focusable control has an accessible name, and the theme's colour pairs meet contrast ratios. A Narrator pass by hand each milestone from here on.
 - [ ] Generic onboarding for a user with no spreadsheets.
@@ -259,6 +262,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 ## Later
 
 - macOS and Linux builds.
+- A live Safe to spend preview while typing an entry, and *Override a date* for a single paycheck.
 - Plaid relay (a stretch goal after 1.0), only if demand justifies it, behind its own ADR and threat model.
 
 ## Maybe later
