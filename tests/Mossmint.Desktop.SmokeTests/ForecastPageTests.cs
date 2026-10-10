@@ -40,6 +40,29 @@ public class ForecastPageTests
     }
 
     [AvaloniaFact]
+    public async Task Marking_a_bill_paid_moves_the_forecast_and_undo_moves_it_back()
+    {
+        using var app = await Unlocked();
+        var entry = new ManualEntry(app.Services.Context.Current.Data, TimeProvider.System);
+        var checking = entry.AddCashAccount("Checking", 1_000m);
+        entry.AddBill(new BillEntry("Rent", 900m, 1), checking.Id);
+        app.ViewModel.Shell.Navigate(Destination.Bills);
+        var bills = (BillsPageViewModel)app.ViewModel.Shell.CurrentPage!;
+
+        bills.MarkPaidCommand.Execute(bills.Rows.Single());
+
+        var rent = bills.Rows.Single();
+        (rent.Status, rent.CanMarkPaid, rent.CanUndo).Should().Be(("Paid", false, true));
+        bills.Notice.Should().Contain("Rent marked paid");
+        Opening(app).Should().Be("$100.00");
+
+        bills.UndoCommand.Execute(rent);
+
+        bills.Rows.Single().CanMarkPaid.Should().BeTrue();
+        Opening(app).Should().Be("$1,000.00");
+    }
+
+    [AvaloniaFact]
     public async Task Without_a_cash_account_the_forecast_pages_say_what_to_add()
     {
         using var app = await Unlocked();
@@ -55,6 +78,14 @@ public class ForecastPageTests
         var paychecks = (PaychecksPageViewModel)app.ViewModel.Shell.CurrentPage!;
         (paychecks.Cards.Count, paychecks.HasSchedules).Should().Be((0, false));
         paychecks.Unavailable.Should().Contain("checking account");
+    }
+
+    private static string Opening(Harness app)
+    {
+        app.ViewModel.Shell.Navigate(Destination.CashFlow);
+        var opening = ((CashFlowPageViewModel)app.ViewModel.Shell.CurrentPage!).Forecast!.Opening;
+        app.ViewModel.Shell.Navigate(Destination.Bills);
+        return Describe.Money(opening);
     }
 
     private static async Task<Harness> Unlocked()

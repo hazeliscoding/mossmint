@@ -193,8 +193,8 @@ public static class OverviewCards
     private static string Plural(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
 }
 
-// Paychecks, Bills and Debts in M2: what was entered, read back from the profile.
-// Editing and forecasting on these pages arrive with the dashboard (M4).
+// Debts in M2: what was entered, read back from the profile.
+// Payoff details for each debt come later in M4.
 public sealed class RecordsPageViewModel(
     Destination destination,
     string title,
@@ -225,15 +225,6 @@ public sealed class RecordsPageViewModel(
 
     public static IEnumerable<RecordRow> Paychecks(IProfileData data) =>
         data.Income().Select(i => Row(i.Name, Describe.Schedule(i.PayDates), Describe.Money(i.NetPay), i.Provenance.Confidence));
-
-    public static IEnumerable<RecordRow> Bills(IProfileData data) =>
-        data.Bills().Select(b => Row(
-            b.Name,
-            $"{(b.Purpose == BillPurpose.DebtPayment ? "Debt payment, not spending" : b.Purpose.ToString())} · due {Describe.Schedule(b.DueDates)}",
-            b.Amount.Kind == AmountKind.Estimated && b.Amount.Low is { } low && b.Amount.High is { } high
-                ? $"{Describe.Money(b.Amount.Expected!.Value)} ({Describe.Money(low)}–{Describe.Money(high)})"
-                : b.Amount.Expected is { } amount ? Describe.Money(amount) : "Unknown",
-            b.Provenance.Confidence));
 
     public static IEnumerable<RecordRow> Debts(IProfileData data)
     {

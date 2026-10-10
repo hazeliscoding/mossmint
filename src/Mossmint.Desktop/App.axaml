@@ -62,6 +62,9 @@
     <DataTemplate DataType="vm:PaychecksPageViewModel">
       <views:PaychecksPageView />
     </DataTemplate>
+    <DataTemplate DataType="vm:BillsPageViewModel">
+      <views:BillsPageView />
+    </DataTemplate>
     <DataTemplate DataType="vm:RecordsPageViewModel">
       <views:RecordsPageView />
     </DataTemplate>

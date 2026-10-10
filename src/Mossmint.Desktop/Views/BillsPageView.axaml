@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.BillsPageView"
+             x:DataType="vm:BillsPageViewModel">
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+    <Border Classes="card" Padding="16,14">
+      <StackPanel Spacing="4" Grid.IsSharedSizeScope="True">
+        <TextBlock Classes="prose secondary" Text="No bills yet. Add them with the Start fresh setup on the Overview page." IsVisible="{Binding IsEmpty}" />
+        <Grid Margin="0,0,0,4" IsVisible="{Binding !IsEmpty}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="320" />
+            <ColumnDefinition SharedSizeGroup="cadence" Width="Auto" MinWidth="160" />
+            <ColumnDefinition SharedSizeGroup="amount" Width="Auto" MinWidth="120" />
+            <ColumnDefinition SharedSizeGroup="status" Width="Auto" MinWidth="130" />
+            <ColumnDefinition SharedSizeGroup="action" Width="Auto" MinWidth="110" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Classes="label" Text="BILL" />
+          <TextBlock Grid.Column="1" Classes="label" Text="CADENCE" />
+          <TextBlock Grid.Column="2" Classes="label" Text="AMOUNT" TextAlignment="Right" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:BillLine">
+              <Border Classes="separator-top" Padding="0,8">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="320" />
+                    <ColumnDefinition SharedSizeGroup="cadence" Width="Auto" MinWidth="160" />
+                    <ColumnDefinition SharedSizeGroup="amount" Width="Auto" MinWidth="120" />
+                    <ColumnDefinition SharedSizeGroup="status" Width="Auto" MinWidth="130" />
+                    <ColumnDefinition SharedSizeGroup="action" Width="Auto" MinWidth="110" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Spacing="2" Margin="0,0,12,0">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                    <TextBlock Classes="compact faint" Text="{Binding Detail}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Classes="compact secondary" Text="{Binding Cadence}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                  <TextBlock Grid.Column="2" Classes="mono" Text="{Binding Amount}" TextAlignment="Right" VerticalAlignment="Center" />
+                  <c:StatusBadge Grid.Column="3" Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="4" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Button Content="Mark paid" IsVisible="{Binding CanMarkPaid}" AutomationProperties.Name="{Binding MarkPaidName}"
+                            Command="{Binding $parent[UserControl].((vm:BillsPageViewModel)DataContext).MarkPaidCommand}" CommandParameter="{Binding}" />
+                    <Button Classes="ghost" Content="Undo" IsVisible="{Binding CanUndo}" AutomationProperties.Name="{Binding UndoName}"
+                            Command="{Binding $parent[UserControl].((vm:BillsPageViewModel)DataContext).UndoCommand}" CommandParameter="{Binding}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <TextBlock Classes="compact secondary" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+               Text="Mark paid records the payment from the account the bill is paid from, dated today, and drops that due date from the forecast. It comes off the balance until you confirm a newer one. A debt payment moves money between your own accounts, so it never counts as spending. Undo stays on the row." />
+  </StackPanel>
+</UserControl>
