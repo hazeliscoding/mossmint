@@ -178,7 +178,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Overview, Cash Flow, Paychecks, Debts, Bills, Savings, Transactions, following the mockup. (What waits is listed in the M4 decisions.)
 - [x] Manual ledger entry, mark paid with undo, balance reconciliation.
 - [ ] Every chart has a table twin; keyboard-only paths; 125–200% scaling; dark, light and high contrast.
-- [ ] Automated accessibility checks in CI: every focusable control has an accessible name, and the theme's colour pairs meet contrast ratios. A Narrator pass by hand each milestone from here on.
+- [x] Automated accessibility checks in CI: every focusable control has an accessible name, and the theme's colour pairs meet contrast ratios. A Narrator pass by hand each milestone from here on.
 - [ ] Generic onboarding for a user with no spreadsheets.
 
 **Done when:** a new user can onboard with no spreadsheet, an imported user can trace every record to its source, and no screen needs the network.
