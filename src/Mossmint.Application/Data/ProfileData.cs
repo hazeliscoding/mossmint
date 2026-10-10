@@ -27,7 +27,8 @@ public sealed record ProfileCounts(
     int AuditEvents,
     int Transactions = 0,
     int ReviewItems = 0,
-    int ImportRuns = 0);
+    int ImportRuns = 0,
+    int Goals = 0);
 
 // The profile's stored records. Every change is recorded in the audit trail.
 public interface IProfileData
@@ -60,6 +61,10 @@ public interface IProfileData
 
     // Undo keeps the entry, marked void, rather than deleting it.
     void VoidTransaction(TransactionId id);
+
+    IReadOnlyList<SavingsGoal> Goals();
+
+    void SaveGoal(SavingsGoal goal);
 
     PlanSettings Settings();
 

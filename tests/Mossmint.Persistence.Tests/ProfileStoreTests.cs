@@ -216,6 +216,22 @@ public class ProfileStoreTests : IDisposable
     }
 
     [Fact]
+    public void Savings_goals_round_trip_dated_ones_first()
+    {
+        var created = _root.Store().Create("Juniper", Passphrase, false);
+        using var session = created.Session;
+        var someday = new SavingsGoal(new GoalId(Guid.NewGuid()), "Someday", Money.Usd(500m), Money.Usd(0m), Provenance.UserConfirmed(Today));
+        var car = new SavingsGoal(new GoalId(Guid.NewGuid()), "Car fund", Money.Usd(3_000m), Money.Usd(1_250.50m), Provenance.UserConfirmed(Today), new DateOnly(2027, 5, 1));
+
+        session.Data.SaveGoal(someday);
+        session.Data.SaveGoal(car);
+        session.Data.SaveGoal(car with { Saved = Money.Usd(1_400m) });
+
+        session.Data.Goals().Should().Equal(car with { Saved = Money.Usd(1_400m) }, someday);
+        session.Data.Counts().Goals.Should().Be(2);
+    }
+
+    [Fact]
     public void Profiles_are_isolated_from_each_other()
     {
         var store = _root.Store();

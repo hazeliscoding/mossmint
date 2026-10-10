@@ -67,6 +67,18 @@ internal sealed class DebtRow
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
+internal sealed class GoalRow
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = "";
+    public long TargetMinor { get; set; }
+    public long SavedMinor { get; set; }
+    public string Currency { get; set; } = "";
+    public string SavedProvenanceJson { get; set; } = "";
+    public DateOnly? TargetDate { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
 internal sealed class SettingsRow
 {
     public int Id { get; set; }
@@ -167,6 +179,7 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
     public DbSet<IncomeRow> Income => Set<IncomeRow>();
     public DbSet<DebtRow> Debts => Set<DebtRow>();
     public DbSet<SettingsRow> Settings => Set<SettingsRow>();
+    public DbSet<GoalRow> Goals => Set<GoalRow>();
     public DbSet<AuditRow> Audit => Set<AuditRow>();
     public DbSet<TransactionRow> Transactions => Set<TransactionRow>();
     public DbSet<ImportRunRow> ImportRuns => Set<ImportRunRow>();
@@ -228,6 +241,14 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
             e.ToTable("Debts");
             e.HasKey(d => d.AccountId);
             e.HasOne<AccountRow>().WithOne().HasForeignKey<DebtRow>(d => d.AccountId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        model.Entity<GoalRow>(e =>
+        {
+            e.ToTable("SavingsGoals");
+            e.HasKey(g => g.Id);
+            e.Property(g => g.Name).HasMaxLength(200);
+            e.Property(g => g.Currency).HasMaxLength(3);
         });
 
         model.Entity<SettingsRow>(e =>

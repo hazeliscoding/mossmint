@@ -98,6 +98,25 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         db.SaveChanges();
     }
 
+    public IReadOnlyList<SavingsGoal> Goals() =>
+        [.. db.Goals.AsNoTracking().OrderBy(g => g.TargetDate == null).ThenBy(g => g.TargetDate).ThenBy(g => g.Name).AsEnumerable().Select(ToGoal)];
+
+    public void SaveGoal(SavingsGoal goal)
+    {
+        var row = db.Goals.Find(goal.Id.Value);
+        var isNew = row is null;
+        row ??= db.Goals.Add(new GoalRow { Id = goal.Id.Value }).Entity;
+        row.Name = goal.Name;
+        row.TargetMinor = goal.Target.ToMinorUnits();
+        row.SavedMinor = goal.Saved.ToMinorUnits();
+        row.Currency = goal.Target.Currency.Code;
+        row.SavedProvenanceJson = JsonSerializer.Serialize(goal.SavedProvenance, Json);
+        row.TargetDate = goal.TargetDate;
+        row.UpdatedAt = clock.GetUtcNow();
+        Audit(isNew ? "goal.added" : "goal.changed", "SavingsGoal", goal.Id.Value, "Savings goal");
+        db.SaveChanges();
+    }
+
     public PlanSettings Settings()
     {
         var row = db.Settings.AsNoTracking().SingleOrDefault();
@@ -122,7 +141,7 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
 
     public ProfileCounts Counts() => new(
         db.Accounts.Count(), db.Balances.Count(), db.Bills.Count(), db.Income.Count(), db.Debts.Count(), db.Audit.Count(),
-        db.Transactions.Count(), db.ReviewItems.Count(), db.ImportRuns.Count());
+        db.Transactions.Count(), db.ReviewItems.Count(), db.ImportRuns.Count(), db.Goals.Count());
 
     public IReadOnlyList<ImportLink> Links() =>
         [.. db.ImportLinks.AsNoTracking().AsEnumerable().Select(l =>
@@ -436,6 +455,13 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         row.TransferGroupId is { } group ? new TransferGroupId(group) : null,
         row.PaysBillId is { } bill && row.PaysNominal is { } nominal ? new PaidBill(new BillId(bill), nominal) : null,
         row.RecordedAt);
+
+    private static SavingsGoal ToGoal(GoalRow row)
+    {
+        var currency = Currency.Of(row.Currency);
+        return new SavingsGoal(new GoalId(row.Id), row.Name, Money.FromMinorUnits(row.TargetMinor, currency), Money.FromMinorUnits(row.SavedMinor, currency),
+            JsonSerializer.Deserialize<Provenance>(row.SavedProvenanceJson, Json)!, row.TargetDate);
+    }
 
     private static RecurringBill ToBill(BillRow row) => new(
         new BillId(row.Id),

@@ -194,6 +194,43 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.ToTable("Debts", (string)null);
                 });
 
+            modelBuilder.Entity("Mossmint.Persistence.Data.GoalRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("SavedMinor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SavedProvenanceJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("TargetDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("TargetMinor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SavingsGoals", (string)null);
+                });
+
             modelBuilder.Entity("Mossmint.Persistence.Data.ImportLinkRow", b =>
                 {
                     b.Property<string>("Entity")
