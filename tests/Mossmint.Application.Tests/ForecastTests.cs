@@ -209,5 +209,23 @@ public class ForecastTests
         FluentActions.Invoking(() => _entry.AddGoal("Past", 100m, by: Today)).Should().Throw<ArgumentException>();
     }
 
+    [Fact]
+    public void Entries_move_todays_cash_and_reconciling_keeps_the_difference()
+    {
+        _entry.RecordEntry(_checking.Id, "Groceries", -115m, Today, "groceries");
+        _entry.RecordEntry(_checking.Id, "Refund", 20m, Today.AddDays(-2));
+
+        // The refund is dated before the 8 Oct balance, which already includes it: 1,240 − 115.
+        _entry.Expected(_checking.Id).Should().Be(Money.Usd(1_125m));
+        Build().Opening.Should().Be(Money.Usd(1_125m));
+        FluentActions.Invoking(() => _entry.RecordEntry(_checking.Id, "Later", -5m, Today.AddDays(1))).Should().Throw<ArgumentException>();
+
+        var (balance, difference) = _entry.Reconcile(_checking.Id, 1_103.50m);
+
+        (balance.State, difference).Should().Be((ReconciliationState.Discrepancy, (Money?)Money.Usd(-21.50m)));
+        Build().Opening.Should().Be(Money.Usd(1_103.50m));
+        _entry.Reconcile(_checking.Id, 1_103.50m).Balance.State.Should().Be(ReconciliationState.Reconciled);
+    }
+
     private ProfileForecast Build() => Forecasts.Build(_data, Today).Should().BeOfType<ProfileForecast>().Subject;
 }

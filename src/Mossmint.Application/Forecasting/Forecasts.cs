@@ -227,7 +227,10 @@ public static class Forecasts
     }
 
     // The account paychecks land in; without one, the first checking, then cash, account.
-    internal static Account? SpendingAccount(IReadOnlyList<Account> accounts, IReadOnlyList<IncomeSchedule> income) =>
+    // Whether an entry adds to the balance or is already in it, for the ledger page.
+    public static bool IsSinceBalance(BalanceSnapshot balance, Transaction entry) => RunningBalance.After(balance, entry);
+
+    public static Account? SpendingAccount(IReadOnlyList<Account> accounts, IReadOnlyList<IncomeSchedule> income) =>
         income.Select(i => i.DepositAccount).OfType<AccountId>()
             .Select(id => accounts.FirstOrDefault(a => a.Id == id)).FirstOrDefault(a => a is not null)
         ?? accounts.FirstOrDefault(a => a.Kind == AccountKind.Checking)

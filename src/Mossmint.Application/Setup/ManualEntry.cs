@@ -5,6 +5,7 @@ using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Debts;
 using Mossmint.Domain.Planning;
 using Mossmint.Domain.Scheduling;
+using Mossmint.Engine.CashFlow;
 
 namespace Mossmint.Application.Setup;
 
@@ -162,6 +163,42 @@ public sealed class ManualEntry(IProfileData data, TimeProvider clock)
             AccruedInterest: unpaidInterest is { } interest ? Cents(interest) : null, RecordedAt: clock.GetUtcNow());
         data.RecordBalance(snapshot);
         return snapshot;
+    }
+
+    // Money in (positive) or out (negative) of a cash account, as it happened.
+    // Only today or earlier: what's still to come belongs in bills, not the ledger.
+    public Transaction RecordEntry(AccountId account, string description, decimal amount, DateOnly date, string? category = null)
+    {
+        Require(amount != 0m, "Enter an amount other than zero.");
+        Require(date <= Today, "Use today or an earlier date. Add a bill for money that's still to go out.");
+        var entry = new Transaction(new TransactionId(NewId()), account, date, Cents(amount), TransactionStatus.Posted, Clean(description),
+            Provenance.UserConfirmed(date), Category: string.IsNullOrWhiteSpace(category) ? null : category.Trim(), RecordedAt: clock.GetUtcNow());
+        data.RecordTransaction(entry);
+        return entry;
+    }
+
+    // What Mossmint expects the account to hold now: its latest balance plus the
+    // entries recorded since. Null without a balance.
+    public Money? Expected(AccountId account) =>
+        data.Balances(account).FirstOrDefault() is { } latest ? RunningBalance.From(latest, data.Transactions(account)).Amount : null;
+
+    // The balance the bank shows today. Any difference from what Mossmint expected
+    // is kept on the balance as a discrepancy; nothing is deleted or rewritten.
+    public (BalanceSnapshot Balance, Money? Difference) Reconcile(AccountId account, decimal balance)
+    {
+        var expected = Expected(account);
+        var confirmed = Cents(balance);
+        var difference = expected is { } e ? confirmed - e : (Money?)null;
+        var snapshot = new BalanceSnapshot(account, confirmed, Provenance.UserConfirmed(Today),
+            difference switch
+            {
+                null => ReconciliationState.Unreconciled,
+                { IsZero: true } => ReconciliationState.Reconciled,
+                _ => ReconciliationState.Discrepancy,
+            },
+            RecordedAt: clock.GetUtcNow());
+        data.RecordBalance(snapshot);
+        return (snapshot, difference);
     }
 
     public SavingsGoal AddGoal(string name, decimal target, decimal saved = 0m, DateOnly? by = null)
