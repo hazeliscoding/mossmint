@@ -1,0 +1,178 @@
+name: Release
+
+# A pushed v* tag tests and packs Mossmint for Windows and creates a draft GitHub Release with the installer,
+# the portable zip, the Velopack update files and SHA256SUMS. A tag with a pre-release suffix, such as
+# v0.4.0-beta.1, packs to the "win-beta" channel and becomes a GitHub pre-release.
+# Run it by hand to build the same artifacts without signing or publishing anything.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to build (nothing is signed or published, and no delta packages are made)
+        required: true
+        default: 0.0.1
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  PACK_ID: Mossmint.Desktop
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      # "-beta" for a pre-release version, appended to the Velopack channel name; empty for stable.
+      suffix: ${{ steps.version.outputs.suffix }}
+    steps:
+      - id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; else version="$INPUT_VERSION"; fi
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then echo "Not a version: $version"; exit 1; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then echo "suffix=-beta" >> "$GITHUB_OUTPUT"; else echo "suffix=" >> "$GITHUB_OUTPUT"; fi
+
+  windows:
+    needs: version
+    runs-on: windows-latest
+    # Tag builds run in the release environment, whose variables let this job sign in to Azure Artifact Signing.
+    # Manual runs have no environment, so they build unsigned. Signing switches on only when the variables exist.
+    environment: ${{ github.ref_type == 'tag' && 'release' || '' }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      CHANNEL: win${{ needs.version.outputs.suffix }}
+      SIGN: ${{ vars.AZURE_CLIENT_ID != '' && vars.ARTIFACT_SIGNING_ENDPOINT != '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Private-file guard
+        shell: pwsh
+        run: ./build/check-private-files.ps1 -Paths (git ls-files)
+      - run: dotnet restore --locked-mode
+      - run: dotnet tool restore
+      - run: dotnet build -c Release --no-restore -p:Version=${{ env.VERSION }}
+      - run: dotnet test -c Release --no-build
+      - name: Publish self-contained win-x64
+        run: dotnet publish src/Mossmint.Desktop -c Release -r win-x64 --self-contained true -p:RestoreLockedMode=true -p:Version=${{ env.VERSION }} -o publish
+      - name: Refuse to ship data files
+        shell: pwsh
+        run: |
+          $data = Get-ChildItem publish -Recurse -Include *.xlsx, *.xlsm, *.xls, *.csv, *.db, *.sqlite, *.mmbak
+          if ($data) { throw "The publish folder contains data files: $($data.FullName -join ', ')" }
+      - name: Download the previous release for delta updates
+        # Only tag builds make deltas; a manual run's version may be lower than the latest release, which vpk refuses.
+        if: github.ref_type == 'tag'
+        continue-on-error: true
+        shell: bash
+        run: dotnet vpk download github --repoUrl https://github.com/${{ github.repository }} --channel "$CHANNEL" $([[ "$CHANNEL" == *-beta ]] && echo --pre) --outputDir releases --token ${{ github.token }}
+      - name: Sign in to Azure for code signing
+        if: env.SIGN == 'true'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Write the Artifact Signing metadata
+        if: env.SIGN == 'true'
+        shell: pwsh
+        env:
+          ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+          PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+        run: |
+          [ordered]@{ Endpoint = $env:ENDPOINT; CodeSigningAccountName = $env:ACCOUNT; CertificateProfileName = $env:PROFILE } |
+            ConvertTo-Json | Out-File -Encoding utf8NoBOM "$env:RUNNER_TEMP/signing.json"
+      - name: Pack with Velopack
+        shell: bash
+        run: |
+          sign=()
+          if [ "$SIGN" = "true" ]; then sign=(--azureTrustedSignFile "$RUNNER_TEMP/signing.json"); fi
+          dotnet vpk pack --packId "$PACK_ID" --packVersion "$VERSION" --packDir publish \
+            --mainExe Mossmint.Desktop.exe --packTitle Mossmint --packAuthors "Hazel Granados" \
+            --icon src/Mossmint.Desktop/Assets/mossmint.ico --channel "$CHANNEL" --outputDir releases "${sign[@]}"
+      - name: Check the installer's signature
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+            Where-Object FullName -like '*\x64\*' | Sort-Object FullName -Descending | Select-Object -First 1
+          & $signtool.FullName verify /pa /v "releases\$env:PACK_ID-$env:CHANNEL-Setup.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Mossmint-Setup.exe isn't signed" }
+      - name: Smoke test the packaged app
+        shell: pwsh
+        run: |
+          Expand-Archive "releases\$env:PACK_ID-$env:CHANNEL-Portable.zip" portable
+          $exe = Get-ChildItem portable -Recurse -Filter Mossmint.Desktop.exe | Where-Object FullName -like '*\current\*' | Select-Object -First 1
+          if (-not $exe) { throw "The portable package has no app" }
+
+          # ADR-0001: the build that ships must prove profiles are encrypted, fail closed and carry one SQLite binary.
+          $check = Start-Process $exe.FullName -ArgumentList "--verify-encryption", "$env:RUNNER_TEMP\self-check.json" -Wait -PassThru -NoNewWindow
+          Get-Content "$env:RUNNER_TEMP\self-check.json"
+          if ($check.ExitCode -ne 0) { throw "The packaged app failed its encryption self-check" }
+
+          # The app must start and stay up over an empty, throwaway data root.
+          $env:MOSSMINT_DATA_ROOT = "$env:RUNNER_TEMP\mossmint-data"
+          $app = Start-Process $exe.FullName -PassThru
+          Start-Sleep -Seconds 20
+          if ($app.HasExited) { throw "Mossmint exited early with code $($app.ExitCode)" }
+          Stop-Process -Id $app.Id
+      - name: Collect this version's files
+        shell: bash
+        run: |
+          mkdir dist
+          ls -la releases
+          cp "releases/${PACK_ID}-${CHANNEL}-Setup.exe" dist/Mossmint-Setup.exe
+          cp "releases/${PACK_ID}-${CHANNEL}-Portable.zip" dist/Mossmint-win-x64-Portable.zip
+          cp "releases/releases.${CHANNEL}.json" dist/
+          # The legacy RELEASES index is "RELEASES" on the default channel and "RELEASES-<channel>" on others.
+          if [ -f releases/RELEASES ]; then cp releases/RELEASES dist/; fi
+          if [ -f "releases/RELEASES-${CHANNEL}" ]; then cp "releases/RELEASES-${CHANNEL}" dist/; fi
+          cp releases/${PACK_ID}-${VERSION}-*.nupkg dist/
+          ls -la dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-windows
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: [version, windows]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist
+      - name: Write SHA256SUMS
+        working-directory: dist
+        run: |
+          sha256sum -- * > "$RUNNER_TEMP/SHA256SUMS"
+          mv "$RUNNER_TEMP/SHA256SUMS" SHA256SUMS
+          cat SHA256SUMS
+      - name: Create a draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+          SUFFIX: ${{ needs.version.outputs.suffix }}
+        run: |
+          ls -la dist
+          prerelease=()
+          if [ -n "$SUFFIX" ]; then prerelease=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --draft "${prerelease[@]}" --title "Mossmint $VERSION" --generate-notes
