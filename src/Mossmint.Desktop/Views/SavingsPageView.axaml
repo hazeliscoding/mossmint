@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.SavingsPageView"
+             x:DataType="vm:SavingsPageViewModel">
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+    <DockPanel>
+      <Button DockPanel.Dock="Right" Content="Add goal" VerticalAlignment="Bottom" Command="{Binding StartAddCommand}" IsVisible="{Binding !IsAdding}" />
+      <StackPanel Spacing="4">
+        <TextBlock Classes="page-title" Text="{Binding Title}" />
+        <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+      </StackPanel>
+    </DockPanel>
+
+    <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+    <ItemsControl ItemsSource="{Binding Plan}" Margin="0,0,-12,0">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Columns="3" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:PlanTile">
+          <Border Classes="card" Margin="0,0,12,0" Padding="16,14">
+            <StackPanel Spacing="6">
+              <DockPanel>
+                <c:StatusBadge DockPanel.Dock="Right" Tone="{Binding Tone}" Text="{Binding Status}" VerticalAlignment="Top" />
+                <TextBlock Classes="label" Text="{Binding Label}" Margin="0,0,8,0" />
+              </DockPanel>
+              <TextBlock Classes="mono" FontSize="24" Text="{Binding Value}" />
+              <TextBlock Classes="compact secondary" Text="{Binding Note}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Border Classes="card" Padding="20,16" IsVisible="{Binding IsAdding}">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="card-title" Text="Add a savings goal" />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <StackPanel Spacing="4" Width="220">
+            <TextBlock Classes="field-label" Text="Name" />
+            <TextBox Text="{Binding GoalName}" AutomationProperties.Name="Goal name" />
+          </StackPanel>
+          <StackPanel Spacing="4" Width="150">
+            <TextBlock Classes="field-label" Text="Goal amount" />
+            <TextBox Classes="money" Text="{Binding GoalTarget}" PlaceholderText="0.00" AutomationProperties.Name="Goal amount" />
+          </StackPanel>
+          <StackPanel Spacing="4" Width="150">
+            <TextBlock Classes="field-label" Text="Saved so far" />
+            <TextBox Classes="money" Text="{Binding GoalSaved}" PlaceholderText="0.00" AutomationProperties.Name="Saved so far" />
+          </StackPanel>
+          <StackPanel Spacing="4" Width="180">
+            <TextBlock Classes="field-label" Text="By (optional)" />
+            <CalendarDatePicker SelectedDate="{Binding GoalBy}" HorizontalAlignment="Stretch" AutomationProperties.Name="Reach it by" />
+          </StackPanel>
+        </StackPanel>
+        <TextBlock Classes="error" Text="{Binding FormError}" TextWrapping="Wrap" IsVisible="{Binding FormError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="primary" Content="Save goal" Command="{Binding SaveGoalCommand}" />
+          <Button Classes="ghost" Content="Cancel" Command="{Binding CancelFormsCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding !HasGoals}">
+      <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                 Text="No goals yet. A goal is something the savings are for, like a car fund or a trip. Give it a date and Mossmint shows what each paycheck needs to set aside." />
+    </Border>
+
+    <ItemsControl ItemsSource="{Binding Goals}" IsVisible="{Binding HasGoals}" Margin="0,0,-12,0">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Columns="3" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:GoalCard">
+          <Border Classes="card" Margin="0,0,12,12" Padding="16,14" VerticalAlignment="Top" AutomationProperties.Name="{Binding AccessibleName}">
+            <StackPanel Spacing="8">
+              <DockPanel>
+                <c:StatusBadge DockPanel.Dock="Right" Tone="{Binding Tone}" Text="{Binding Status}" VerticalAlignment="Top" />
+                <StackPanel Spacing="2" Margin="0,0,8,0">
+                  <TextBlock Classes="card-title" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                  <TextBlock Classes="compact secondary" Text="{Binding When}" />
+                </StackPanel>
+              </DockPanel>
+              <ProgressBar Minimum="0" Maximum="1" Value="{Binding Share}" Height="6" MinHeight="6" AutomationProperties.Name="{Binding Progress}" />
+              <TextBlock Classes="mono" Text="{Binding Progress}" TextWrapping="Wrap" />
+              <TextBlock Classes="compact faint" Text="{Binding Left}" TextWrapping="Wrap" />
+              <TextBlock Classes="compact" Text="{Binding Pace}" TextWrapping="Wrap" />
+              <Button Classes="ghost" Content="Update saved" HorizontalAlignment="Left" AutomationProperties.Name="{Binding Name, StringFormat='Update saved for {0}'}"
+                      Command="{Binding $parent[UserControl].((vm:SavingsPageViewModel)DataContext).StartUpdateCommand}" CommandParameter="{Binding}" />
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Border Classes="card" Padding="20,16" IsVisible="{Binding IsUpdating}">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="card-title" Text="{Binding UpdateTitle}" />
+        <StackPanel Spacing="4" Width="180" HorizontalAlignment="Left">
+          <TextBlock Classes="field-label" Text="Saved so far" />
+          <TextBox Classes="money" Text="{Binding SavedText}" PlaceholderText="0.00" AutomationProperties.Name="Saved so far" />
+        </StackPanel>
+        <TextBlock Classes="error" Text="{Binding FormError}" TextWrapping="Wrap" IsVisible="{Binding FormError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="primary" Content="Save" Command="{Binding SaveSavedCommand}" />
+          <Button Classes="ghost" Content="Cancel" Command="{Binding CancelFormsCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <StackPanel Spacing="6" IsVisible="{Binding Pace, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <c:StatusBadge Tone="Warning" Text="Goals need more" HorizontalAlignment="Left" IsVisible="{Binding IsPaceShort}" />
+      <TextBlock Classes="compact secondary" MaxWidth="760" HorizontalAlignment="Left" Text="{Binding Pace}" TextWrapping="Wrap" />
+    </StackPanel>
+  </StackPanel>
+</UserControl>

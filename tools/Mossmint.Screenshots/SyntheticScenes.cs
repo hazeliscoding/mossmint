@@ -3,6 +3,7 @@ using Mossmint.Application.Setup;
 using Mossmint.Desktop.Services;
 using Mossmint.Desktop.ViewModels;
 using Mossmint.Desktop.Views;
+using Mossmint.Domain.Accounts;
 using Mossmint.Persistence.Backups;
 using Mossmint.Persistence.Profiles;
 using Mossmint.Persistence.Security;
@@ -167,6 +168,10 @@ internal sealed class SyntheticScenes : IDisposable
         entry.AddLoan(new LoanEntry("Car loan", 9_800m, asOf.AddDays(-9), 7.4m, 285m, 28), checking.Id);
         entry.AddCard(new CardEntry("Card", 2_300m, asOf.AddDays(-18), 24.99m, 150m, 21, 3), checking.Id);
         entry.SetSavings(150m, 300m);
+        entry.AddCashAccount("Savings", 1_850m, asOf.AddDays(-8), AccountKind.Savings);
+        entry.AddGoal("Car fund", 3_000m, 1_250m, new DateOnly(2027, 5, 1));
+        entry.AddGoal("Holiday trip", 900m, 120m, new DateOnly(2026, 12, 18));
+        entry.AddGoal("New laptop", 1_400m, 1_400m);
         return session;
     }
 

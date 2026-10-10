@@ -90,6 +90,30 @@ public class ForecastPageTests
     }
 
     [AvaloniaFact]
+    public async Task Savings_goals_can_be_added_and_updated()
+    {
+        using var app = await Unlocked();
+        app.ViewModel.Shell.Navigate(Destination.Savings);
+        var savings = (SavingsPageViewModel)app.ViewModel.Shell.CurrentPage!;
+        savings.HasGoals.Should().BeFalse();
+
+        savings.StartAddCommand.Execute(null);
+        (savings.GoalName, savings.GoalTarget) = ("Trip", "lots");
+        savings.SaveGoalCommand.Execute(null);
+        savings.FormError.Should().Contain("Goal amount");
+
+        (savings.GoalTarget, savings.GoalSaved) = ("900", "120");
+        savings.SaveGoalCommand.Execute(null);
+
+        var trip = savings.Goals.Single();
+        (trip.Status, savings.IsAdding).Should().Be(("No date", false));
+        savings.StartUpdateCommand.Execute(trip);
+        savings.SavedText = "900.00";
+        savings.SaveSavedCommand.Execute(null);
+        (savings.Goals.Single().Status, savings.IsUpdating).Should().Be(("Reached", false));
+    }
+
+    [AvaloniaFact]
     public async Task Without_a_cash_account_the_forecast_pages_say_what_to_add()
     {
         using var app = await Unlocked();
