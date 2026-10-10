@@ -1,10 +1,14 @@
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Mossmint.Application.Setup;
@@ -105,6 +109,25 @@ public partial class AccessibilityTests
         string.Join(Environment.NewLine, unnamed).Should().BeEmpty();
     }
 
+    [AvaloniaTheory]
+    [InlineData("Dark")]
+    [InlineData("Light")]
+    public void Keyboard_focus_draws_a_ring_around_the_control(string theme)
+    {
+        using var app = new Harness();
+
+        RingPixels(Variant(theme), withRing: true).Should().BeGreaterThan(100);
+    }
+
+    [AvaloniaFact]
+    public void The_ring_check_sees_a_missing_ring()
+    {
+        using var app = new Harness();
+
+        // Positive control: the same button with no focus adorner draws nothing outside itself.
+        RingPixels(ThemeVariant.Dark, withRing: false).Should().Be(0);
+    }
+
     [AvaloniaFact]
     public void The_name_check_catches_an_unnamed_control()
     {
@@ -130,6 +153,55 @@ public partial class AccessibilityTests
     }
 
     private sealed record Sample(string Name);
+
+    // Accent-coloured pixels just outside a button focused from the keyboard: the outer ring.
+    private static int RingPixels(ThemeVariant theme, bool withRing)
+    {
+        var button = new Button { Content = "Save", Margin = new Thickness(40) };
+        if (!withRing)
+        {
+            button.FocusAdorner = null;
+        }
+
+        var window = new Window { Width = 300, Height = 200, RequestedThemeVariant = theme, Content = button };
+        window.Show();
+        button.Focus(NavigationMethod.Tab);
+        Harness.Pump();
+
+        using var frame = window.CaptureRenderedFrame()!;
+        var accent = Colour("Accent", theme);
+        var bounds = button.Bounds.Translate(button.TranslatePoint(default, window)!.Value - button.Bounds.Position);
+        var pixels = new byte[frame.PixelSize.Width * frame.PixelSize.Height * 4];
+        var pinned = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+        try
+        {
+            frame.CopyPixels(new PixelRect(frame.PixelSize), pinned.AddrOfPinnedObject(), pixels.Length, frame.PixelSize.Width * 4);
+        }
+        finally
+        {
+            pinned.Free();
+        }
+
+        var (r, b) = frame.Format == PixelFormats.Rgba8888 ? (0, 2) : (2, 0);
+        var count = 0;
+        for (var y = 0; y < frame.PixelSize.Height; y++)
+        {
+            for (var x = 0; x < frame.PixelSize.Width; x++)
+            {
+                var i = ((y * frame.PixelSize.Width) + x) * 4;
+                var outside = !bounds.Contains(new Point(x + 0.5, y + 0.5)) && bounds.Inflate(6).Contains(new Point(x + 0.5, y + 0.5));
+                if (outside && Near(pixels[i + r], accent.R) && Near(pixels[i + 1], accent.G) && Near(pixels[i + b], accent.B))
+                {
+                    count++;
+                }
+            }
+        }
+
+        window.Close();
+        return count;
+
+        static bool Near(byte a, byte b) => Math.Abs(a - b) <= 12;
+    }
 
     private static IEnumerable<string> Unnamed(Harness app, string where)
     {

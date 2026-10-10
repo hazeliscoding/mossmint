@@ -12,8 +12,10 @@ public static class TestAppBuilder
     {
         // Belt and braces: even the app's own container points at a throwaway folder.
         Environment.SetEnvironmentVariable(Services.DataRoot.Variable, Path.Combine(Path.GetTempPath(), "mossmint-ui-tests", "app-root"));
+        // Skia draws real pixels, so a test can see what a user would, such as the focus ring.
         return AppBuilder.Configure<App>()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions())
+            .UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
             .WithMossmintFonts();
     }
 }
