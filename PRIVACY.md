@@ -21,7 +21,7 @@ Mossmint is built so that your financial data never has to leave your computer. 
 
 ## Network use you can opt into
 
-- **Update checks** (planned): off unless you turn them on. A check downloads release information from GitHub and sends nothing about you or your data.
+- **Update checks:** only when you click **Check now** in Settings. A check asks GitHub for the list of Mossmint releases and sends nothing about you or your data; GitHub sees your IP address. Details: [ADR-0003](docs/architecture/ADR-0003-update-check.md).
 - **Bank connections** (after the MVP, optional): each provider will document what it shares, where your credentials are kept, how to disconnect, and how to erase what was downloaded. Some providers process your bank data on their own servers; Mossmint will say so before you connect. See [the connector ADR](docs/connectors/ADR-provider-security.md).
 
 ## Exports

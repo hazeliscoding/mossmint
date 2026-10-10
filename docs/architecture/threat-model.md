@@ -44,7 +44,7 @@ flowchart LR
     end
 
     subgraph net["Network: off unless the user opts in"]
-        releases["GitHub Releases<br/>update check, M6+"]
+        releases["GitHub Releases<br/>Check now in Settings"]
         provider["Connector provider or relay<br/>M7+"]
     end
 
@@ -88,6 +88,7 @@ flowchart TB
 | Forecast reports a guess as fact | Provenance on every figure; *needs confirmation* and *never pays off* results | ADR-0002, M1 |
 | Malicious dependency or action | Central version pins, lock files, NuGet audit, Dependabot, actions pinned by SHA, checksummed tools | M0 |
 | Tampered installer | SHA-256 checksums now; code signing and signed update feed before public release | M6 |
+| Tampered update | Only this repo's published GitHub Releases, over TLS; Velopack checks each package's SHA-256 against the release feed; code signing to follow | ADR-0003, M6 |
 | Connector credential leak | Stored only in the encrypted profile, redacted everywhere, revocable | Connector ADR, M7 |
 
 ## Open items
