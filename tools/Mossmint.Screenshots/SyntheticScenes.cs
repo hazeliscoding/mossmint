@@ -139,7 +139,15 @@ internal sealed class SyntheticScenes : IDisposable
             new BackupService(locations, TimeProvider.System),
             new NoDialogs(workbooks ?? []),
             new ProfileContext(),
-            TimeProvider.System);
+            new SyntheticClock());
+    }
+
+    // Screens read "today" from the clock, so screenshots pin it to the synthetic profile's date.
+    private sealed class SyntheticClock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(SyntheticProfile.Today.ToDateTime(new TimeOnly(9, 0)), TimeSpan.Zero);
+
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     }
 
     // The same synthetic numbers as the engine preview (samples/Mossmint.Samples).
