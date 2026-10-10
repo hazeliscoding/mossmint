@@ -49,9 +49,6 @@ public enum SpendingScenario
 
 public sealed record OneOffExpense(DateOnly Date, string Label, Money Amount);
 
-// A bill occurrence already paid, by the date its schedule produced.
-public sealed record PaidBill(BillId Bill, DateOnly Nominal);
-
 // An obligation in the horizon whose amount nobody knows yet.
 public sealed record UnvaluedObligation(BillId Bill, string Name, DateOnly Date);
 

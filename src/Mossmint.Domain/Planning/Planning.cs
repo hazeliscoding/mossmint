@@ -6,6 +6,9 @@ namespace Mossmint.Domain.Planning;
 
 public readonly record struct BillId(Guid Value);
 
+// A bill occurrence already paid, by the date its schedule produced.
+public sealed record PaidBill(BillId Bill, DateOnly Nominal);
+
 public readonly record struct IncomeId(Guid Value);
 
 public readonly record struct GoalId(Guid Value);

@@ -1,3 +1,5 @@
+using Mossmint.Domain.Planning;
+
 namespace Mossmint.Domain.Accounts;
 
 public readonly record struct TransactionId(Guid Value);
@@ -12,7 +14,8 @@ public enum TransactionStatus
 }
 
 // Amount is signed the way the account reports it: deposits and card charges
-// are positive; withdrawals and card payments are negative.
+// are positive; withdrawals and card payments are negative. Pays links a payment
+// to the bill occurrence it settles.
 public sealed record Transaction(
     TransactionId Id,
     AccountId Account,
@@ -23,7 +26,9 @@ public sealed record Transaction(
     Provenance Provenance,
     DateOnly? PostedDate = null,
     string? Category = null,
-    TransferGroupId? TransferGroup = null);
+    TransferGroupId? TransferGroup = null,
+    PaidBill? Pays = null,
+    DateTimeOffset? RecordedAt = null);
 
 public static class Transfers
 {
