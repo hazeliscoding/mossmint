@@ -66,6 +66,14 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - **Each import takes an encrypted snapshot first**, and the five newest are kept.
 - **Handoff profile:** produced on 2026-10-09 with `tools/Mossmint.ImportTool`, verified by restoring its backup with both secrets. It's delivered as the backup file, with the secrets sent separately.
 
+## Decisions (2026-10-09, releases)
+
+- **Releases follow the Prompuff process,** moved up from M6 so the handoff profile has an app to open (owner's request). The version bump lands on `main` as `chore(release): x.y.z`. A `v*` tag on that commit starts the release workflow, which tests, packs, smoke-tests the packaged app (the encryption self-check included) and opens a **draft** GitHub Release with `SHA256SUMS`. The owner reads the draft and publishes it.
+- **Release tags can't be moved or deleted** (the `release tags` ruleset). Only `v*` tags can use the `release` environment.
+- **Versions follow milestones until 1.0:** 0.3.0 is the first release, with M0–M3. A tag with a pre-release suffix (`v0.4.0-beta.1`) packs to the `win-beta` channel and becomes a GitHub pre-release.
+- **Release files:** `Mossmint-Setup.exe`, `Mossmint-win-x64-Portable.zip`, the Velopack update files and `SHA256SUMS`.
+- **Signing** uses Azure Artifact Signing the way Prompuff does, and switches on once the `release` environment has the Azure variables and a federated credential trusts it. Until then builds are unsigned, and SmartScreen warns on first launch.
+
 ## M0: Skeleton and guardrails
 
 - [x] Repo files: `README`, `ROADMAP`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `.editorconfig`, `.gitattributes`, `.gitignore`.
@@ -144,7 +152,8 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 
 ## M6: Windows release
 
-- [ ] Velopack installer, release CI on tags, checksums, signing if practical.
+- [x] Velopack installer, release CI on tags, checksums (moved up for the handoff; see the releases decisions).
+- [ ] Code signing through Azure Artifact Signing.
 - [ ] Upgrade test: install, create a profile, back up, update, restore.
 - [ ] User docs and a sample-data generator.
 

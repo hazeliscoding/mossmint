@@ -57,6 +57,10 @@ dotnet run --project tools/Mossmint.Screenshots -- artifacts/screenshots
 - Larger decisions get a short ADR in `docs/architecture/`, and a dated line in `ROADMAP.md`.
 - UI changes: include before and after screenshots from the headless renderer, in both themes.
 
+## How releases are cut
+
+The owner cuts releases. A `chore(release): x.y.z` commit sets the version, and a `v*` tag on it starts [the release workflow](.github/workflows/release.yml). The workflow packs Mossmint with Velopack, smoke-tests the packaged app, and opens a draft GitHub Release with `SHA256SUMS`. The owner reads the draft and publishes it. The README's Releases section and `release.yml` are the source of truth.
+
 ## Reporting security issues
 
 See [SECURITY.md](SECURITY.md). Please report privately, not in a public issue.

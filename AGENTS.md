@@ -71,6 +71,7 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`, `test:`, `ci:`, `build:`, `refactor:`). Keep each commit atomic and use a scope when it helps (`feat(engine): …`).
 - **No AI attribution** in commits or PRs: no `Co-Authored-By` trailers, no "Generated with" lines, no session links.
 - **Checks:** automate acceptance checks. Every check for an absence gets a positive control.
+- **Releases:** the version bump in `Directory.Build.props` is its own commit, `chore(release): x.y.z`. Once CI passes, tag that commit on `main` and push the tag; the workflow opens a draft release, and the owner publishes it. `v*` tags can't be moved or deleted. Release notes and Discord posts never mention private data.
 - **Docs:** short. Prefer editing `ROADMAP.md` over new planning documents.
 - **Diagrams** are Mermaid (flowcharts, sequence, state, ER) in fenced `mermaid` blocks, never ASCII art.
 - **Comments** explain why, not what: a constraint, a financial rule and its source, a workaround and its cause. No boilerplate XML docs, no commented-out code.
