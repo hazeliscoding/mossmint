@@ -17,7 +17,7 @@ Use theme resources (`DynamicResource`), never literals in views. Dark is the fi
 | Selected (bg-4) | `#2E4239` | `#E2EAE3` | pressed, current nav |
 | Inset | `#0C1411` | `#F1F3EE` | code / path wells |
 | Border 1/2/3 | `#243229` / `#304439` / `#43594C` | `#E3E6DF` / `#D1D7CF` / `#B2BDB4` | hairline / default / strong |
-| Text 1/2/3/4 | `#F3F5F0` / `#B4C1B9` / `#7E8F85` / `#51625A` | `#202B25` / `#536159` / `#7A877F` / `#AEB8B1` | primary / secondary / faint / disabled |
+| Text 1/2/3/4 | `#F3F5F0` / `#B4C1B9` / `#8F9F96` / `#51625A` | `#202B25` / `#536159` / `#647169` / `#AEB8B1` | primary / secondary / faint / disabled |
 | Accent (moss) | `#96CCA7` | `#346B4F` | primary actions, selection, focus, forecast line |
 | Lavender | `#BBA8E4` | `#7867A8` | *Estimated / Scheduled / Projected* and inflows |
 | Healthy | `#8ED39F` | `#2F7D55` | Confirmed, covered, funded |

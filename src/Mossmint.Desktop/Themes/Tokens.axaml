@@ -18,7 +18,7 @@
 
       <SolidColorBrush x:Key="TextPrimary" Color="#F3F5F0" />
       <SolidColorBrush x:Key="TextSecondary" Color="#B4C1B9" />
-      <SolidColorBrush x:Key="TextFaint" Color="#7E8F85" />
+      <SolidColorBrush x:Key="TextFaint" Color="#8F9F96" />
       <SolidColorBrush x:Key="TextDisabled" Color="#51625A" />
       <SolidColorBrush x:Key="TextInverse" Color="#111A17" />
 
@@ -73,7 +73,7 @@
 
       <SolidColorBrush x:Key="TextPrimary" Color="#202B25" />
       <SolidColorBrush x:Key="TextSecondary" Color="#536159" />
-      <SolidColorBrush x:Key="TextFaint" Color="#7A877F" />
+      <SolidColorBrush x:Key="TextFaint" Color="#647169" />
       <SolidColorBrush x:Key="TextDisabled" Color="#AEB8B1" />
       <SolidColorBrush x:Key="TextInverse" Color="#FFFFFF" />
 
