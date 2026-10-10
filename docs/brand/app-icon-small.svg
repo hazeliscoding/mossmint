@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 16 16">
+  <title>Mossmint (16 to 32 px)</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2C5947"/>
+      <stop offset="1" stop-color="#13251E"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="3" y1="5" x2="13" y2="15" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2DEA6"/>
+      <stop offset="1" stop-color="#B8924A"/>
+    </linearGradient>
+    <linearGradient id="field" x1="4" y1="6" x2="12" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C9EAD3"/>
+      <stop offset="1" stop-color="#8DC5A1"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#tile)" d="M 10.24 0 C 12.26 0 13.26 0 14.03 0.39 A 3.6 3.6 0 0 1 15.61 1.97 C 16 2.74 16 3.74 16 5.76 L 16 10.24 C 16 12.26 16 13.26 15.61 14.03 A 3.6 3.6 0 0 1 14.03 15.61 C 13.26 16 12.26 16 10.24 16 L 5.76 16 C 3.74 16 2.74 16 1.97 15.61 A 3.6 3.6 0 0 1 0.39 14.03 C 0 13.26 0 12.26 0 10.24 L 0 5.76 C 0 3.74 0 2.74 0.39 1.97 A 3.6 3.6 0 0 1 1.97 0.39 C 2.74 0 3.74 0 5.76 0 Z"/>
+  <circle cx="8" cy="10.75" r="5" fill="#7A5C26"/>
+  <circle cx="8" cy="10" r="5" fill="url(#rim)"/>
+  <circle cx="8" cy="10" r="4" fill="url(#field)"/>
+  <path fill="#2A7449" d="M 7.5 6 H 8.5 V 11 H 7.5 Z"/>
+  <path fill="#5DBE7C" d="M 7.5 6.6 C 6.19 7.68 3.54 6.67 2.2 3.6 C 5.72 2.82 7.95 4.57 7.5 6.6 Z"/>
+  <path fill="#0E3F26" fill-opacity=".35" d="M 7.5 6.6 C 5.83 5.43 4.07 4.43 2.2 3.6 C 3.54 6.67 6.19 7.68 7.5 6.6 Z"/>
+  <path fill="#74CF8F" d="M 8.5 6.2 C 7.27 3.83 9.34 1.15 13.8 1.2 C 13.18 5.22 10.38 7.13 8.5 6.2 Z"/>
+  <path fill="#0E3F26" fill-opacity=".35" d="M 8.5 6.2 C 10.06 4.32 11.83 2.65 13.8 1.2 C 13.18 5.22 10.38 7.13 8.5 6.2 Z"/>
+</svg>

@@ -13,7 +13,7 @@ using Mossmint.Screenshots.EnginePreview;
 // Skia renderer. Screens only ever show synthetic data, from throwaway profiles
 // in a temporary folder; the app's own data root is pointed there as well.
 // Usage: dotnet run --project tools/Mossmint.Screenshots -- [out-dir] [screen ...]
-//        dotnet run --project tools/Mossmint.Screenshots -- --icons src/Mossmint.Desktop/Assets
+//        dotnet run --project tools/Mossmint.Screenshots -- --icons src/Mossmint.Desktop/Assets [docs/brand]
 Environment.SetEnvironmentVariable(Mossmint.Desktop.Services.DataRoot.Variable, Path.Combine(Path.GetTempPath(), "mossmint-screenshots", "app-root"));
 AppBuilder.Configure<App>()
     .UseSkia()
@@ -21,9 +21,10 @@ AppBuilder.Configure<App>()
     .WithMossmintFonts()
     .SetupWithoutStarting();
 
-if (args.Length == 2 && args[0] == "--icons")
+if (args.Length is 2 or 3 && args[0] == "--icons")
 {
-    foreach (var file in AppIcon.Write(Path.GetFullPath(args[1])))
+    var brandDir = args.Length == 3 ? Path.GetFullPath(args[2]) : null;
+    foreach (var file in AppIcon.Write(Path.GetFullPath(args[1]), brandDir))
     {
         Console.WriteLine(file);
     }

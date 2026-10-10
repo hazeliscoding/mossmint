@@ -1,5 +1,116 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 1024 1024">
   <title>Mossmint</title>
-  <rect width="16" height="16" rx="3.2" fill="#111A17"/>
-  <path fill="#96CCA7" fill-rule="evenodd" d="M8 2A6 6 0 1 1 8 14A6 6 0 1 1 8 2Z M7.2 12V9.6C5.44 9.6 4 8.16 4 6.4C6.24 6.4 8 7.28 8 8.4C8 6.4 9.44 4.8 11.2 4.8C11.2 7.2 10.16 8.8 8.8 8.8V12Z"/>
+  <defs>
+    <path id="tile" d="M 627.4 100 C 731.2 100 783.1 100 822.8 120.2 A 185.4 185.4 0 0 1 903.8 201.2 C 924 240.9 924 292.8 924 396.6 L 924 627.4 C 924 731.2 924 783.1 903.8 822.8 A 185.4 185.4 0 0 1 822.8 903.8 C 783.1 924 731.2 924 627.4 924 L 396.6 924 C 292.8 924 240.9 924 201.2 903.8 A 185.4 185.4 0 0 1 120.2 822.8 C 100 783.1 100 731.2 100 627.4 L 100 396.6 C 100 292.8 100 240.9 120.2 201.2 A 185.4 185.4 0 0 1 201.2 120.2 C 240.9 100 292.8 100 396.6 100 Z"/>
+    <path id="stem" d="M 493 624 C 486 555.2 498 495 503 452 L 529 452 C 524 495 518 555.2 531 624 Q 512 637.3 493 624 Z"/>
+    <path id="big-leaf" d="M 522 458 C 444.9 345.3 528.9 208.4 748 198 C 738 390.2 614.1 492.4 522 458 Z"/>
+    <path id="small-leaf" d="M 506 466 C 450.6 506.9 350.2 462.6 310 336 C 457.7 300.5 537.7 375.7 506 466 Z"/>
+    <clipPath id="tile-clip"><use xlink:href="#tile"/></clipPath>
+    <clipPath id="edge-clip"><circle cx="512" cy="624" r="228"/></clipPath>
+    <clipPath id="big-leaf-clip"><use xlink:href="#big-leaf"/></clipPath>
+    <clipPath id="small-leaf-clip"><use xlink:href="#small-leaf"/></clipPath>
+    <!-- Blur radius R in AppIcon.cs is stdDeviation 0.29R + 0.5 here. -->
+    <filter id="blur-tile" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="6.3"/></filter>
+    <filter id="blur-coin" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="13.2"/></filter>
+    <filter id="blur-contact" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="3.4"/></filter>
+    <filter id="blur-plant" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5.7"/></filter>
+    <linearGradient id="tile-fill" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2C5947"/>
+      <stop offset="1" stop-color="#12231C"/>
+    </linearGradient>
+    <radialGradient id="tile-glow" cx="300" cy="150" r="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A8DDB8" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#A8DDB8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tile-rim" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF" stop-opacity=".3"/>
+      <stop offset=".3" stop-color="#FFF" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#FFF" stop-opacity=".1"/>
+    </linearGradient>
+    <linearGradient id="coin-edge" x1="0" y1="596" x2="0" y2="852" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B08A45"/>
+      <stop offset="1" stop-color="#5A4219"/>
+    </linearGradient>
+    <!-- Light falls from the top left, so every coin bevel runs along this diagonal. -->
+    <linearGradient id="coin-rim" x1="284" y1="368" x2="740" y2="824" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8EBC2"/>
+      <stop offset=".5" stop-color="#DDBE7A"/>
+      <stop offset="1" stop-color="#9A7535"/>
+    </linearGradient>
+    <linearGradient id="coin-wall" xlink:href="#coin-rim">
+      <stop offset="0" stop-color="#8C6A2E"/>
+      <stop offset="1" stop-color="#F3E0AA"/>
+    </linearGradient>
+    <linearGradient id="coin-field" xlink:href="#coin-rim">
+      <stop offset="0" stop-color="#C2E6CE"/>
+      <stop offset="1" stop-color="#78B391"/>
+    </linearGradient>
+    <linearGradient id="coin-sweep" xlink:href="#coin-rim">
+      <stop offset=".3" stop-color="#FFF" stop-opacity="0"/>
+      <stop offset=".42" stop-color="#FFF" stop-opacity=".2"/>
+      <stop offset=".54" stop-color="#FFF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="coin-sheen" cx="432" cy="496" r="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#FFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sprout-hole" cx="512" cy="628" r="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#143A27" stop-opacity=".7"/>
+      <stop offset=".7" stop-color="#143A27" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#143A27" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="stem-fill" x1="490" y1="0" x2="534" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4A9A68"/>
+      <stop offset="1" stop-color="#1D5A39"/>
+    </linearGradient>
+    <linearGradient id="small-leaf-fill" x1="330" y1="330" x2="500" y2="490" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A3E6AE"/>
+      <stop offset=".55" stop-color="#4DB06E"/>
+      <stop offset="1" stop-color="#2E8752"/>
+    </linearGradient>
+    <linearGradient id="big-leaf-fill" x1="480" y1="210" x2="740" y2="470" xlink:href="#small-leaf-fill"/>
+    <linearGradient id="leaf-rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF" stop-opacity=".5"/>
+      <stop offset=".45" stop-color="#FFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <use xlink:href="#tile" transform="translate(0 10)" opacity=".25" filter="url(#blur-tile)"/>
+  <use xlink:href="#tile" fill="url(#tile-fill)"/>
+  <use xlink:href="#tile" fill="url(#tile-glow)"/>
+  <use xlink:href="#tile" fill="none" stroke="url(#tile-rim)" stroke-width="10" clip-path="url(#tile-clip)"/>
+
+  <circle cx="512" cy="640" r="228" opacity=".45" filter="url(#blur-coin)"/>
+  <circle cx="512" cy="624" r="224" opacity=".35" filter="url(#blur-contact)"/>
+
+  <!-- The coin lies on the tile, so its reeded edge shows below the face. -->
+  <circle cx="512" cy="624" r="228" fill="url(#coin-edge)"/>
+  <path clip-path="url(#edge-clip)" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="4" d="M 738.8 619.8 V 651.8 M 736.2 637.5 V 669.5 M 732.2 655 V 687 M 726.9 672.1 V 704.1 M 720.3 688.7 V 720.7 M 712.4 704.8 V 736.8 M 703.2 720.2 V 752.2 M 692.9 734.8 V 766.8 M 681.4 748.6 V 780.6 M 668.9 761.4 V 793.4 M 655.5 773.2 V 805.2 M 641.1 783.9 V 815.9 M 626 793.5 V 825.5 M 610.2 801.8 V 833.8 M 593.7 808.9 V 840.9 M 576.8 814.6 V 846.6 M 559.4 819 V 851 M 541.8 822 V 854 M 523.9 823.7 V 855.7 M 506 823.9 V 855.9 M 488.2 822.8 V 854.8 M 470.5 820.2 V 852.2 M 453 816.2 V 848.2 M 435.9 810.9 V 842.9 M 419.3 804.3 V 836.3 M 403.2 796.4 V 828.4 M 387.8 787.2 V 819.2 M 373.2 776.9 V 808.9 M 359.4 765.4 V 797.4 M 346.6 752.9 V 784.9 M 334.8 739.5 V 771.5 M 324.1 725.1 V 757.1 M 314.5 710 V 742 M 306.2 694.2 V 726.2 M 299.1 677.7 V 709.7 M 293.4 660.8 V 692.8 M 289 643.4 V 675.4 M 286 625.8 V 657.8"/>
+
+  <circle cx="512" cy="596" r="228" fill="url(#coin-rim)"/>
+  <path d="M 304.3 520.4 A 221 221 0 0 1 436.4 388.3" fill="none" stroke="#FFF" stroke-opacity=".7" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="512" cy="596" r="191.52" fill="url(#coin-wall)"/>
+  <circle cx="512" cy="596" r="182.4" fill="url(#coin-field)"/>
+  <circle cx="512" cy="596" r="182.4" fill="url(#coin-sheen)"/>
+  <circle cx="512" cy="596" r="182.4" fill="url(#coin-sweep)"/>
+  <circle cx="514" cy="598" r="159.6" fill="none" stroke="#FFF" stroke-opacity=".5" stroke-width="3"/>
+  <circle cx="512" cy="596" r="159.6" fill="none" stroke="#2E6B4A" stroke-opacity=".3" stroke-width="3"/>
+  <ellipse cx="512" cy="628" rx="38" ry="11" fill="url(#sprout-hole)"/>
+
+  <g transform="translate(14 20)" opacity=".4" filter="url(#blur-plant)">
+    <use xlink:href="#stem"/>
+    <use xlink:href="#big-leaf"/>
+    <use xlink:href="#small-leaf"/>
+  </g>
+  <use xlink:href="#stem" fill="url(#stem-fill)"/>
+
+  <use xlink:href="#small-leaf" fill="url(#small-leaf-fill)"/>
+  <path fill="#0E3F26" fill-opacity=".35" d="M 506 466 C 448.4 411 383.1 367.7 310 336 C 350.2 462.6 450.6 506.9 506 466 Z"/>
+  <use xlink:href="#small-leaf" fill="none" stroke="url(#leaf-rim)" stroke-width="8" clip-path="url(#small-leaf-clip)"/>
+  <path fill="#F0FBF2" fill-opacity=".7" d="M 495.8 461 C 458.4 424.4 408.1 386.6 352.9 356.4 C 409.7 384.3 461.5 419.6 499.7 455.1 Z"/>
+
+  <use xlink:href="#big-leaf" fill="url(#big-leaf-fill)"/>
+  <path fill="#0E3F26" fill-opacity=".35" d="M 522 458 C 582.2 358.2 657.6 271.5 748 198 C 738 390.2 614.1 492.4 522 458 Z"/>
+  <use xlink:href="#big-leaf" fill="none" stroke="url(#leaf-rim)" stroke-width="8" clip-path="url(#big-leaf-clip)"/>
+  <path fill="#F0FBF2" fill-opacity=".7" d="M 526.8 440.2 C 567.1 375.5 626.5 305.4 695.6 243.7 C 629.6 308.1 573.3 380.9 534.6 447 Z"/>
 </svg>
