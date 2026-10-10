@@ -28,8 +28,28 @@ public sealed record ForecastEvent(string Label, Money Amount, bool IsInflow, Co
 
 public sealed record ForecastDay(DateOnly Date, Money Low, Money Closing, bool IsPayday, bool BelowCushion, IReadOnlyList<ForecastEvent> Events);
 
-// Payday is null for the cash on hand, which funds what's due before the first paycheck.
-public sealed record PaycheckView(DateOnly? Payday, Money NetPay, int BillCount, Money Bills, Money SavingsTarget, Money SavingsFunded, Money Leftover);
+public sealed record FundedBill(DateOnly Due, string Label, Money Amount, Confidence Confidence);
+
+// One paycheck and what it pays for, from Payday until the day before the next
+// one (Until). Payday is null for the cash on hand, which funds what's due before
+// the first paycheck. CarryIn is the last period's leftover, so Leftover adds up
+// from the lines. Lowest is the lowest cash in the period, the number the cushion
+// is checked against.
+public sealed record PaycheckView(
+    DateOnly? Payday,
+    DateOnly Until,
+    Money CarryIn,
+    Money NetPay,
+    IReadOnlyList<FundedBill> Funded,
+    Money Bills,
+    Money SavingsTarget,
+    Money SavingsFunded,
+    Money Leftover,
+    DateOnly LowestDate,
+    Money Lowest)
+{
+    public int BillCount => Funded.Count;
+}
 
 // A projection, not a lender's payoff quote. Problem says why there's no payoff date.
 public sealed record DebtView(
@@ -98,25 +118,61 @@ public static class Forecasts
         var expanded = CashFlowPlanner.Expand(plan);
         var forecast = CashFlowSimulator.Run(plan, expanded);
         var paydays = expanded.Paydays.ToHashSet();
+        List<ForecastDay> forecastDays = [.. forecast.Days.Select(d => new ForecastDay(
+            d.Date,
+            d.Low,
+            d.Closing,
+            paydays.Contains(d.Date),
+            d.BelowReserve,
+            [.. d.Events.Select(e => new ForecastEvent(e.Label, e.Amount, e.IsInflow, e.Confidence))]))];
 
         return new ProfileForecast(
             account.Name,
             balance.Balance,
             balance.Provenance,
             settings.ReserveFloor?.Minimum ?? Money.Zero(balance.Balance.Currency),
-            [.. forecast.Days.Select(d => new ForecastDay(
-                d.Date,
-                d.Low,
-                d.Closing,
-                paydays.Contains(d.Date),
-                d.BelowReserve,
-                [.. d.Events.Select(e => new ForecastEvent(e.Label, e.Amount, e.IsInflow, e.Confidence))]))],
+            forecastDays,
             forecast.Lowest.Date,
             forecast.Lowest.Amount,
             Safe(plan),
-            [.. PaycheckFunding.Plan(plan, expanded).Select(p => new PaycheckView(
-                p.Payday, p.NetPay, p.Obligations.Count, p.ObligationsTotal, p.ContributionTarget, p.ContributionFunded, p.Leftover))],
+            Paychecks(plan, PaycheckFunding.Plan(plan, expanded), forecastDays),
             [.. data.Debts().Select(d => Debt(d, data, accounts, bills))]);
+    }
+
+    private static List<PaycheckView> Paychecks(CashFlowPlan plan, IReadOnlyList<FundingPeriod> periods, List<ForecastDay> days)
+    {
+        var views = new List<PaycheckView>();
+        for (var i = 0; i < periods.Count; i++)
+        {
+            var p = periods[i];
+            var from = p.Payday ?? plan.Today;
+            var until = i + 1 < periods.Count ? periods[i + 1].Payday!.Value.AddDays(-1) : plan.Through;
+            if (until < from)
+            {
+                // Payday is today, so there's no cash-on-hand period before it.
+                continue;
+            }
+
+            // On payday the period starts once the paycheck has landed. A bill that drafts
+            // before it still shows in the day's low on the Cash Flow table.
+            var lowest = days.Where(d => d.Date >= from && d.Date <= until)
+                .Select(d => (d.Date, Amount: d.Date == p.Payday ? d.Closing : d.Low))
+                .MinBy(d => d.Amount.Amount);
+            views.Add(new PaycheckView(
+                p.Payday,
+                until,
+                p.CarryIn,
+                p.NetPay,
+                [.. p.Obligations.Select(o => new FundedBill(o.DueDate, o.Label, o.Amount, o.Confidence))],
+                p.ObligationsTotal,
+                p.ContributionTarget,
+                p.ContributionFunded,
+                p.Leftover,
+                lowest.Date,
+                lowest.Amount));
+        }
+
+        return views;
     }
 
     // The account paychecks land in; without one, the first checking, then cash, account.

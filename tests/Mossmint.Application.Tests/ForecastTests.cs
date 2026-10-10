@@ -77,13 +77,33 @@ public class ForecastTests
     {
         _entry.AddLoan(new LoanEntry("Car loan", 9_800m, Today, 7.4m, 285m, 28), _checking.Id);
 
-        var paycheck = Build().Paychecks.First(p => p.Payday is not null);
+        var paychecks = Build().Paychecks;
+
+        // Nothing is due before the 15th, so the cash on hand carries over whole.
+        var onHand = paychecks[0];
+        (onHand.Payday, onHand.Until, onHand.BillCount, onHand.Leftover).Should().Be(((DateOnly?)null, new DateOnly(2026, 10, 14), 0, Money.Usd(1_240m)));
 
         // The loan payment on the 28th is funded by the 15 Oct paycheck; rent on 1 Nov by the 30 Oct one.
+        var paycheck = paychecks[1];
         paycheck.Payday.Should().Be(new DateOnly(2026, 10, 15));
-        paycheck.NetPay.Should().Be(Money.Usd(2_050m));
+        paycheck.Until.Should().Be(new DateOnly(2026, 10, 29));
+        (paycheck.CarryIn, paycheck.NetPay).Should().Be((Money.Usd(1_240m), Money.Usd(2_050m)));
+        paycheck.Funded.Should().ContainSingle().Which.Due.Should().Be(new DateOnly(2026, 10, 28));
         (paycheck.BillCount, paycheck.Bills).Should().Be((1, Money.Usd(285m)));
         paycheck.SavingsFunded.Should().Be(Money.Usd(150m));
+
+        // 1,240 + 2,050 − 285 − 150. The low is after the loan payment, not the morning before pay.
+        paycheck.Leftover.Should().Be(Money.Usd(2_855m));
+        (paycheck.LowestDate, paycheck.Lowest).Should().Be((new DateOnly(2026, 10, 28), Money.Usd(2_855m)));
+    }
+
+    [Fact]
+    public void A_payday_today_has_no_cash_on_hand_period()
+    {
+        var paychecks = Forecasts.Build(_data, new DateOnly(2026, 10, 15)).Should().BeOfType<ProfileForecast>().Subject.Paychecks;
+
+        paychecks[0].Payday.Should().Be(new DateOnly(2026, 10, 15));
+        paychecks[0].CarryIn.Should().Be(Money.Usd(1_240m));
     }
 
     [Fact]
