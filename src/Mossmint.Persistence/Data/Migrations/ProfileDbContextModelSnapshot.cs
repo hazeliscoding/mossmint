@@ -453,12 +453,21 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.Property<DateOnly>("EffectiveDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("PaysBillId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("PaysNominal")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly?>("PostedDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProvenanceJson")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<long?>("RecordedAt")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("RemovedAtSource")
                         .HasColumnType("INTEGER");

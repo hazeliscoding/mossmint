@@ -94,6 +94,9 @@ internal sealed class TransactionRow
     // The source's own key ("<account key>|<external id>") for imported rows.
     public string? SourceKey { get; set; }
     public bool RemovedAtSource { get; set; }
+    public Guid? PaysBillId { get; set; }
+    public DateOnly? PaysNominal { get; set; }
+    public DateTimeOffset? RecordedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
 

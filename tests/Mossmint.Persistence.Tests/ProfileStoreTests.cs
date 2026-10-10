@@ -16,6 +16,7 @@ public class ProfileStoreTests : IDisposable
 {
     private const string Passphrase = "moss under the old oak";
     private static readonly DateOnly Today = new(2026, 10, 9);
+    private static readonly DateTimeOffset Now = new(2026, 10, 9, 14, 0, 0, TimeSpan.Zero);
     private readonly TempRoot _root = new();
 
     public void Dispose() => _root.Dispose();
@@ -187,12 +188,31 @@ public class ProfileStoreTests : IDisposable
         using var session = Unlocks(store.Unlock(id, new UnlockSecret.Passphrase(Passphrase)));
         var data = session.Data;
         data.Accounts().Should().Equal(checking, loanAccount);
-        data.Balances(loanAccount.Id).Single().Should().Be(new BalanceSnapshot(loanAccount.Id, Money.Usd(9_800m), Provenance.LenderStatement(Today, "statement"), AccruedInterest: Money.Usd(12.40m)));
+        data.Balances(loanAccount.Id).Single().Should().Be(new BalanceSnapshot(loanAccount.Id, Money.Usd(9_800m), Provenance.LenderStatement(Today, "statement"), AccruedInterest: Money.Usd(12.40m), RecordedAt: Now));
         data.Bills().Single().Should().BeEquivalentTo(bill);
         data.Income().Single().Should().BeEquivalentTo(income);
         data.Debts().Single().Should().BeEquivalentTo(debt);
         data.Settings().Should().BeEquivalentTo(settings);
         data.Counts().Should().Be(new Application.Data.ProfileCounts(2, 2, 1, 1, 1, 8));
+    }
+
+    [Fact]
+    public void Manual_entries_keep_the_bill_they_pay_and_undo_leaves_them_void()
+    {
+        var created = _root.Store().Create("Juniper", Passphrase, false);
+        using var session = created.Session;
+        var checking = Checking("Everyday");
+        session.Data.AddAccount(checking);
+        var paid = new PaidBill(new BillId(Guid.NewGuid()), new DateOnly(2026, 10, 12));
+        var payment = new Transaction(new TransactionId(Guid.NewGuid()), checking.Id, Today, Money.Usd(-70m), TransactionStatus.Posted,
+            "Electric", Provenance.UserConfirmed(Today), Pays: paid);
+
+        session.Data.RecordTransaction(payment);
+        session.Data.Transactions(checking.Id).Should().Equal(payment with { RecordedAt = Now });
+
+        session.Data.VoidTransaction(payment.Id);
+        session.Data.Transactions(checking.Id).Single().Status.Should().Be(TransactionStatus.Void);
+        session.Data.Counts().Transactions.Should().Be(1);
     }
 
     [Fact]

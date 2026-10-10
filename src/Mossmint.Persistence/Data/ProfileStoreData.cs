@@ -56,6 +56,30 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         db.SaveChanges();
     }
 
+    public IReadOnlyList<Transaction> Transactions(AccountId account) =>
+        [.. db.Transactions.AsNoTracking()
+            .Where(t => t.AccountId == account.Value && !t.RemovedAtSource)
+            .OrderByDescending(t => t.EffectiveDate).ThenByDescending(t => t.RecordedAt)
+            .AsEnumerable().Select(ToTransaction)];
+
+    public void RecordTransaction(Transaction transaction)
+    {
+        var row = Stage(transaction, sourceKey: null, removedAtSource: false);
+        row.PaysBillId = transaction.Pays?.Bill.Value;
+        row.PaysNominal = transaction.Pays?.Nominal;
+        Audit("transaction.added", "Transaction", transaction.Id.Value, transaction.Pays is null ? "Manual entry" : "Bill marked paid");
+        db.SaveChanges();
+    }
+
+    public void VoidTransaction(TransactionId id)
+    {
+        var row = db.Transactions.Find(id.Value) ?? throw new InvalidOperationException("That entry doesn't exist.");
+        row.Status = TransactionStatus.Void.ToString();
+        row.UpdatedAt = clock.GetUtcNow();
+        Audit("transaction.voided", "Transaction", id.Value, "Entry undone");
+        db.SaveChanges();
+    }
+
     public IReadOnlyList<IncomeSchedule> Income() =>
         [.. db.Income.AsNoTracking().OrderBy(i => i.Name).AsEnumerable().Select(ToIncome)];
 
@@ -332,10 +356,15 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
 
     private void StageTransaction(ImportedTransaction imported)
     {
-        var t = imported.Transaction;
+        var isNew = db.Transactions.Find(imported.Transaction.Id.Value) is null;
+        Stage(imported.Transaction, imported.Key, imported.RemovedAtSource);
+        Audit(isNew ? "transaction.added" : imported.RemovedAtSource ? "transaction.removed-at-source" : "transaction.changed", "Transaction", imported.Transaction.Id.Value, "Imported transaction");
+    }
+
+    private TransactionRow Stage(Transaction t, string? sourceKey, bool removedAtSource)
+    {
         var row = db.Transactions.Find(t.Id.Value);
-        var isNew = row is null;
-        row ??= db.Transactions.Add(new TransactionRow { Id = t.Id.Value }).Entity;
+        row ??= db.Transactions.Add(new TransactionRow { Id = t.Id.Value, RecordedAt = clock.GetUtcNow() }).Entity;
         row.AccountId = t.Account.Value;
         row.EffectiveDate = t.EffectiveDate;
         row.PostedDate = t.PostedDate;
@@ -346,10 +375,10 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         row.Category = t.Category;
         row.TransferGroupId = t.TransferGroup?.Value;
         row.ProvenanceJson = JsonSerializer.Serialize(t.Provenance, Json);
-        row.SourceKey = imported.Key;
-        row.RemovedAtSource = imported.RemovedAtSource;
+        row.SourceKey = sourceKey;
+        row.RemovedAtSource = removedAtSource;
         row.UpdatedAt = clock.GetUtcNow();
-        Audit(isNew ? "transaction.added" : imported.RemovedAtSource ? "transaction.removed-at-source" : "transaction.changed", "Transaction", t.Id.Value, "Imported transaction");
+        return row;
     }
 
     // Audit summaries name what changed, never amounts, so nothing sensitive
@@ -390,7 +419,8 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
             Money.FromMinorUnits(row.AmountMinor, currency),
             JsonSerializer.Deserialize<Provenance>(row.ProvenanceJson, Json)!,
             Enum.Parse<ReconciliationState>(row.State),
-            row.AccruedInterestMinor is { } accrued ? Money.FromMinorUnits(accrued, currency) : null);
+            row.AccruedInterestMinor is { } accrued ? Money.FromMinorUnits(accrued, currency) : null,
+            row.RecordedAt);
     }
 
     private static Transaction ToTransaction(TransactionRow row) => new(
@@ -403,7 +433,9 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         JsonSerializer.Deserialize<Provenance>(row.ProvenanceJson, Json)!,
         row.PostedDate,
         row.Category,
-        row.TransferGroupId is { } group ? new TransferGroupId(group) : null);
+        row.TransferGroupId is { } group ? new TransferGroupId(group) : null,
+        row.PaysBillId is { } bill && row.PaysNominal is { } nominal ? new PaidBill(new BillId(bill), nominal) : null,
+        row.RecordedAt);
 
     private static RecurringBill ToBill(BillRow row) => new(
         new BillId(row.Id),

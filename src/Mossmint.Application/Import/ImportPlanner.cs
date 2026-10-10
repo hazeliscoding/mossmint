@@ -94,7 +94,7 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
         Hash(JsonSerializer.Serialize(new { s.SavingsTarget, s.ReserveFloor }, Json));
 
     internal static string Fingerprint(Transaction t) =>
-        Hash(JsonSerializer.Serialize(t with { Id = default, Provenance = Neutral }, Json));
+        Hash(JsonSerializer.Serialize(t with { Id = default, Provenance = Neutral, RecordedAt = null }, Json));
 
     private sealed class PlanContext(ImportBatch batch, IProfileData data, IImportStore store, TimeProvider clock)
     {

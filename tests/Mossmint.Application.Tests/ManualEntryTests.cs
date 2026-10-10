@@ -123,6 +123,7 @@ internal sealed class InMemoryProfileData : IProfileData
     private readonly Dictionary<BillId, RecurringBill> _bills = [];
     private readonly Dictionary<IncomeId, IncomeSchedule> _income = [];
     private readonly Dictionary<AccountId, DebtAccount> _debts = [];
+    private readonly List<Transaction> _transactions = [];
     private PlanSettings _settings = PlanSettings.Empty(Currency.Usd);
 
     public IReadOnlyList<Account> Accounts() => _accounts;
@@ -151,6 +152,16 @@ internal sealed class InMemoryProfileData : IProfileData
     public IReadOnlyList<DebtAccount> Debts() => [.. _debts.Values];
 
     public void SaveDebt(DebtAccount debt) => _debts[debt.Account] = debt;
+
+    public IReadOnlyList<Transaction> Transactions(AccountId account) => [.. _transactions.Where(t => t.Account == account).Reverse()];
+
+    public void RecordTransaction(Transaction transaction) => _transactions.Add(transaction);
+
+    public void VoidTransaction(TransactionId id)
+    {
+        var i = _transactions.FindIndex(t => t.Id == id);
+        _transactions[i] = _transactions[i] with { Status = TransactionStatus.Void };
+    }
 
     public PlanSettings Settings() => _settings;
 

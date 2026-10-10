@@ -53,6 +53,14 @@ public interface IProfileData
 
     void SaveDebt(DebtAccount debt);
 
+    // Newest first, void entries included so corrections stay visible.
+    IReadOnlyList<Transaction> Transactions(AccountId account);
+
+    void RecordTransaction(Transaction transaction);
+
+    // Undo keeps the entry, marked void, rather than deleting it.
+    void VoidTransaction(TransactionId id);
+
     PlanSettings Settings();
 
     void SaveSettings(PlanSettings settings);
