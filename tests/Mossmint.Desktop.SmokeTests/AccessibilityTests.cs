@@ -144,6 +144,41 @@ public partial class AccessibilityTests
     }
 
     [AvaloniaFact]
+    public async Task Focus_moves_into_a_form_and_back_to_what_opened_it()
+    {
+        using var app = await Unlocked();
+        var shell = app.Screen<ShellViewModel>();
+
+        shell.Navigate(Destination.Savings);
+        var savings = (SavingsPageViewModel)shell.CurrentPage!;
+        Press(app, "Add goal", savings.StartAddCommand);
+        Focused(app).Should().Be("Goal name");
+        Press(app, "Cancel", savings.CancelFormsCommand);
+        Focused(app).Should().Be("Add goal");
+
+        // Saving rebuilds the goal cards; focus finds the new card's button.
+        Press(app, "Update saved for Car fund", savings.StartUpdateCommand, savings.Goals[0]);
+        Focused(app).Should().Be("Saved so far");
+        savings.SavedText = "1300";
+        Press(app, "Save", savings.SaveSavedCommand);
+        Focused(app).Should().Be("Update saved for Car fund");
+
+        shell.Navigate(Destination.Debts);
+        var debts = (DebtsPageViewModel)shell.CurrentPage!;
+        Press(app, "Confirm balance", debts.StartConfirmCommand);
+        Focused(app).Should().Be("Balance owed");
+        Press(app, "Cancel", debts.CancelConfirmCommand);
+        Focused(app).Should().Be("Confirm balance");
+
+        shell.Navigate(Destination.Bills);
+        var bills = (BillsPageViewModel)shell.CurrentPage!;
+        Press(app, "Mark Rent paid", bills.MarkPaidCommand, bills.Rows.Single(r => r.Name == "Rent"));
+        Focused(app).Should().Be("Undo Rent paid");
+        Press(app, "Undo Rent paid", bills.UndoCommand, bills.Rows.Single(r => r.Name == "Rent"));
+        Focused(app).Should().Be("Mark Rent paid");
+    }
+
+    [AvaloniaFact]
     public void Errors_and_notices_are_announced_when_they_change()
     {
         using var app = new Harness();
@@ -182,6 +217,35 @@ public partial class AccessibilityTests
     }
 
     private sealed record Sample(string Name);
+
+    private static async Task<Harness> Unlocked()
+    {
+        var app = new Harness();
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        Populate(app);
+        Harness.Pump();
+        return app;
+    }
+
+    // As a keyboard user would: focus the button, then run what Enter runs.
+    private static void Press(Harness app, string name, System.Windows.Input.ICommand command, object? parameter = null)
+    {
+        Harness.Pump();
+        var button = app.Window!.GetVisualDescendants().OfType<Button>()
+            .First(b => b.IsEffectivelyVisible && (AutomationProperties.GetName(b) == name || b.Content as string == name));
+        button.Focus(NavigationMethod.Tab);
+        command.Execute(parameter);
+        Harness.Pump();
+    }
+
+    private static string? Focused(Harness app) =>
+        app.Window!.FocusManager?.GetFocusedElement() is Control c
+            ? AutomationProperties.GetName(c) is { Length: > 0 } name ? name : (c as ContentControl)?.Content as string
+            : null;
 
     // Accent-coloured pixels just outside a button focused from the keyboard: the outer ring.
     private static int RingPixels(ThemeVariant theme, bool withRing)
