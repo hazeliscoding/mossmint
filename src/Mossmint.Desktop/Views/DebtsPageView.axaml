@@ -112,7 +112,7 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <Border Classes="separator-top" Padding="0,14,0,0" IsVisible="{Binding IsConfirming}">
+        <Border c:FormFocus.IsForm="True" Classes="separator-top" Padding="0,14,0,0" IsVisible="{Binding IsConfirming}">
           <StackPanel Spacing="10">
             <TextBlock Classes="card-title" Text="Confirm the balance you see today" />
             <TextBlock Classes="compact secondary" Text="Use the figure your lender or card shows now. It becomes the latest balance, and the payoff date starts from it." TextWrapping="Wrap" />

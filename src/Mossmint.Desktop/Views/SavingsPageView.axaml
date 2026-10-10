@@ -38,7 +38,7 @@
       </ItemsControl.ItemTemplate>
     </ItemsControl>
 
-    <Border Classes="card" Padding="20,16" IsVisible="{Binding IsAdding}">
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="20,16" IsVisible="{Binding IsAdding}">
       <StackPanel Spacing="10">
         <TextBlock Classes="card-title" Text="Add a savings goal" />
         <StackPanel Orientation="Horizontal" Spacing="12">
@@ -101,7 +101,7 @@
       </ItemsControl.ItemTemplate>
     </ItemsControl>
 
-    <Border Classes="card" Padding="20,16" IsVisible="{Binding IsUpdating}">
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="20,16" IsVisible="{Binding IsUpdating}">
       <StackPanel Spacing="10">
         <TextBlock Classes="card-title" Text="{Binding UpdateTitle}" />
         <StackPanel Spacing="4" Width="180" HorizontalAlignment="Left">

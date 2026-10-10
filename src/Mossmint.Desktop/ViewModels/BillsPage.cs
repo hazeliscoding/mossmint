@@ -32,9 +32,13 @@ public sealed partial class BillsPageViewModel(AppServices services)
     [ObservableProperty]
     private string? _notice;
 
+    // The rows are rebuilt after Mark paid or Undo; focus goes to the same row's other button.
+    [ObservableProperty]
+    private string? _focusTarget;
+
     public override void OnNavigatedTo()
     {
-        Notice = null;
+        (Notice, FocusTarget) = (null, null);
         Load();
     }
 
@@ -52,6 +56,7 @@ public sealed partial class BillsPageViewModel(AppServices services)
         }
 
         Load();
+        FocusTarget = line.UndoName;
     }
 
     [RelayCommand]
@@ -60,6 +65,7 @@ public sealed partial class BillsPageViewModel(AppServices services)
         Entry().Undo(line.Next!.Payment!);
         Notice = $"{line.Name} is unpaid again.";
         Load();
+        FocusTarget = line.MarkPaidName;
     }
 
     private ManualEntry Entry() => new(services.Context.Current.Data, services.Clock);

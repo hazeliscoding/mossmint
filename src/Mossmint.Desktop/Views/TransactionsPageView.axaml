@@ -36,7 +36,7 @@
 
     <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
-    <Border Classes="card" Padding="20,16" IsVisible="{Binding IsAdding}">
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="20,16" IsVisible="{Binding IsAdding}">
       <StackPanel Spacing="10">
         <TextBlock Classes="card-title" Text="Add an entry" />
         <TextBlock Classes="compact secondary" TextWrapping="Wrap"
@@ -71,7 +71,7 @@
       </StackPanel>
     </Border>
 
-    <Border Classes="card" Padding="20,16" IsVisible="{Binding IsReconciling}">
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="20,16" IsVisible="{Binding IsReconciling}">
       <StackPanel Spacing="10">
         <TextBlock Classes="card-title" Text="Reconcile the balance" />
         <TextBlock Classes="compact secondary" Text="{Binding ExpectedText}" TextWrapping="Wrap" />

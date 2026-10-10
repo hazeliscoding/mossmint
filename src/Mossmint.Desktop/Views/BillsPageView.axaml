@@ -5,7 +5,7 @@
              x:Class="Mossmint.Desktop.Views.BillsPageView"
              x:DataType="vm:BillsPageViewModel">
 
-  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left" c:FormFocus.Target="{Binding FocusTarget}">
     <StackPanel Spacing="4">
       <TextBlock Classes="page-title" Text="{Binding Title}" />
       <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
