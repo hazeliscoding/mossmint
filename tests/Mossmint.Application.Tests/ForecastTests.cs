@@ -163,5 +163,30 @@ public class ForecastTests
         undone.Days.SelectMany(d => d.Events).Should().Contain(e => e.Label == "Rent");
     }
 
+    [Fact]
+    public void A_balance_confirmed_after_paying_already_includes_the_payment()
+    {
+        var rent = Forecasts.UpcomingBills(_data, Today).Single(b => b.Bill.Name == "Rent");
+        _entry.MarkPaid(rent.Bill, rent.Upcoming[0].Nominal);
+
+        _entry.ConfirmBalance(_checking.Id, 90m);
+
+        var forecast = Build();
+        (forecast.Opening, forecast.EntriesSince, forecast.OpeningProvenance.AsOf).Should().Be((Money.Usd(90m), 0, Today));
+        forecast.SafeToSpend.State.Should().Be(SafeToSpendState.Shortfall);
+    }
+
+    [Fact]
+    public void A_confirmed_debt_balance_restarts_its_payoff_projection()
+    {
+        var loan = _entry.AddLoan(new LoanEntry("Car loan", 9_800m, Today.AddDays(-40), 7.4m, 285m, 28), _checking.Id);
+
+        _entry.ConfirmBalance(loan.Account, 9_500m, 12.40m);
+
+        var car = Build().Debts.Single();
+        (car.Account, car.Balance, car.BalanceAsOf).Should().Be((loan.Account, (Money?)Money.Usd(9_500m), (DateOnly?)Today));
+        FluentActions.Invoking(() => _entry.ConfirmBalance(loan.Account, 9_500m, -1m)).Should().Throw<ArgumentException>();
+    }
+
     private ProfileForecast Build() => Forecasts.Build(_data, Today).Should().BeOfType<ProfileForecast>().Subject;
 }

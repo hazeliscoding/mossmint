@@ -152,6 +152,18 @@ public sealed class ManualEntry(IProfileData data, TimeProvider clock)
         return settings;
     }
 
+    // A balance read off the bank or lender today. It becomes the account's latest,
+    // so the forecast or payoff projection starts from it. For a loan, unpaid
+    // interest is entered apart from principal, as lenders report it.
+    public BalanceSnapshot ConfirmBalance(AccountId account, decimal balance, decimal? unpaidInterest = null)
+    {
+        Require(unpaidInterest is null or >= 0m, "Unpaid interest can't be negative.");
+        var snapshot = new BalanceSnapshot(account, Cents(balance), Provenance.UserConfirmed(Today),
+            AccruedInterest: unpaidInterest is { } interest ? Cents(interest) : null, RecordedAt: clock.GetUtcNow());
+        data.RecordBalance(snapshot);
+        return snapshot;
+    }
+
     // Pays one bill occurrence, today, from the account the bill is funded from.
     // The payment comes off that balance until a newer one is confirmed, and the
     // occurrence leaves the forecast (docs/financial-models/cash-flow.md).

@@ -53,6 +53,7 @@ public sealed record PaycheckView(
 
 // A projection, not a lender's payoff quote. Problem says why there's no payoff date.
 public sealed record DebtView(
+    AccountId Account,
     string Name,
     Money? Balance,
     DateOnly? BalanceAsOf,
@@ -220,7 +221,7 @@ public static class Forecasts
         var name = accounts.FirstOrDefault(a => a.Id == debt.Account)?.Name ?? "Debt";
         if (data.Balances(debt.Account).FirstOrDefault() is not { } balance)
         {
-            return new DebtView(name, null, null, null, null, "Enter the balance owed.", Confidence.NeedsReview, debt.Terms is CreditCardTerms);
+            return new DebtView(debt.Account, name, null, null, null, null, "Enter the balance owed.", Confidence.NeedsReview, debt.Terms is CreditCardTerms);
         }
 
         var asOf = balance.Provenance.AsOf;
@@ -254,9 +255,9 @@ public static class Forecasts
         {
             return outcome switch
             {
-                PaysOff p => new(name, balance.Balance, asOf, p.PayoffDate, p.TotalInterest, null, confidence, approximate),
-                NeverPaysOff n => new(name, balance.Balance, asOf, null, null, n.Reason, confidence, approximate),
-                InsufficientData i => new(name, balance.Balance, asOf, null, null, string.Join(" ", i.Missing), confidence, approximate),
+                PaysOff p => new(debt.Account, name, balance.Balance, asOf, p.PayoffDate, p.TotalInterest, null, confidence, approximate),
+                NeverPaysOff n => new(debt.Account, name, balance.Balance, asOf, null, null, n.Reason, confidence, approximate),
+                InsufficientData i => new(debt.Account, name, balance.Balance, asOf, null, null, string.Join(" ", i.Missing), confidence, approximate),
                 _ => throw new InvalidOperationException($"Unknown payoff outcome {outcome.GetType().Name}."),
             };
         }
