@@ -77,6 +77,21 @@ public partial class AccessibilityTests
             unnamed.AddRange(Unnamed(app, $"Setup {step}"));
         }
 
+        // Options that show more fields.
+        setup.Step = SetupStep.Paychecks;
+        foreach (var pattern in setup.Patterns)
+        {
+            setup.Pattern = pattern;
+            unnamed.AddRange(Unnamed(app, $"Setup pay {pattern.Pattern}"));
+        }
+
+        setup.Step = SetupStep.Bills;
+        setup.BillIsEstimate = true;
+        unnamed.AddRange(Unnamed(app, "Setup bill estimate"));
+        setup.Step = SetupStep.Debts;
+        setup.DebtIsCard = !setup.DebtIsCard;
+        unnamed.AddRange(Unnamed(app, "Setup other debt kind"));
+
         Populate(app);
         app.ViewModel.OpenApp(Destination.Overview);
         var shell = app.Screen<ShellViewModel>();
@@ -126,6 +141,20 @@ public partial class AccessibilityTests
 
         // Positive control: the same button with no focus adorner draws nothing outside itself.
         RingPixels(ThemeVariant.Dark, withRing: false).Should().Be(0);
+    }
+
+    [AvaloniaFact]
+    public void Errors_and_notices_are_announced_when_they_change()
+    {
+        using var app = new Harness();
+        var error = new TextBlock { Classes = { "error" } };
+        var notice = new TextBlock { Classes = { "notice" } };
+        var window = new Window { Content = new StackPanel { Children = { error, notice } } };
+        window.Show();
+
+        (AutomationProperties.GetLiveSetting(error), AutomationProperties.GetLiveSetting(notice))
+            .Should().Be((AutomationLiveSetting.Assertive, AutomationLiveSetting.Polite));
+        window.Close();
     }
 
     [AvaloniaFact]
