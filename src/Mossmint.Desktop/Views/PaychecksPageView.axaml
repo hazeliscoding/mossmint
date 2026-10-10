@@ -1,0 +1,102 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.PaychecksPageView"
+             x:DataType="vm:PaychecksPageViewModel">
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding Unavailable, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="10">
+        <c:StatusBadge Tone="Warning" Text="No forecast yet" HorizontalAlignment="Left" />
+        <TextBlock Classes="prose" Text="{Binding Unavailable}" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="card-title" Text="Your paychecks" />
+        <TextBlock Classes="prose secondary" Text="No paychecks yet. Add one with the Start fresh setup on the Overview page." TextWrapping="Wrap" IsVisible="{Binding !HasSchedules}" />
+        <ItemsControl ItemsSource="{Binding Schedules}" IsVisible="{Binding HasSchedules}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:RecordRow">
+              <Grid ColumnDefinitions="*,Auto,140" Margin="0,6">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                  <TextBlock Classes="compact faint" Text="{Binding Detail}" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Classes="mono" FontSize="14" Text="{Binding Amount}" VerticalAlignment="Center" Margin="16,0" />
+                <c:StatusBadge Grid.Column="2" Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Classes="compact secondary" Text="{Binding Plan}" TextWrapping="Wrap" IsVisible="{Binding HasCards}" />
+      </StackPanel>
+    </Border>
+
+    <ItemsControl ItemsSource="{Binding Cards}" IsVisible="{Binding HasCards}" Margin="0,0,-12,0">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Columns="2" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:PaycheckCard">
+          <Border Classes="card" Margin="0,0,12,12" Padding="0" VerticalAlignment="Top" AutomationProperties.Name="{Binding AccessibleName}">
+            <StackPanel>
+              <DockPanel Margin="16,14">
+                <StackPanel DockPanel.Dock="Right" Spacing="2" Margin="12,0,0,0">
+                  <TextBlock Classes="mono" FontSize="22" Text="{Binding Value}" HorizontalAlignment="Right" />
+                  <TextBlock Classes="compact secondary" Text="{Binding ValueNote}" HorizontalAlignment="Right" />
+                </StackPanel>
+                <StackPanel Spacing="4">
+                  <DockPanel>
+                    <c:StatusBadge DockPanel.Dock="Right" Tone="{Binding Tone}" Text="{Binding Status}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <TextBlock Classes="section" Text="{Binding Title}" />
+                  </DockPanel>
+                  <TextBlock Classes="compact secondary" Text="{Binding Subtitle}" TextWrapping="Wrap" />
+                </StackPanel>
+              </DockPanel>
+              <ItemsControl ItemsSource="{Binding Lines}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:PaycheckLine">
+                    <Border Classes="separator-top" Padding="16,7">
+                      <Grid ColumnDefinitions="72,*,Auto">
+                        <TextBlock Classes="label" Text="{Binding When}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <TextBlock Grid.Column="2" Classes="mono" Text="{Binding Amount}" VerticalAlignment="Center" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Border Classes="separator-top" Padding="16,12">
+                <Grid ColumnDefinitions="*,10,*">
+                  <Border Background="{DynamicResource BgElevated}" CornerRadius="4" Padding="12,10">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="label" Text="PLANNED LEFTOVER" />
+                      <TextBlock Classes="mono" FontSize="20" Text="{Binding Leftover}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Column="2" Background="{DynamicResource BgElevated}" CornerRadius="4" Padding="12,10">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="label" Text="LOWEST BEFORE NEXT PAY" />
+                      <TextBlock Classes="mono" FontSize="20" Text="{Binding Lowest}" />
+                      <TextBlock Classes="compact faint" Text="{Binding LowestNote}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </Grid>
+              </Border>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

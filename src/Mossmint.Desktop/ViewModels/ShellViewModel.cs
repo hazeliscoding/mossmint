@@ -20,8 +20,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         [
             Nav(new OverviewPageViewModel(services, navigator), "IconLayoutDashboard", "Ctrl+1"),
             Nav(new CashFlowPageViewModel(services), "IconWaves", "Ctrl+2"),
-            Nav(new RecordsPageViewModel(Destination.Paychecks, "Paychecks", "When you get paid, and how much lands each time.",
-                "No paychecks yet. Add one with the Start fresh setup on the Overview page.", context, RecordsPageViewModel.Paychecks), "IconBanknote", "Ctrl+3"),
+            Nav(new PaychecksPageViewModel(services), "IconBanknote", "Ctrl+3"),
             Nav(new RecordsPageViewModel(Destination.Debts, "Debts", "Balances and terms. Payoff plans and extra-payment comparisons arrive in M5.",
                 "No debts yet. Add loans and cards with the Start fresh setup on the Overview page.", context, RecordsPageViewModel.Debts), "IconCreditCard", "Ctrl+4"),
             Nav(new RecordsPageViewModel(Destination.Bills, "Bills", "Recurring bills and payments, each with its due date.",
