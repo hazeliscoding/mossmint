@@ -47,7 +47,8 @@ internal sealed class Harness : IDisposable
     public const string Passphrase = "moss under the old oak";
     internal static readonly Argon2Settings Fast = new(1024, 1, 1);
 
-    public Harness()
+    // Without fake updates the real Velopack service is used, which isn't installed under test.
+    public Harness(IAppUpdates? updates = null)
     {
         Root = Path.Combine(Path.GetTempPath(), "mossmint-ui-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Root);
@@ -58,6 +59,10 @@ internal sealed class Harness : IDisposable
             Dialogs,
             new ProfileContext(),
             TimeProvider.System);
+        if (updates is not null)
+        {
+            Services = Services with { Updates = updates };
+        }
     }
 
     public string Root { get; }

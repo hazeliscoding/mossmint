@@ -57,6 +57,28 @@
       </StackPanel>
     </Border>
 
+    <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="section" Text="Updates" />
+        <TextBlock Classes="prose secondary" Text="Mossmint never checks on its own. Check now asks GitHub for the list of Mossmint releases and sends nothing about you or your data; GitHub sees your IP address, as any website would." />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Classes="compact secondary" Text="This version" VerticalAlignment="Center" />
+          <TextBlock Classes="mono" Text="{Binding Version}" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock Classes="hint" Text="Updates work in the installed app. This copy runs from source." IsVisible="{Binding !IsInstalled}" />
+        <c:StatusBadge Tone="{Binding UpdateTone}" Text="{Binding UpdateStatus}" HorizontalAlignment="Left"
+                       IsVisible="{Binding UpdateStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <ProgressBar Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" IsVisible="{Binding IsUpdating}"
+                     IsIndeterminate="{Binding AvailableVersion, Converter={x:Static ObjectConverters.IsNull}}"
+                     AutomationProperties.Name="Update progress" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Check now" Command="{Binding CheckForUpdatesCommand}" />
+          <Button Content="Download" Command="{Binding DownloadUpdateCommand}" IsVisible="{Binding AvailableVersion, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <Button Classes="primary" Content="Restart and update" Command="{Binding RestartToUpdateCommand}" IsVisible="{Binding IsDownloaded}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
     <Border Classes="card" Padding="24,20" BorderBrush="{DynamicResource SignalCriticalBorder}">
       <StackPanel Spacing="10">
         <TextBlock Classes="section" Text="Delete this profile" />

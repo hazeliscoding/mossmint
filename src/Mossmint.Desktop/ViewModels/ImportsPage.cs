@@ -122,6 +122,8 @@ public sealed partial class ImportsPageViewModel(AppServices services)
 
     partial void OnShowClosedChanged(bool value) => Refresh();
 
+    partial void OnIsBusyChanged(bool value) => services.Context.ActiveWork += value ? 1 : -1;
+
     [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task ChooseWorkbooks()
     {

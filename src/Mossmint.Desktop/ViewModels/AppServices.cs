@@ -13,6 +13,8 @@ public sealed record AppServices(
     TimeProvider Clock)
 {
     public ImportService Imports { get; init; } = new(new Import.Excel.WorkbookImporter(), Clock);
+
+    public IAppUpdates Updates { get; init; } = new VelopackUpdates();
 }
 
 // The window-level moves a page can ask for.

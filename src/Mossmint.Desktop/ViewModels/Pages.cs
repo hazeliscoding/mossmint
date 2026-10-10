@@ -182,6 +182,8 @@ public sealed partial class BackupsPageViewModel(AppServices services, IAppNavig
     [NotifyCanExecuteChangedFor(nameof(BackUpNowCommand), nameof(KeepLocalCopyCommand))]
     private bool _isBusy;
 
+    partial void OnIsBusyChanged(bool value) => services.Context.ActiveWork += value ? 1 : -1;
+
     [RelayCommand(CanExecute = nameof(CanBackUp))]
     private async Task BackUpNow()
     {
@@ -224,7 +226,7 @@ public sealed partial class BackupsPageViewModel(AppServices services, IAppNavig
 }
 
 public sealed partial class SettingsPageViewModel(AppServices services, IAppNavigator navigator)
-    : PageViewModel(Destination.Settings, "Settings", "Profile security and privacy.")
+    : PageViewModel(Destination.Settings, "Settings", "Profile security, privacy and updates.")
 {
     [ObservableProperty]
     private string _newPassphrase = "";
@@ -249,9 +251,35 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
     [NotifyCanExecuteChangedFor(nameof(ChangePassphraseCommand))]
     private bool _isBusy;
 
+    // The update check keeps its own status, so it survives moving between pages.
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CheckForUpdatesCommand), nameof(DownloadUpdateCommand))]
+    private bool _isUpdating;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(DownloadUpdateCommand))]
+    private string? _availableVersion;
+
+    [ObservableProperty]
+    private int _downloadProgress;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(DownloadUpdateCommand), nameof(RestartToUpdateCommand))]
+    private bool _isDownloaded;
+
+    [ObservableProperty]
+    private string? _updateStatus;
+
+    [ObservableProperty]
+    private StatusTone _updateTone = StatusTone.Neutral;
+
     public bool CanUseThisDevice => OperatingSystem.IsWindows();
 
     public string ProfileName => services.Context.ProfileName;
+
+    public string Version => services.Updates.Version;
+
+    public bool IsInstalled => services.Updates.IsInstalled;
 
     public override void OnNavigatedTo()
     {
@@ -326,4 +354,59 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
     private bool CanDelete() => services.Context.IsUnlocked && DeleteConfirmation == services.Context.ProfileName;
 
     private void Report(string message, StatusTone tone) => (Status, StatusTone) = (message, tone);
+
+    [RelayCommand(CanExecute = nameof(CanCheck))]
+    private Task CheckForUpdates() => Updating("Couldn't check for updates", async () =>
+    {
+        (AvailableVersion, IsDownloaded, DownloadProgress) = (null, false, 0);
+        AvailableVersion = await services.Updates.CheckAsync();
+        (UpdateStatus, UpdateTone) = AvailableVersion is { } version
+            ? ($"Mossmint {version} is available.", StatusTone.Info)
+            : ("Mossmint is up to date.", StatusTone.Healthy);
+    });
+
+    private bool CanCheck() => IsInstalled && !IsUpdating;
+
+    [RelayCommand(CanExecute = nameof(CanDownload))]
+    private Task DownloadUpdate() => Updating("The download didn't finish", async () =>
+    {
+        var progress = new Progress<int>(percent => DownloadProgress = percent);
+        await services.Updates.DownloadAsync(((IProgress<int>)progress).Report);
+        IsDownloaded = true;
+        (UpdateStatus, UpdateTone) = ($"Mossmint {AvailableVersion} is downloaded. It installs the next time Mossmint starts.", StatusTone.Healthy);
+    });
+
+    private bool CanDownload() => AvailableVersion is not null && !IsDownloaded && !IsUpdating;
+
+    // Locks the profile first, so the database is closed and the key zeroed before Mossmint exits.
+    [RelayCommand(CanExecute = nameof(IsDownloaded))]
+    private void RestartToUpdate()
+    {
+        if (services.Context.ActiveWork > 0)
+        {
+            (UpdateStatus, UpdateTone) = ("A backup or import is still running. Restart once it has finished.", StatusTone.Warning);
+            return;
+        }
+
+        navigator.Lock();
+        services.Updates.ApplyAndRestart();
+    }
+
+    // Any failure (offline, GitHub, disk) is reported here; Mossmint keeps working without the update.
+    private async Task Updating(string failure, Func<Task> work)
+    {
+        IsUpdating = true;
+        try
+        {
+            await work();
+        }
+        catch (Exception e)
+        {
+            (UpdateStatus, UpdateTone) = ($"{failure}: {e.Message}", StatusTone.Warning);
+        }
+        finally
+        {
+            IsUpdating = false;
+        }
+    }
 }

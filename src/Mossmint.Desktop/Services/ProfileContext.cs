@@ -17,6 +17,9 @@ public sealed partial class ProfileContext : ObservableObject, IDisposable
 
     public string ProfileInitial => ProfileName[..1].ToUpperInvariant();
 
+    // Backups and imports count themselves in while they run, so an update restart can't cut one short.
+    public int ActiveWork { get; set; }
+
     public IProfileSession Current => Session ?? throw new InvalidOperationException("No profile is unlocked.");
 
     public void Open(IProfileSession session)
