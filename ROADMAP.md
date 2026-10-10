@@ -109,6 +109,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - Seasonal estimates wait for 13 months of history.
 - **A profile or backup saved by a newer Mossmint is refused,** untouched, with a message to update (done 2026-10-10). Betas and downgrades can't misread data they don't understand.
 - **Bank logins:** Mossmint never asks for them. A bank feed such as SimpleFIN is a separate service the user signs up and pays for, and it holds the bank login. There is still no Mossmint account.
+- **Mark paid records a payment entry** (M4). The forecast starts from the latest confirmed balance plus the manual entries recorded after it, so a paid bill comes off the balance at once and its due date leaves the forecast. Imported entries don't move it: an imported balance already includes them. Undo stays on the row with no time limit, instead of the mockup's 10-second toast, so nobody has to beat a timer (WCAG 2.2.1). The rules are in `docs/financial-models/cash-flow.md`.
 
 ## M0: Skeleton and guardrails (v0.3.0)
 
