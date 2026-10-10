@@ -54,7 +54,7 @@ Contributor setup and checks: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 1. Set the version in `Directory.Build.props` as `chore(release): x.y.z`, push it to `main`, and wait for CI.
 2. Tag that commit and push the tag: `git tag v0.3.0 && git push origin v0.3.0`. Release tags can't be moved or deleted. A tag with a pre-release suffix, such as `v0.4.0-beta.1`, makes a beta on the `win-beta` channel.
-3. The [Release workflow](.github/workflows/release.yml) tests and packs Mossmint, runs the encryption self-check and a launch check against the packaged app, and opens a **draft** GitHub Release with the installer, the portable zip, the Velopack update files and `SHA256SUMS`.
+3. The [Release workflow](.github/workflows/release.yml) tests and packs Mossmint, launches the portable build, installs with `Setup.exe`, runs the encryption self-check on both, and opens a **draft** GitHub Release with the installer, the portable zip, the Velopack update files and `SHA256SUMS`.
 4. Read the draft, write its notes, and publish it.
 
 Running the workflow by hand from the Actions tab builds the same files without publishing anything. `pwsh build/pack.ps1` packs locally.

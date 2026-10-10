@@ -68,7 +68,7 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 
 ## Decisions (2026-10-09, releases)
 
-- **Releases follow the Prompuff process,** moved up from M6 so the handoff profile has an app to open (owner's request). The version bump lands on `main` as `chore(release): x.y.z`. A `v*` tag on that commit starts the release workflow, which tests, packs, smoke-tests the packaged app (the encryption self-check included) and opens a **draft** GitHub Release with `SHA256SUMS`. The owner reads the draft and publishes it.
+- **Releases follow the Prompuff process,** moved up from M6 so the handoff profile has an app to open (owner's request). The version bump lands on `main` as `chore(release): x.y.z`. A `v*` tag on that commit starts the release workflow, which tests, packs, smoke-tests the portable build, installs with `Setup.exe` on the runner, runs the encryption self-check on both, and opens a **draft** GitHub Release with `SHA256SUMS`. The owner reads the draft and publishes it.
 - **Release tags can't be moved or deleted** (the `release tags` ruleset). Only `v*` tags can use the `release` environment.
 - **Versions follow milestones until 1.0:** 0.3.0 is the first release, with M0–M3. A tag with a pre-release suffix (`v0.4.0-beta.1`) packs to the `win-beta` channel and becomes a GitHub pre-release.
 - **Release files:** `Mossmint-Setup.exe`, `Mossmint-win-x64-Portable.zip`, the Velopack update files and `SHA256SUMS`.
@@ -83,7 +83,7 @@ Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for payche
 - [x] Avalonia shell that boots offline: custom title bar, sidebar with every destination, top bar with an *Offline* status, Welcome screen for a clean install, dark and light theme tokens, bundled fonts.
 - [x] Headless smoke tests: the window opens, every destination navigates, nothing touches the network.
 - [x] Screenshot tool: renders screens headlessly to PNG.
-- [x] Velopack: startup hook, `vpk` as a local tool, a pack script with a data-file guard and SHA256SUMS, and a proof-of-concept installer. The packaged app boots from the portable build; running `Setup.exe` itself is checked in M6 release CI.
+- [x] Velopack: startup hook, `vpk` as a local tool, a pack script with a data-file guard and SHA256SUMS, and a proof-of-concept installer. The packaged app boots from the portable build; the release workflow also installs with `Setup.exe` (since 0.3.0).
 - [x] CI on `windows-latest`: restore, format check, build, test, vulnerable-package check, secret scan, and a private-file guard.
 - [x] `SECURITY.md`, `PRIVACY.md`, `CONTRIBUTING.md`; private vulnerability reporting is on.
 - [x] ADRs: encrypted local persistence, forecasting semantics, connector provider security. A draft threat model.
