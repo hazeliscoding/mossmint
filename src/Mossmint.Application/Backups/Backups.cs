@@ -14,6 +14,9 @@ public enum RestoreFailure
     MalformedRecoveryKey,
     ThisDeviceCantRestore,
     Damaged,
+
+    // The backup holds a profile saved by a newer Mossmint.
+    NewerVersion,
 }
 
 public abstract record RestoreResult

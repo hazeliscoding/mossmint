@@ -170,6 +170,11 @@ public sealed class BackupService(ProfileLocations locations, TimeProvider clock
                 Directory.Move(staging, final);
                 return new RestoreResult.Restored(ProfileStore.Summary(keys), counts);
             }
+            catch (ProfileFromNewerVersionException)
+            {
+                return new RestoreResult.Failed(RestoreFailure.NewerVersion,
+                    "This backup comes from a newer version of Mossmint. Update Mossmint, then restore it.");
+            }
             catch (Exception e) when (e is BackupFormatException or InvalidDataException or SqliteException or WrongSecretException or JsonException)
             {
                 return new RestoreResult.Failed(RestoreFailure.Damaged, e.Message);

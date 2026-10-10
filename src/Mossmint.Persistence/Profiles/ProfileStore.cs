@@ -145,6 +145,12 @@ public sealed class ProfileStore(ProfileLocations locations, TimeProvider clock,
             key.Dispose();
             return new UnlockResult.Failed(UnlockFailure.EncryptionUnavailable, e.Message);
         }
+        catch (ProfileFromNewerVersionException)
+        {
+            key.Dispose();
+            return new UnlockResult.Failed(UnlockFailure.NewerVersion,
+                "This profile was saved by a newer version of Mossmint. Update Mossmint to open it; nothing was changed.");
+        }
         catch (Exception e) when (e is WrongSecretException or SqliteException or FileNotFoundException)
         {
             key.Dispose();

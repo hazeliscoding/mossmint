@@ -29,6 +29,9 @@ public enum UnlockFailure
     ProfileMissing,
     ProfileDamaged,
     EncryptionUnavailable,
+
+    // The profile was saved by a newer Mossmint; this build doesn't know its schema.
+    NewerVersion,
 }
 
 public abstract record UnlockResult
