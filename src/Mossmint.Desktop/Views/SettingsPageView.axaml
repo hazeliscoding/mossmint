@@ -44,7 +44,7 @@
     <Border Classes="card" Padding="24,20" IsVisible="{Binding CanUseThisDevice}">
       <StackPanel Spacing="10">
         <TextBlock Classes="section" Text="This PC" />
-        <ToggleSwitch IsChecked="{Binding UnlockOnThisDevice}" OnContent="Unlocks automatically on this PC" OffContent="Asks for the passphrase on this PC" />
+        <ToggleSwitch IsChecked="{Binding UnlockOnThisDevice}" OnContent="Unlocks automatically on this PC" OffContent="Asks for the passphrase on this PC" AutomationProperties.Name="Unlock automatically on this PC" />
         <TextBlock Classes="hint" Text="Windows protects the key for your account. Anyone who can sign in as you here can open the profile." />
       </StackPanel>
     </Border>

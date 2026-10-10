@@ -94,7 +94,7 @@
             <TextBlock Classes="section" Text="To review" />
             <TextBlock Classes="prose secondary" Text="{Binding ReviewSummary}" />
           </StackPanel>
-          <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowClosed}" OnContent="Showing settled" OffContent="Open only" VerticalAlignment="Top" />
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowClosed}" OnContent="Showing settled" OffContent="Open only" VerticalAlignment="Top" AutomationProperties.Name="Show settled items" />
         </Grid>
         <ItemsControl ItemsSource="{Binding Review}" IsVisible="{Binding HasReview}">
           <ItemsControl.ItemTemplate>

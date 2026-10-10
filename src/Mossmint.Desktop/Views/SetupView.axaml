@@ -97,7 +97,7 @@
           </StackPanel>
           <StackPanel Spacing="4" IsVisible="{Binding NeedsPayDay}">
             <TextBlock Classes="field-label" Text="Day of the month" />
-            <NumericUpDown Value="{Binding PayDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" Width="140" HorizontalAlignment="Left" />
+            <NumericUpDown Value="{Binding PayDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" Width="140" HorizontalAlignment="Left" AutomationProperties.Name="Payday, day of the month" />
           </StackPanel>
           <CheckBox IsChecked="{Binding PayEarly}" Content="Paid the business day before when payday falls on a weekend or bank holiday" />
         </StackPanel>
@@ -165,11 +165,11 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Spacing="4">
               <TextBlock Classes="field-label" Text="Due day" />
-              <NumericUpDown Value="{Binding DebtDueDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" />
+              <NumericUpDown Value="{Binding DebtDueDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" AutomationProperties.Name="Payment due day" />
             </StackPanel>
             <StackPanel Grid.Column="4" Spacing="4" IsVisible="{Binding DebtIsCard}">
               <TextBlock Classes="field-label" Text="Statement closes on" />
-              <NumericUpDown Value="{Binding DebtClosingDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" />
+              <NumericUpDown Value="{Binding DebtClosingDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" AutomationProperties.Name="Statement closing day" />
             </StackPanel>
           </Grid>
           <TextBlock Classes="hint" IsVisible="{Binding DebtIsCard}"

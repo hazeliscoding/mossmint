@@ -42,12 +42,17 @@
                  ItemsSource="{Binding NavItems}"
                  SelectedItem="{Binding SelectedItem}"
                  AutomationProperties.Name="Primary navigation">
+          <!-- Narrator reads the focused item, so the name goes on the item, not inside it. -->
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem" x:DataType="vm:NavItemViewModel">
+              <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+            </Style>
+          </ListBox.Styles>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="vm:NavItemViewModel">
               <StackPanel ToolTip.Tip="{Binding ToolTip}">
                 <Border Classes="separator" Margin="2,8,2,8" IsVisible="{Binding StartsGroup}" />
-                <Border Classes="nav-row" Height="32" Padding="10,0" Background="Transparent"
-                        AutomationProperties.Name="{Binding Label}">
+                <Border Classes="nav-row" Height="32" Padding="10,0" Background="Transparent">
                   <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <c:Icon Data="{Binding IconKey, Converter={x:Static views:IconKeyConverter.Instance}}" />
                     <TextBlock Classes="nav-label hide-collapsed" Text="{Binding Label}" VerticalAlignment="Center" />
