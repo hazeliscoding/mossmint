@@ -27,6 +27,7 @@ jobs:
           ./build/check-private-files.ps1 -Paths (git ls-files)
           # Positive control: the guard must reject a tracked spreadsheet.
           ./build/check-private-files.ps1 -Paths @("docs/leak.xlsx") -ExpectFailure
+          ./build/check-private-files.ps1 -Paths @("samples/bank-export.csv") -ExpectFailure
 
       - name: Restore
         run: dotnet restore --locked-mode

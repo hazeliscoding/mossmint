@@ -10,7 +10,7 @@ param(
 
 $patterns = @(
     '\.(xlsx|xlsm|xlsb|xls|ods|numbers)$',
-    '\.(ofx|qfx|qif)$',
+    '\.(ofx|qfx|qif|csv)$',
     '\.(db|db-wal|db-shm|sqlite|sqlite3)$',
     '\.(mossmint|mmbak)$',
     '(^|/)private/'
