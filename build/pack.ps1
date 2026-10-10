@@ -2,15 +2,19 @@
 # installer into artifacts/releases. The package carries binaries only: no
 # profile, sample data or user file is ever copied into the publish folder.
 #
-# Usage: pwsh build/pack.ps1 [-Version 0.1.0]
-# Velopack refuses to pack a version at or below one already in
-# artifacts/releases: bump -Version, or delete that folder for a local rebuild.
+# Usage: pwsh build/pack.ps1 [-Version 0.3.0]
+# The version defaults to the one in Directory.Build.props. Velopack refuses to
+# pack a version at or below one already in artifacts/releases: pass a higher
+# -Version, or delete that folder for a local rebuild.
 param(
-    [string]$Version = "0.1.0"
+    [string]$Version
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
+if (-not $Version) {
+    $Version = ([xml](Get-Content (Join-Path $root "Directory.Build.props"))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+}
 $publishDir = Join-Path $root "artifacts/publish/win-x64"
 $releaseDir = Join-Path $root "artifacts/releases"
 $icon = Join-Path $root "src/Mossmint.Desktop/Assets/mossmint.ico"
