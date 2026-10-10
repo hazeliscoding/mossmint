@@ -37,3 +37,6 @@ Thumbs.db
 # Agent guidelines are committed; this overrides the global gitignore
 !AGENTS.md
 !CLAUDE.md
+
+# Working files for the launch video (/brag); the finished video goes in site/.
+/brag-output*/

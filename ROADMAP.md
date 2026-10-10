@@ -95,6 +95,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Bank data before 1.0:** CSV with column mapping, OFX/QFX and a SimpleFIN adapter are wanted, in 0.7. **Plaid moves after 1.0** as a stretch goal, still behind its own ADR and threat model.
 - **0.8 matches real activity to the plan,** and **0.9 learns from history** (the seasonal estimates and backtesting that were under Later, plus export). Both need the transactions 0.7 brings in.
 - **1.0 is the promise release:** compatibility from 1.0 on, tested upgrades from every release, audits, and betas first, the way Prompuff did it.
+- **1.0 launches with a video and a landing page,** the way Prompuff did. The video is made with the `/brag` skill from Mossmint's own tokens, fonts and copy ("Make room to grow."), and shows only the synthetic *Juniper* household. The landing page is a static site on GitHub Pages that keeps the app's promise: no analytics or trackers, nothing loaded from other sites, and nothing that asks for financial data.
 - **The opt-in update check moves into 0.6,** because a real user now installs releases and shouldn't have to download each one by hand.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -217,8 +218,10 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [ ] Threat model refresh and complete user docs.
 - [ ] Betas on the `win-beta` channel before the release.
 - [ ] Protect `main` with a ruleset like Prompuff's; every change lands through a pull request.
+- [ ] Launch video made with `/brag`, from synthetic data only: safe to spend before payday, the lowest point before payday, a review item that won't guess, and everything staying on the PC. The working files stay in the gitignored `brag-output/`.
+- [ ] Landing page in `site/`, deployed to GitHub Pages: plain HTML and CSS, the app's own fonts, a Content-Security-Policy that blocks anything from other sites (a deploy check enforces it), downloads that link to the latest release, and the privacy contract up front.
 
-**Done when:** a profile from any 0.x release upgrades cleanly to 1.0, the betas surface no data-loss bugs, and the promise is written in the README.
+**Done when:** a profile from any 0.x release upgrades cleanly to 1.0, the betas surface no data-loss bugs, the promise is written in the README, and the video and the landing page are live.
 
 ## Later
 
