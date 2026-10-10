@@ -20,12 +20,12 @@ Mossmint is a local-first desktop app for paycheck forecasting and debt payoff p
 - **It watches the whole month, not just payday.** The forecast tracks the lowest point between paychecks, so a bill due the day before payday can't hide behind a healthy month-end total.
 - **Debt math you can audit.** Daily-interest loans, amortizing loans and credit cards are modelled explicitly, with day-count, rounding and payment-allocation rules written down. If a payment can't overcome interest, you get "never pays off", not a fake date.
 - **Your spreadsheets stay yours.** Importing Excel workbooks is read-only and previewed first. Originals are never modified.
-- **Offline by default.** No telemetry, no analytics, no bank login. Update checks are opt-in.
+- **Offline by default.** No telemetry, no analytics, and Mossmint never asks for your bank login. Update checks are opt-in.
 
 ## Privacy contract
 
 - All data stays on this computer, in an encrypted profile database under `%LOCALAPPDATA%\Mossmint`.
-- No network calls during normal use. Update checks and future bank connectors are separate, explicit opt-ins.
+- No network calls during normal use. Update checks and future bank connectors are separate, explicit opt-ins. A bank feed such as SimpleFIN is a service you sign up for separately, and it, not Mossmint, holds your bank login.
 - No telemetry, crash upload or tracking.
 - Logs never contain balances, transaction names, account numbers or file paths.
 
