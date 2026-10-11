@@ -114,6 +114,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Reconciling keeps the difference on the balance.** The bank's figure becomes the latest balance, marked *Differs* when it doesn't match what Mossmint expected; no balancing entry is invented and nothing is deleted. Entries typed in are dated today or earlier, since money still to come belongs in Bills.
 - **Savings goals don't move money.** A dated goal shows what's left divided over the paydays before its date, rounded up, and the Savings page says when the goals together need more than each paycheck sets aside. The rule is in `docs/financial-models/cash-flow.md`.
 - **The smallest window is 760×480** (M4, from the accessibility audit). That fits 200% on a 1080p screen, and half of one at 125%. In a narrow window, tables scroll sideways rather than hide columns, card grids drop to fewer columns, and the sidebar folds to icons below 1200 px. A smoke test checks every screen at both the default and the smallest size.
+- **Windows contrast themes use the user's own colours** (M4). While one is on, every Mossmint colour and Fluent's control colours come from the system colours, and Mossmint follows the setting live. Status hues drop out, which is safe because every status already has a shape and a label. The mapping is in `docs/design/design-system.md`. It was checked with sample palettes; a run on a real contrast theme is part of the hand Narrator pass.
 - **Mark paid records a payment entry** (M4). The forecast starts from the latest confirmed balance plus the manual entries recorded after it, so a paid bill comes off the balance at once and its due date leaves the forecast. Imported entries don't move it: an imported balance already includes them. Undo stays on the row with no time limit, instead of the mockup's 10-second toast, so nobody has to beat a timer (WCAG 2.2.1). The rules are in `docs/financial-models/cash-flow.md`.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -178,7 +179,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 - [x] Overview, Cash Flow, Paychecks, Debts, Bills, Savings, Transactions, following the mockup. (What waits is listed in the M4 decisions.)
 - [x] Manual ledger entry, mark paid with undo, balance reconciliation.
-- [ ] Every chart has a table twin; keyboard-only paths; 125–200% scaling; dark, light and high contrast.
+- [x] Every chart has a table twin; keyboard-only paths; 125–200% scaling; dark, light and high contrast.
 - [x] Automated accessibility checks in CI: every focusable control has an accessible name, and the theme's colour pairs meet contrast ratios. A Narrator pass by hand each milestone from here on.
 - [ ] Generic onboarding for a user with no spreadsheets.
 
