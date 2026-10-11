@@ -10,11 +10,13 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Mossmint.Application.Setup;
+using Mossmint.Desktop.Services;
 using Mossmint.Desktop.ViewModels;
 using Mossmint.Domain.Accounts;
 
@@ -54,6 +56,41 @@ public partial class AccessibilityTests
         // Positive control: disabled text is meant to be faint, and #777 on white is the textbook 4.48:1.
         Failures([("TextDisabled", "BgSurface", null, 4.5)], ThemeVariant.Light).Should().ContainSingle();
         Contrast(Color.Parse("#777777"), Colors.White).Should().BeApproximately(4.48, 0.01);
+    }
+
+    // Close to Windows 11's Night sky and Desert contrast themes: one dark, one light.
+    private static readonly ContrastPalette NightSky = new(
+        Color.Parse("#000000"), Color.Parse("#FFFFFF"), Color.Parse("#D6B4FD"), Color.Parse("#2B2B2B"), Color.Parse("#8080FF"), Color.Parse("#A6A6A6"));
+
+    private static readonly ContrastPalette Desert = new(
+        Color.Parse("#FFFAEF"), Color.Parse("#3D3D3D"), Color.Parse("#903909"), Color.Parse("#FFF5E3"), Color.Parse("#1C5E75"), Color.Parse("#676767"));
+
+    [AvaloniaTheory]
+    [InlineData("Night sky")]
+    [InlineData("Desert")]
+    public void A_contrast_theme_replaces_every_colour(string theme)
+    {
+        using var app = new Harness();
+        var palette = theme == "Desert" ? Desert : NightSky;
+
+        ContrastTheme.Apply(Avalonia.Application.Current!, palette);
+        try
+        {
+            Leaks(palette).Should().BeEmpty();
+        }
+        finally
+        {
+            ContrastTheme.Apply(Avalonia.Application.Current!, null);
+        }
+    }
+
+    [AvaloniaFact]
+    public void The_contrast_check_sees_the_moss_colours()
+    {
+        using var app = new Harness();
+
+        // Positive control: with no contrast theme on, the tokens hold Mossmint's own colours.
+        Leaks(NightSky).Should().Contain(s => s.StartsWith("BgCanvas", StringComparison.Ordinal));
     }
 
     [AvaloniaFact]
@@ -440,6 +477,25 @@ public partial class AccessibilityTests
         }
 
         return false;
+    }
+
+    // Every colour token, and the colours Fluent's own controls are drawn from, that
+    // doesn't come from the user's contrast theme.
+    private static List<string> Leaks(ContrastPalette p)
+    {
+        var app = Avalonia.Application.Current!;
+        var tokens = app.Resources.MergedDictionaries
+            .Select(r => r is ResourceInclude include ? include.Loaded : r).OfType<ResourceDictionary>()
+            .Select(r => r.ThemeDictionaries.TryGetValue(ThemeVariant.Dark, out var dark) ? dark as ResourceDictionary : null)
+            .OfType<ResourceDictionary>()
+            .SelectMany(d => d.Keys.OfType<string>())
+            .ToList();
+        string[] fluent = ["SystemAccentColor", "SystemAltHighColor", "SystemBaseHighColor", "SystemBaseLowColor", "SystemChromeMediumColor", "SystemChromeDisabledLowColor", "SystemRegionColor", "SystemListLowColor"];
+        Color[] theirs = [p.Window, p.WindowText, p.Highlight, p.HighlightText, p.HotLight, p.GrayText];
+        return [.. tokens.Concat(fluent)
+            .Select(key => (key, Value: app.TryGetResource(key, app.ActualThemeVariant, out var value) ? value switch { ISolidColorBrush b => b.Color, Color c => c, _ => (Color?)null } : null))
+            .Where(r => r.Value is not { } colour || !theirs.Contains(colour))
+            .Select(r => $"{r.key} is {r.Value?.ToString() ?? "missing"}")];
     }
 
     // A profile with a row in every list, so every row template renders.
