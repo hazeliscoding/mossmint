@@ -237,7 +237,7 @@
   <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BgSelected}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BorderStrong}" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSelected}" />
   </Style>
   <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
@@ -288,7 +288,7 @@
     <Setter Property="Padding" Value="0" />
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="FontWeight" Value="Normal" />
-    <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+    <Setter Property="Foreground" Value="{DynamicResource LinkText}" />
     <Setter Property="Cursor" Value="Hand" />
   </Style>
   <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
@@ -330,7 +330,7 @@
   </Style>
   <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BgSelected}" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSelected}" />
   </Style>
   <Style Selector="ListBox.nav ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BgSelected}" />

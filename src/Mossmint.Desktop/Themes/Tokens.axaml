@@ -21,6 +21,9 @@
       <SolidColorBrush x:Key="TextFaint" Color="#8F9F96" />
       <SolidColorBrush x:Key="TextDisabled" Color="#51625A" />
       <SolidColorBrush x:Key="TextInverse" Color="#111A17" />
+      <!-- On BgSelected, and for links. They only part from TextPrimary and AccentText in a contrast theme. -->
+      <SolidColorBrush x:Key="TextSelected" Color="#F3F5F0" />
+      <SolidColorBrush x:Key="LinkText" Color="#B6E2C4" />
 
       <SolidColorBrush x:Key="Accent" Color="#96CCA7" />
       <SolidColorBrush x:Key="AccentHover" Color="#B2DCBE" />
@@ -76,6 +79,9 @@
       <SolidColorBrush x:Key="TextFaint" Color="#647169" />
       <SolidColorBrush x:Key="TextDisabled" Color="#AEB8B1" />
       <SolidColorBrush x:Key="TextInverse" Color="#FFFFFF" />
+      <!-- On BgSelected, and for links. They only part from TextPrimary and AccentText in a contrast theme. -->
+      <SolidColorBrush x:Key="TextSelected" Color="#202B25" />
+      <SolidColorBrush x:Key="LinkText" Color="#2E5F46" />
 
       <SolidColorBrush x:Key="Accent" Color="#346B4F" />
       <SolidColorBrush x:Key="AccentHover" Color="#2A5940" />

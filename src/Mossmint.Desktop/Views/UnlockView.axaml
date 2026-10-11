@@ -54,7 +54,7 @@
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="p:ProfileSummary">
                 <StackPanel Orientation="Horizontal" Spacing="10" Margin="12,9">
-                  <c:Icon Data="{StaticResource IconLock}" Foreground="{DynamicResource TextFaint}" />
+                  <c:Icon Data="{StaticResource IconLock}" />
                   <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </StackPanel>
               </DataTemplate>
