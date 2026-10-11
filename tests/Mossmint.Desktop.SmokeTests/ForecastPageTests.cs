@@ -163,6 +163,17 @@ public class ForecastPageTests
         paychecks.Unavailable.Should().Contain("checking account");
     }
 
+    [AvaloniaFact]
+    public async Task The_overview_chart_links_to_its_table()
+    {
+        using var app = await Unlocked();
+        app.ViewModel.OpenApp(Destination.Overview);
+
+        ((OverviewPageViewModel)app.ViewModel.Shell.CurrentPage!).ShowTableCommand.Execute(null);
+
+        app.ViewModel.Shell.CurrentPage.Should().BeOfType<CashFlowPageViewModel>();
+    }
+
     // Steps away first: navigating to the page already open doesn't refresh it.
     private static string Opening(Harness app)
     {

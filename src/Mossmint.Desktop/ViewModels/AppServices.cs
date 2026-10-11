@@ -29,4 +29,6 @@ public interface IAppNavigator
     void ShowRecoveryKey(string recoveryKey, Action whenSaved);
 
     void ShowWelcomeAfterDelete();
+
+    void OpenApp(Destination destination);
 }

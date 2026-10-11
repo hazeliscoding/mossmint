@@ -63,6 +63,7 @@
         <TextBlock Classes="card-title" Text="{Binding ChartTitle}" />
         <TextBlock Classes="compact secondary" Text="Line: closing balance, dipping to each day's low · dashed: the cushion · PAY: paydays" TextWrapping="Wrap" />
         <c:ForecastChart Forecast="{Binding Forecast}" Height="250" AutomationProperties.Name="{Binding ChartDescription}" />
+        <Button Classes="link" FontSize="12" Content="See every day as a table on Cash Flow" Command="{Binding ShowTableCommand}" HorizontalAlignment="Left" />
       </StackPanel>
     </Border>
 

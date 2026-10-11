@@ -139,6 +139,10 @@ public sealed partial class OverviewPageViewModel(AppServices services, IAppNavi
     [RelayCommand]
     private void RunSetup() => navigator.StartSetup();
 
+    // The chart's table twin.
+    [RelayCommand]
+    private void ShowTable() => navigator.OpenApp(Destination.CashFlow);
+
     private static string Plural(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
 }
 
