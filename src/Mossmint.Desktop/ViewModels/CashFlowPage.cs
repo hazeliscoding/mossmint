@@ -20,6 +20,16 @@ public sealed partial class CashFlowPageViewModel(AppServices services)
     [ObservableProperty]
     private int _days = Forecasts.DefaultDays;
 
+    public IReadOnlyList<SpendingChoice> SpendingChoices => SpendingChoice.All;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Summary))]
+    private SpendingChoice _spending = SpendingChoice.All[0];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Summary))]
+    private bool _latePaychecks;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasForecast), nameof(Summary), nameof(ChartDescription))]
     private ProfileForecast? _forecast;
@@ -32,7 +42,7 @@ public sealed partial class CashFlowPageViewModel(AppServices services)
     public bool HasForecast => Forecast is not null;
 
     public string Summary => Forecast is { } f
-        ? $"{f.AccountName}, from {Describe.Money(f.Opening)} as of {f.OpeningProvenance.AsOf:d MMM}. Lowest {Describe.Money(f.Lowest)} on {f.LowestDate:ddd d MMM}; cushion {Describe.Money(f.Cushion)}."
+        ? $"{f.AccountName}, from {Describe.Money(f.Opening)} as of {f.OpeningProvenance.AsOf:d MMM}. Lowest {Describe.Money(f.Lowest)} on {f.LowestDate:ddd d MMM}; cushion {Describe.Money(f.Cushion)}. {SpendingChoice.Describe(Spending, LatePaychecks)}."
         : "";
 
     public string ChartDescription => Forecast is { } f
@@ -40,6 +50,10 @@ public sealed partial class CashFlowPageViewModel(AppServices services)
         : "";
 
     partial void OnDaysChanged(int value) => OnNavigatedTo();
+
+    partial void OnSpendingChanged(SpendingChoice value) => OnNavigatedTo();
+
+    partial void OnLatePaychecksChanged(bool value) => OnNavigatedTo();
 
     public override void OnNavigatedTo()
     {
@@ -50,7 +64,7 @@ public sealed partial class CashFlowPageViewModel(AppServices services)
         }
 
         var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);
-        (Forecast, Unavailable) = Forecasts.Build(services.Context.Current.Data, today, Days) switch
+        (Forecast, Unavailable) = Forecasts.Build(services.Context.Current.Data, today, Days, new ForecastAssumptions(Spending.Value, LatePaychecks)) switch
         {
             ProfileForecast f => (f, (string?)null),
             ForecastUnavailable u => (null, string.Join(" ", u.Missing)),

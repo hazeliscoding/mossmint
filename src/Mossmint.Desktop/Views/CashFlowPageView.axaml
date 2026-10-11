@@ -34,6 +34,31 @@
       </StackPanel>
     </DockPanel>
 
+    <!-- Assumptions, not probabilities (ADR-0002): each choice re-runs the forecast and the table. -->
+    <WrapPanel>
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
+        <TextBlock Classes="compact secondary" Text="Spending" VerticalAlignment="Center" />
+        <ListBox Classes="segments" ItemsSource="{Binding SpendingChoices}" SelectedItem="{Binding Spending}" AutomationProperties.Name="Spending">
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem" x:DataType="vm:SpendingChoice">
+              <Setter Property="AutomationProperties.Name" Value="{Binding Label, StringFormat='{}{0} spending'}" />
+            </Style>
+          </ListBox.Styles>
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:SpendingChoice">
+              <TextBlock Text="{Binding Label}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </StackPanel>
+      <CheckBox Content="{x:Static vm:SpendingChoice.LateLabel}" IsChecked="{Binding LatePaychecks}" VerticalAlignment="Center" />
+    </WrapPanel>
+
     <Border Classes="card" Padding="24,20" IsVisible="{Binding Unavailable, Converter={x:Static ObjectConverters.IsNotNull}}">
       <StackPanel Spacing="10">
         <c:StatusBadge Tone="Warning" Text="No forecast yet" HorizontalAlignment="Left" />

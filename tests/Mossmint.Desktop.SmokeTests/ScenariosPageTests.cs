@@ -45,6 +45,28 @@ public class ScenariosPageTests
     }
 
     [AvaloniaFact]
+    public async Task Harsher_assumptions_shrink_the_safe_extra_and_show_how_late_debt_free_could_be()
+    {
+        using var app = await WithDebts();
+        var page = Open(app);
+        var expected = page.Largest!.Value;
+
+        page.Spending = page.SpendingChoices.Single(c => c.Label == "Stress");
+        page.LatePaychecks = true;
+
+        page.Largest.Should().BeLessThan(expected);
+        page.Columns.Should().OnlyContain(c => !c.HasTightNote);
+
+        page.Spending = page.SpendingChoices[0];
+        page.LatePaychecks = false;
+        page.Extra = expected;
+        page.Refresh();
+
+        page.Columns[1].TightNote.Should().StartWith("With stress spending and late paychecks");
+        page.Columns[0].HasTightNote.Should().BeFalse();
+    }
+
+    [AvaloniaFact]
     public async Task Moving_a_debt_changes_the_custom_order()
     {
         using var app = await WithDebts();
@@ -94,6 +116,7 @@ public class ScenariosPageTests
         var checking = entry.AddCashAccount("Checking", 1_240m);
         entry.AddPaycheck(new PaycheckEntry("Paycheck", 2_050m, PayPattern.TwiceMonthly), checking.Id);
         entry.AddBill(new BillEntry("Rent", 1_150m, 1), checking.Id);
+        entry.AddBill(new BillEntry("Electric", 70m, 12, IsEstimate: true, Low: 60m, High: 95m), checking.Id);
         entry.AddLoan(new LoanEntry("Car loan", 9_800m, today, 7.4m, 285m, 28), checking.Id);
         entry.AddCard(new CardEntry("Card", 2_300m, today, 24.99m, 150m, 21, 3), checking.Id);
         entry.SetSavings(150m, 300m);

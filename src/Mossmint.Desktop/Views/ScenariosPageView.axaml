@@ -47,6 +47,30 @@
             </StackPanel>
           </StackPanel>
         </WrapPanel>
+        <!-- Assumptions, not probabilities (ADR-0002): each choice re-runs the comparison. -->
+        <WrapPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
+            <TextBlock Classes="compact secondary" Text="Spending" VerticalAlignment="Center" />
+            <ListBox Classes="segments" ItemsSource="{Binding SpendingChoices}" SelectedItem="{Binding Spending}" AutomationProperties.Name="Spending">
+              <ListBox.Styles>
+                <Style Selector="ListBoxItem" x:DataType="vm:SpendingChoice">
+                  <Setter Property="AutomationProperties.Name" Value="{Binding Label, StringFormat='{}{0} spending'}" />
+                </Style>
+              </ListBox.Styles>
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:SpendingChoice">
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+          <CheckBox Content="{x:Static vm:SpendingChoice.LateLabel}" IsChecked="{Binding LatePaychecks}" VerticalAlignment="Center" />
+        </WrapPanel>
         <TextBlock Classes="error" Text="{Binding ExtraError}" TextWrapping="Wrap" IsVisible="{Binding ExtraError, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <TextBlock Classes="compact secondary" Text="{Binding LargestBasis}" TextWrapping="Wrap" />
       </StackPanel>
@@ -79,6 +103,7 @@
               </Grid>
               <c:StatusBadge Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Left" />
               <TextBlock Classes="compact secondary" Text="{Binding Problem}" TextWrapping="Wrap" IsVisible="{Binding HasProblem}" />
+              <TextBlock Classes="compact secondary" Text="{Binding TightNote}" TextWrapping="Wrap" IsVisible="{Binding HasTightNote}" />
               <Border Classes="separator-top" Padding="0,8,0,0">
                 <ItemsControl ItemsSource="{Binding Steps}">
                   <ItemsControl.ItemTemplate>

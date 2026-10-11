@@ -22,11 +22,14 @@ public sealed record ScenarioColumn(
     string Status,
     StatusTone Tone,
     IReadOnlyList<string> Steps,
-    string? Problem)
+    string? Problem,
+    string? TightNote)
 {
     public bool HasProblem => Problem is not null;
 
-    public string AccessibleName => $"{Title}: {Subtitle}. {DebtFreeLabel} {DebtFree}. Interest {Interest}. Lowest cash {Lowest}. {Status}.";
+    public bool HasTightNote => TightNote is not null;
+
+    public string AccessibleName => $"{Title}: {Subtitle}. {DebtFreeLabel} {DebtFree}. Interest {Interest}. Lowest cash {Lowest}. {Status}. {TightNote}";
 }
 
 public sealed record OrderedDebt(AccountId Account, string Name);
@@ -84,6 +87,18 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     private bool _hasNoDebts;
 
     public bool CanUseLargest => Largest is not null;
+
+    public IReadOnlyList<SpendingChoice> SpendingChoices => SpendingChoice.All;
+
+    [ObservableProperty]
+    private SpendingChoice _spending = SpendingChoice.All[0];
+
+    [ObservableProperty]
+    private bool _latePaychecks;
+
+    partial void OnSpendingChanged(SpendingChoice value) => Refresh();
+
+    partial void OnLatePaychecksChanged(bool value) => Refresh();
 
     // The slider moves in steps of 5; the box takes any amount.
     public double SliderValue
@@ -159,7 +174,8 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
 
         var data = _services.Context.Current.Data;
         var today = DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime);
-        var outcome = Scenarios.Compare(data, today, new Money(Extra, data.Settings().Currency), [.. CustomOrder.Select(d => d.Account)]);
+        var outcome = Scenarios.Compare(
+            data, today, new Money(Extra, data.Settings().Currency), [.. CustomOrder.Select(d => d.Account)], new ForecastAssumptions(Spending.Value, LatePaychecks));
         HasNoDebts = data.Debts().Count == 0;
         if (outcome is PayoffComparison comparison)
         {
@@ -195,7 +211,7 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
         (Largest, LargestText, LargestBasis) = largest.State switch
         {
             SafeToSpendState.Safe => (largest.Amount!.Value.Amount, Describe.Money(largest.Amount.Value),
-                $"Keeps checking at or above the {Describe.Money(comparison.Cushion)} cushion every day through {comparison.Through:MMM yyyy}, paid from the first paycheck each month."),
+                $"Keeps checking at or above the {Describe.Money(comparison.Cushion)} cushion every day through {comparison.Through:MMM yyyy}, paid from the first paycheck each month. {SpendingChoice.Describe(Spending, LatePaychecks)}."),
             SafeToSpendState.Shortfall => ((decimal?)null, "None",
                 $"Checking already falls {Describe.Money(largest.Amount!.Value)} below the {Describe.Money(comparison.Cushion)} cushion with no extra, so no extra is safe."),
             _ => (null, "Needs confirmation", string.Join(" ", largest.Reasons)),
@@ -228,7 +244,21 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
             status,
             tone,
             [.. option.Steps.Select((s, i) => $"{i + 1}. {s.Name} · {(s.PaidOff is { } paid ? Month(paid) : "not paid off")}")],
-            option.Problem);
+            option.Problem,
+            TightNote(option));
+    }
+
+    // The far end of the debt-free range: what stress spending and late paychecks would leave room for.
+    private string? TightNote(PayoffOption option)
+    {
+        if (option.ExtraIfTight is not { } tight)
+        {
+            return null;
+        }
+
+        var room = tight.IsZero ? "no extra fits" : $"only {Describe.Money(tight)} a month fits";
+        var date = option.DebtFreeIfTight is { } late ? $"debt-free {Month(late)}" : "no debt-free date";
+        return $"With stress spending and late paychecks, {room}: {date}.";
     }
 
     private string Month(DateOnly date) => date.ToString("MMM yyyy", _culture);

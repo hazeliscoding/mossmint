@@ -22,6 +22,28 @@ public class ForecastPageTests
     }
 
     [AvaloniaFact]
+    public async Task Cash_flow_reruns_under_stress_spending_and_late_paychecks()
+    {
+        using var app = await Unlocked();
+        var entry = new ManualEntry(app.Services.Context.Current.Data, TimeProvider.System);
+        var checking = entry.AddCashAccount("Checking", 1_000m);
+        entry.AddPaycheck(new PaycheckEntry("Paycheck", 2_000m, PayPattern.TwiceMonthly), checking.Id);
+        entry.AddBill(new BillEntry("Electric", 70m, 12, IsEstimate: true, Low: 60m, High: 95m), checking.Id);
+        app.ViewModel.Shell.Navigate(Destination.CashFlow);
+        var page = (CashFlowPageViewModel)app.ViewModel.Shell.CurrentPage!;
+        var paydays = page.Rows.Where(r => r.Status == "Payday").Select(r => r.Date).ToList();
+
+        page.LatePaychecks = true;
+
+        page.Rows.Where(r => r.Status == "Payday").Select(r => r.Date).Should().NotEqual(paydays);
+        page.Summary.Should().Contain("paychecks 3 business days late");
+
+        page.Spending = page.SpendingChoices.Single(c => c.Label == "Stress");
+
+        page.Summary.Should().Contain("Stress spending");
+    }
+
+    [AvaloniaFact]
     public async Task Paychecks_show_what_each_paycheck_pays_for()
     {
         using var app = await Unlocked();
