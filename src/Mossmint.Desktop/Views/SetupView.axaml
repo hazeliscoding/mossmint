@@ -123,7 +123,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Spacing="4">
               <TextBlock Classes="field-label" Text="Amount" />
-              <TextBox Classes="money" Text="{Binding BillAmount}" PlaceholderText="0.00" AutomationProperties.Name="Bill amount" />
+              <TextBox Classes="money" Text="{Binding BillAmount}" PlaceholderText="0.00" AutomationProperties.Name="Amount" />
             </StackPanel>
             <StackPanel Grid.Column="4" Spacing="4">
               <TextBlock Classes="field-label" Text="Due day" />
@@ -180,7 +180,7 @@
             </StackPanel>
             <StackPanel Grid.Column="4" Spacing="4" IsVisible="{Binding DebtIsCard}">
               <TextBlock Classes="field-label" Text="Statement closes on" />
-              <NumericUpDown Value="{Binding DebtClosingDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" AutomationProperties.Name="Statement closing day" />
+              <NumericUpDown Value="{Binding DebtClosingDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0" AutomationProperties.Name="Statement closes on" />
             </StackPanel>
           </Grid>
           <TextBlock Classes="hint" IsVisible="{Binding DebtIsCard}"
@@ -194,11 +194,11 @@
           <Grid ColumnDefinitions="*,16,*">
             <StackPanel Spacing="4">
               <TextBlock Classes="field-label" Text="Save from each paycheck" />
-              <TextBox Classes="money" Text="{Binding SavingsPerPaycheck}" PlaceholderText="0.00" AutomationProperties.Name="Savings per paycheck" />
+              <TextBox Classes="money" Text="{Binding SavingsPerPaycheck}" PlaceholderText="0.00" AutomationProperties.Name="Save from each paycheck" />
             </StackPanel>
             <StackPanel Grid.Column="2" Spacing="4">
               <TextBlock Classes="field-label" Text="Cushion to keep in checking" />
-              <TextBox Classes="money" Text="{Binding Cushion}" PlaceholderText="0.00" AutomationProperties.Name="Cushion" />
+              <TextBox Classes="money" Text="{Binding Cushion}" PlaceholderText="0.00" AutomationProperties.Name="Cushion to keep in checking" />
             </StackPanel>
           </Grid>
         </StackPanel>

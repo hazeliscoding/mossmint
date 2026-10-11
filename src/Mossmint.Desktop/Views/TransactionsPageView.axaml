@@ -57,7 +57,7 @@
           </StackPanel>
           <StackPanel Spacing="4" Margin="0,0,12,8">
             <TextBlock Classes="field-label" Text="Direction" />
-            <ToggleSwitch IsChecked="{Binding IsMoneyIn}" OnContent="Money in" OffContent="Money out" AutomationProperties.Name="Money in" />
+            <ToggleSwitch IsChecked="{Binding IsMoneyIn}" OnContent="Money in" OffContent="Money out" AutomationProperties.Name="Direction: money in" />
           </StackPanel>
           <StackPanel Spacing="4" Width="180" Margin="0,0,12,8">
             <TextBlock Classes="field-label" Text="Date" />
@@ -71,7 +71,7 @@
         <TextBlock Classes="error" Text="{Binding FormError}" TextWrapping="Wrap" IsVisible="{Binding FormError, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Classes="primary" Content="Record" Command="{Binding SaveEntryCommand}" />
-          <Button Classes="ghost" Content="Cancel" Command="{Binding CancelFormsCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelFormsCommand}" />
         </StackPanel>
       </StackPanel>
     </Border>
@@ -87,7 +87,7 @@
         <TextBlock Classes="error" Text="{Binding FormError}" TextWrapping="Wrap" IsVisible="{Binding FormError, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Classes="primary" Content="Confirm balance" Command="{Binding SaveReconcileCommand}" />
-          <Button Classes="ghost" Content="Cancel" Command="{Binding CancelFormsCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelFormsCommand}" />
         </StackPanel>
       </StackPanel>
     </Border>

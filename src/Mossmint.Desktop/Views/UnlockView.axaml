@@ -74,7 +74,7 @@
         <CheckBox IsChecked="{Binding UseRecoveryKey}" Content="Use my recovery key instead" />
 
         <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Unlocking" IsVisible="{Binding IsBusy}" />
 
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
           <Button Content="Unlock with this PC" Command="{Binding UnlockWithThisDeviceCommand}" IsVisible="{Binding CanUnlockWithThisDevice}" />

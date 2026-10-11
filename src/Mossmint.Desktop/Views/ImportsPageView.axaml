@@ -23,7 +23,7 @@
         <StackPanel Orientation="Horizontal" Spacing="10">
           <Button Classes="primary" Content="Choose workbooks…" Command="{Binding ChooseWorkbooksCommand}" />
         </StackPanel>
-        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Reading the workbooks" IsVisible="{Binding IsBusy}" />
       </StackPanel>
     </Border>
 
@@ -37,8 +37,8 @@
         <StackPanel Orientation="Horizontal" Spacing="10">
           <Button Classes="primary" Content="Import" Command="{Binding ImportCommand}" />
           <Button Content="Save report…" Command="{Binding SaveReportCommand}" />
-          <Button Classes="ghost" Content="Cancel" Command="{Binding CancelPreviewCommand}" />
-          <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="120" VerticalAlignment="Center" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelPreviewCommand}" />
+          <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Importing" IsVisible="{Binding IsBusy}" Width="120" VerticalAlignment="Center" />
         </StackPanel>
         <StackPanel Spacing="16" DataContext="{Binding Preview}" x:DataType="vm:ImportPreviewViewModel">
           <ItemsControl ItemsSource="{Binding Files}">
@@ -108,11 +108,11 @@
                   </StackPanel>
                   <c:StatusBadge Grid.Column="1" Tone="{Binding Tone}" Text="{Binding Badge}" VerticalAlignment="Top" Margin="16,0,0,0" />
                   <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                    <Button Content="Mark resolved" IsVisible="{Binding IsOpen}"
+                    <Button Content="Mark resolved" IsVisible="{Binding IsOpen}" AutomationProperties.Name="{Binding Title, StringFormat='Mark {0} resolved'}"
                             Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).ResolveCommand}" CommandParameter="{Binding}" />
-                    <Button Classes="ghost" Content="Dismiss" IsVisible="{Binding IsOpen}"
+                    <Button Classes="ghost" Content="Dismiss" IsVisible="{Binding IsOpen}" AutomationProperties.Name="{Binding Title, StringFormat='Dismiss {0}'}"
                             Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).DismissCommand}" CommandParameter="{Binding}" />
-                    <Button Classes="ghost" Content="Reopen" IsVisible="{Binding !IsOpen}"
+                    <Button Classes="ghost" Content="Reopen" IsVisible="{Binding !IsOpen}" AutomationProperties.Name="{Binding Title, StringFormat='Reopen {0}'}"
                             Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).ReopenCommand}" CommandParameter="{Binding}" />
                   </StackPanel>
                 </Grid>

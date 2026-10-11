@@ -31,7 +31,7 @@
 
         <StackPanel Spacing="4">
           <TextBlock Classes="field-label" Text="Passphrase again" />
-          <TextBox Text="{Binding Confirm}" PasswordChar="•" AutomationProperties.Name="Confirm passphrase" />
+          <TextBox Text="{Binding Confirm}" PasswordChar="•" AutomationProperties.Name="Passphrase again" />
         </StackPanel>
 
         <StackPanel Spacing="4" IsVisible="{Binding CanUseThisDevice}">
@@ -41,7 +41,7 @@
         </StackPanel>
 
         <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Creating the profile" IsVisible="{Binding IsBusy}" />
 
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
           <Button Classes="ghost" Content="Back" Command="{Binding BackCommand}" />

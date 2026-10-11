@@ -20,7 +20,7 @@
           <Button Classes="primary" Content="Back up now…" Command="{Binding BackUpNowCommand}" />
           <Button Content="Keep a copy on this PC" Command="{Binding KeepLocalCopyCommand}" />
         </StackPanel>
-        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Backing up" IsVisible="{Binding IsBusy}" />
         <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left" AutomationProperties.LiveSetting="Polite"
                        IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <TextBlock Classes="hint" Text="Copies on this PC keep the newest five. They protect against mistakes, not against losing the PC." />

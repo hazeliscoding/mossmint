@@ -236,6 +236,12 @@ public partial class AccessibilityTests
         Press(app, "Save", savings.SaveSavedCommand);
         Focused(app).Should().Be("Update saved for Car fund");
 
+        // Escape closes a form like Cancel does.
+        Press(app, "Add goal", savings.StartAddCommand);
+        app.Window!.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Harness.Pump();
+        (savings.IsAdding, Focused(app)).Should().Be((false, "Add goal"));
+
         shell.Navigate(Destination.Debts);
         var debts = (DebtsPageViewModel)shell.CurrentPage!;
         Press(app, "Confirm balance", debts.StartConfirmCommand);

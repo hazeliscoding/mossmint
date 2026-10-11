@@ -25,10 +25,10 @@
           </StackPanel>
           <StackPanel Grid.Column="2" Spacing="4">
             <TextBlock Classes="field-label" Text="Again" />
-            <TextBox Text="{Binding ConfirmPassphrase}" PasswordChar="•" AutomationProperties.Name="Confirm new passphrase" />
+            <TextBox Text="{Binding ConfirmPassphrase}" PasswordChar="•" AutomationProperties.Name="New passphrase again" />
           </StackPanel>
         </Grid>
-        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Changing the passphrase" IsVisible="{Binding IsBusy}" />
         <Button Content="Change passphrase" Command="{Binding ChangePassphraseCommand}" HorizontalAlignment="Left" />
       </StackPanel>
     </Border>
@@ -88,7 +88,8 @@
             <Run Text="Type the profile name to confirm: " />
             <Run Text="{Binding ProfileName}" FontWeight="Bold" />
           </TextBlock>
-          <TextBox Text="{Binding DeleteConfirmation}" AutomationProperties.Name="Profile name to confirm deletion" />
+          <TextBox Text="{Binding DeleteConfirmation}" AutomationProperties.Name="Type the profile name to confirm"
+                   AutomationProperties.HelpText="{Binding ProfileName, StringFormat='Type {0}'}" />
         </StackPanel>
         <Button Classes="danger" Content="Delete profile" Command="{Binding DeleteProfileCommand}" HorizontalAlignment="Left" />
       </StackPanel>
