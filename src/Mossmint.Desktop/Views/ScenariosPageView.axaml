@@ -1,0 +1,122 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.ScenariosPageView"
+             x:DataType="vm:ScenariosPageViewModel">
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding HasNoDebts}">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                   Text="No debts to compare yet. Add your loans and cards to see which order of paying them off gets you debt-free sooner, and how much extra your cash can take." />
+        <Button Classes="primary" Content="Add a loan or card" Command="{Binding AddDebtsCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding Unavailable, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="10">
+        <c:StatusBadge Tone="Warning" Text="No comparison yet" HorizontalAlignment="Left" />
+        <TextBlock Classes="prose" Text="{Binding Unavailable}" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="16,14" IsVisible="{Binding HasComparison}">
+      <StackPanel Spacing="10">
+        <WrapPanel>
+          <StackPanel Spacing="4" Margin="0,0,32,8">
+            <TextBlock Classes="field-label" Text="Extra each month" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <Slider Width="220" Minimum="0" Maximum="{Binding SliderMaximum}" Value="{Binding SliderValue}"
+                      SmallChange="5" LargeChange="50" VerticalAlignment="Center" AutomationProperties.Name="Extra each month" />
+              <TextBox Classes="money" Width="130" Text="{Binding ExtraText}" AutomationProperties.Name="Extra each month, exact amount" />
+            </StackPanel>
+          </StackPanel>
+          <StackPanel Spacing="4" Margin="0,0,32,8">
+            <TextBlock Classes="field-label" Text="Largest safe extra" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <TextBlock Classes="mono" FontSize="18" Text="{Binding LargestText}" VerticalAlignment="Center" />
+              <TextBlock Classes="secondary" Text="a month" VerticalAlignment="Center" IsVisible="{Binding CanUseLargest}" />
+              <Button Content="Use it" Command="{Binding UseLargestCommand}" IsVisible="{Binding CanUseLargest}"
+                      AutomationProperties.Name="Use the largest safe extra" />
+            </StackPanel>
+          </StackPanel>
+        </WrapPanel>
+        <TextBlock Classes="error" Text="{Binding ExtraError}" TextWrapping="Wrap" IsVisible="{Binding ExtraError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <TextBlock Classes="compact secondary" Text="{Binding LargestBasis}" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <ItemsControl ItemsSource="{Binding Columns}" IsVisible="{Binding HasComparison}" Margin="0,0,-12,-12">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <WrapPanel />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ScenarioColumn">
+          <Border Classes="card" Width="284" Padding="14" Margin="0,0,12,12" AutomationProperties.Name="{Binding AccessibleName}"
+                  AutomationProperties.ControlTypeOverride="Group" AutomationProperties.IsControlElementOverride="True">
+            <StackPanel Spacing="8">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="card-title" Text="{Binding Title}" />
+                <TextBlock Classes="compact secondary" Text="{Binding Subtitle}" TextWrapping="Wrap" />
+              </StackPanel>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="label" Text="{Binding DebtFreeLabel}" />
+                <TextBlock Classes="mono" FontSize="24" Text="{Binding DebtFree}" />
+              </StackPanel>
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                <TextBlock Classes="compact secondary" Text="Interest" />
+                <TextBlock Grid.Column="1" Classes="mono compact" Text="{Binding Interest}" TextAlignment="Right" />
+                <TextBlock Grid.Row="1" Classes="compact secondary" Text="Lowest cash" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono compact" Text="{Binding Lowest}" TextAlignment="Right" />
+              </Grid>
+              <c:StatusBadge Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Left" />
+              <TextBlock Classes="compact secondary" Text="{Binding Problem}" TextWrapping="Wrap" IsVisible="{Binding HasProblem}" />
+              <Border Classes="separator-top" Padding="0,8,0,0">
+                <ItemsControl ItemsSource="{Binding Steps}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Classes="compact" Text="{Binding}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Border>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Border Classes="card" Padding="16,14" IsVisible="{Binding HasComparison}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="card-title" Text="Your order" />
+        <TextBlock Classes="compact secondary" TextWrapping="Wrap"
+                   Text="The extra goes to the first debt still owed, then to the next once it's paid off. Move a debt to change which one comes first." />
+        <ItemsControl ItemsSource="{Binding CustomOrder}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OrderedDebt">
+              <DockPanel Margin="0,2">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                  <Button Classes="ghost" Content="Earlier" CommandParameter="{Binding}"
+                          Command="{Binding $parent[UserControl].((vm:ScenariosPageViewModel)DataContext).MoveEarlierCommand}"
+                          AutomationProperties.Name="{Binding Name, StringFormat='Move {0} earlier'}" />
+                  <Button Classes="ghost" Content="Later" CommandParameter="{Binding}"
+                          Command="{Binding $parent[UserControl].((vm:ScenariosPageViewModel)DataContext).MoveLaterCommand}"
+                          AutomationProperties.Name="{Binding Name, StringFormat='Move {0} later'}" />
+                </StackPanel>
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+              </DockPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>
