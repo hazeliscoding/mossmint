@@ -203,7 +203,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Payoff comparison: avalanche, snowball, custom.
 - [x] Largest feasible extra payment over the whole horizon, revalidated against daily cash.
 - [x] Stress scenarios and a debt-free date range.
-- [ ] Apply to plan with a change summary; scenarios never change the real plan silently.
+- [x] Apply to plan with a change summary; scenarios never change the real plan silently.
 - [ ] Bills can be kept up to date from the Bills page (the test user's questions, see the M5 decisions):
   - Add a bill there, not only through *Start fresh*.
   - Edit a bill's name, amount (a price change) and day of the month (a subscription's real billing day).
