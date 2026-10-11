@@ -25,10 +25,11 @@
         <ItemsControl ItemsSource="{Binding Steps}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:SetupStepItem">
-              <DockPanel Margin="0,6">
+              <DockPanel Margin="0,6" AutomationProperties.Name="{Binding AccessibleName}"
+                         AutomationProperties.ControlTypeOverride="Text" AutomationProperties.IsControlElementOverride="True">
                 <c:Icon DockPanel.Dock="Right" Width="14" Height="14" Data="{StaticResource IconCheck}" Foreground="{DynamicResource SignalHealthy}"
                         IsVisible="{Binding IsSaved}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Label}" Classes="secondary" Classes.current="{Binding IsCurrent}" AutomationProperties.Name="{Binding AccessibleName}" />
+                <TextBlock Text="{Binding Label}" Classes="secondary" Classes.current="{Binding IsCurrent}" AutomationProperties.AccessibilityView="Raw" />
               </DockPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>

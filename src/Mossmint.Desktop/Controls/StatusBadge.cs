@@ -1,4 +1,6 @@
 using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 
@@ -27,6 +29,11 @@ public sealed class StatusBadge : TemplatedControl
     public StatusBadge()
     {
         UpdateTone(Tone);
+
+        // The label inside is part of the template, which UI Automation leaves out, so the
+        // badge itself is the text Narrator reads.
+        AutomationProperties.SetControlTypeOverride(this, AutomationControlType.Text);
+        AutomationProperties.SetIsControlElementOverride(this, true);
     }
 
     public string? Text
@@ -47,6 +54,10 @@ public sealed class StatusBadge : TemplatedControl
         if (change.Property == ToneProperty)
         {
             UpdateTone(change.GetNewValue<StatusTone>());
+        }
+        else if (change.Property == TextProperty)
+        {
+            AutomationProperties.SetName(this, change.GetNewValue<string?>());
         }
     }
 

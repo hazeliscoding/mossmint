@@ -194,7 +194,7 @@ public static class OverviewCards
 
     private static (string Status, StatusTone Tone) Status(Confidence confidence) => Describe.Confidence(confidence);
 
-    private static string Plural(int n, string noun) => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
+    private static string Plural(int n, string noun) => n switch { 0 => $"no {noun}s", 1 => $"1 {noun}", _ => $"{n} {noun}s" };
 }
 
 public sealed partial class BackupsPageViewModel(AppServices services, IAppNavigator navigator)

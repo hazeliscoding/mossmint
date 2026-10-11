@@ -85,10 +85,11 @@
             <Border Width="22" Height="22" CornerRadius="11" BorderThickness="1"
                     BorderBrush="{DynamicResource BorderStrong}" Background="{DynamicResource BgElevated}">
               <TextBlock Text="{Binding Context.ProfileInitial}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}"
+                         AutomationProperties.AccessibilityView="Raw"
                          HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <TextBlock Text="{Binding Context.ProfileName}" FontWeight="SemiBold" VerticalAlignment="Center"
-                       AutomationProperties.Name="{Binding Context.ProfileName, StringFormat='Unlocked profile: {0}'}" />
+                       AutomationProperties.HelpText="Unlocked profile" />
             <Border Width="1" Height="18" Background="{DynamicResource BorderHairline}" />
             <TextBlock Classes="compact faint" Text="Forecast as of" VerticalAlignment="Center" />
             <TextBlock Classes="mono faint" Text="{Binding ForecastAsOf}" VerticalAlignment="Center"

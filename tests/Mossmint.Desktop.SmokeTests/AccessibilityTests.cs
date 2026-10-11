@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
@@ -135,7 +136,8 @@ public partial class AccessibilityTests
     {
         using var app = new Harness();
 
-        // Positive control: a plain Border isn't a control element, so its name is never read.
+        // Positive control: a plain Border isn't a control element, so its name is never read; a
+        // text block reads its text, not its name; a masked text box still hands over its text.
         var window = new Window
         {
             Content = new StackPanel
@@ -144,12 +146,17 @@ public partial class AccessibilityTests
                 {
                     new Border { [AutomationProperties.NameProperty] = "Card" },
                     new Border { [AutomationProperties.NameProperty] = "Group", [AutomationProperties.IsControlElementOverrideProperty] = true },
+                    new TextBlock { Text = "1. Cash", [AutomationProperties.NameProperty] = "Cash, step 1 of 5" },
+                    new TextBox { PasswordChar = '•', Text = "secret", [AutomationProperties.NameProperty] = "Passphrase" },
+                    new Controls.PassphraseBox { Text = "secret", [AutomationProperties.NameProperty] = "Passphrase" },
+                    new Controls.StatusBadge { Text = "Estimated" },
                 },
             },
         };
         window.Show();
 
-        Inert(window, "Sample").Should().ContainSingle().Which.Should().Contain("'Card'");
+        Inert(window, "Sample").Should().HaveCount(3)
+            .And.Contain(s => s.Contains("'Card'")).And.Contain(s => s.Contains("'Cash, step 1 of 5' reads as '1. Cash'")).And.Contain(s => s.Contains("TextBox 'Passphrase'"));
         window.Close();
     }
 
@@ -495,12 +502,16 @@ public partial class AccessibilityTests
         return found;
     }
 
-    // A name set on something UI Automation treats as layout is silently dropped.
+    // A name set on something UI Automation treats as layout is silently dropped, and a text
+    // block reports its own text instead. Badges are read as their text; a passphrase is
+    // never handed to UI Automation as a value.
     private static List<string> Inert(Visual root, string where) =>
         [.. root.GetVisualDescendants().OfType<Control>()
-            .Where(c => c.IsEffectivelyVisible && AutomationProperties.GetName(c) is { Length: > 0 }
-                && !ControlAutomationPeer.CreatePeerForElement(c).IsControlElement())
-            .Select(c => $"{where}: {c.GetType().Name} '{AutomationProperties.GetName(c)}'")
+            .Where(c => c.IsEffectivelyVisible)
+            .Select(c => (Control: c, Name: c is Controls.StatusBadge b ? b.Text : AutomationProperties.GetName(c), Peer: ControlAutomationPeer.CreatePeerForElement(c)))
+            .Where(c => (c.Name is { Length: > 0 } && (!c.Peer.IsControlElement() || c.Peer.GetName() != c.Name))
+                || (c.Control is TextBox { PasswordChar: not ' ' } && c.Peer is IValueProvider))
+            .Select(c => $"{where}: {c.Control.GetType().Name} '{c.Name}' reads as '{c.Peer.GetName()}'{(c.Peer is IValueProvider ? " with its value" : "")}")
             .Distinct()];
 
     // Each control that takes focus, each badge and each figure either fits or sits in a

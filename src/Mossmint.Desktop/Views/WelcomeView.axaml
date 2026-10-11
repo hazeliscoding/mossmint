@@ -31,19 +31,8 @@
               BorderBrush="{DynamicResource BorderHairline}"
               BorderThickness="0,0,1,0"
               Classes="promise">
-        <DockPanel>
-          <StackPanel DockPanel.Dock="Bottom" Spacing="10" MaxWidth="440" HorizontalAlignment="Left">
-            <TextBlock Classes="label" Text="YOUR PROFILE" />
-            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
-              <TextBlock Classes="compact secondary" Text="Profile" />
-              <TextBlock Grid.Column="1" Classes="compact" Text="None yet" />
-              <TextBlock Grid.Row="1" Classes="compact secondary" Text="Stored at" />
-              <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono" Text="%LOCALAPPDATA%\Mossmint\Profiles" TextWrapping="Wrap" />
-              <TextBlock Grid.Row="2" Classes="compact secondary" Text="Unlock" />
-              <TextBlock Grid.Row="2" Grid.Column="1" Classes="compact" Text="A passphrase you choose; encrypted at rest" TextWrapping="Wrap" />
-            </Grid>
-          </StackPanel>
-
+        <!-- The promise first and the profile facts last, in reading order too. -->
+        <Grid RowDefinitions="*,Auto">
           <StackPanel Spacing="20" MaxWidth="440" HorizontalAlignment="Left">
             <c:BrandMark Width="44" Height="44" HorizontalAlignment="Left" />
             <TextBlock Classes="display" Text="Make room to grow." TextWrapping="Wrap" />
@@ -54,7 +43,19 @@
               <c:StatusBadge Tone="Neutral" Text="Open source · MIT" />
             </WrapPanel>
           </StackPanel>
-        </DockPanel>
+
+          <StackPanel Grid.Row="1" Spacing="10" MaxWidth="440" HorizontalAlignment="Left">
+            <TextBlock Classes="label" Text="YOUR PROFILE" />
+            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+              <TextBlock Classes="compact secondary" Text="Profile" />
+              <TextBlock Grid.Column="1" Classes="compact" Text="None yet" />
+              <TextBlock Grid.Row="1" Classes="compact secondary" Text="Stored at" />
+              <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono" Text="%LOCALAPPDATA%\Mossmint\Profiles" TextWrapping="Wrap" />
+              <TextBlock Grid.Row="2" Classes="compact secondary" Text="Unlock" />
+              <TextBlock Grid.Row="2" Grid.Column="1" Classes="compact" Text="A passphrase you choose; encrypted at rest" TextWrapping="Wrap" />
+            </Grid>
+          </StackPanel>
+        </Grid>
       </Border>
 
       <!-- Right: how to begin -->
