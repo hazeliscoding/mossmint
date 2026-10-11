@@ -67,6 +67,58 @@ public class ScenariosPageTests
     }
 
     [AvaloniaFact]
+    public async Task Applying_shows_what_changes_saves_the_plan_and_can_be_undone()
+    {
+        using var app = await WithDebts();
+        var page = Open(app);
+        page.Extra = 150m;
+        page.Refresh();
+
+        page.StartApplyCommand.Execute(page.Columns[1]);
+
+        page.IsConfirming.Should().BeTrue();
+        page.Changes.Select(c => c.What).Should().Contain(["Extra each month", "Debt-free", "Safe to spend now"]);
+        page.Changes.Single(c => c.What == "Extra each month").Should().Be(new ChangeRow("Extra each month", "None", "$150.00"));
+        page.HasRisk.Should().BeFalse();
+        app.Services.Context.Current.Data.Settings().DebtPlan.Should().BeNull("nothing is saved before Apply");
+
+        page.ApplyPlanCommand.Execute(null);
+
+        page.IsConfirming.Should().BeFalse();
+        page.Notice.Should().Contain("Avalanche");
+        page.Columns[0].Title.Should().Be("Your plan");
+        app.ViewModel.Shell.Navigate(Destination.CashFlow);
+        ((CashFlowPageViewModel)app.ViewModel.Shell.CurrentPage!).Rows.Should().Contain(r => r.Events.Contains("Extra debt payment"));
+
+        app.ViewModel.Shell.Navigate(Destination.Scenarios);
+        page.CanUndo.Should().BeTrue();
+        page.UndoApplyCommand.Execute(null);
+
+        app.Services.Context.Current.Data.Settings().DebtPlan.Should().BeNull();
+        page.Columns[0].Title.Should().Be("Today's plan");
+        page.CanUndo.Should().BeFalse();
+    }
+
+    [AvaloniaFact]
+    public async Task An_extra_above_the_safe_amount_warns_before_it_is_applied()
+    {
+        using var app = await WithDebts();
+        var page = Open(app);
+        page.Extra = page.Largest!.Value + 0.01m;
+        page.Refresh();
+
+        page.StartApplyCommand.Execute(page.Columns[2]);
+
+        (page.HasRisk, page.RiskLabel, page.ApplyLabel).Should().Be((true, "Below cushion", "Apply anyway"));
+        page.Risk.Should().Contain("below the");
+
+        page.CancelApplyCommand.Execute(null);
+
+        page.IsConfirming.Should().BeFalse();
+        app.Services.Context.Current.Data.Settings().DebtPlan.Should().BeNull();
+    }
+
+    [AvaloniaFact]
     public async Task Moving_a_debt_changes_the_custom_order()
     {
         using var app = await WithDebts();

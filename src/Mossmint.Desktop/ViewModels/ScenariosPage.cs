@@ -3,6 +3,7 @@ using System.Globalization;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mossmint.Application.Data;
 using Mossmint.Application.Forecasting;
 using Mossmint.Desktop.Controls;
 using Mossmint.Desktop.Services;
@@ -23,9 +24,12 @@ public sealed record ScenarioColumn(
     StatusTone Tone,
     IReadOnlyList<string> Steps,
     string? Problem,
-    string? TightNote)
+    string? TightNote,
+    PayoffOrder Order)
 {
     public bool HasProblem => Problem is not null;
+
+    public bool CanApply => Order != PayoffOrder.TodaysPlan;
 
     public bool HasTightNote => TightNote is not null;
 
@@ -34,6 +38,12 @@ public sealed record ScenarioColumn(
 
 public sealed record OrderedDebt(AccountId Account, string Name);
 
+// One line of the summary shown before a plan is applied.
+public sealed record ChangeRow(string What, string Now, string After)
+{
+    public string AccessibleName => $"{What}: now {Now}, after {After}.";
+}
+
 public sealed partial class ScenariosPageViewModel : PageViewModel
 {
     private readonly AppServices _services;
@@ -41,9 +51,14 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     private readonly CultureInfo _culture = CultureInfo.CurrentCulture;
     private readonly DispatcherTimer _settle = new() { Interval = TimeSpan.FromMilliseconds(120) };
     private bool _syncing;
+    private bool _seeded;
+    private Money _cushion;
+    private DebtPlan? _applied;
+    private DebtPlan? _pending;
+    private DebtPlan? _replaced;
 
     public ScenariosPageViewModel(AppServices services, IAppNavigator navigator)
-        : base(Destination.Scenarios, "Scenarios", "The same extra each month, paid off in different orders. Nothing here changes your plan.")
+        : base(Destination.Scenarios, "Scenarios", "The same extra each month, paid off in different orders. Nothing changes your plan until you apply one.")
     {
         (_services, _navigator) = (services, navigator);
 
@@ -54,6 +69,38 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     public ObservableCollection<ScenarioColumn> Columns { get; } = [];
 
     public ObservableCollection<OrderedDebt> CustomOrder { get; } = [];
+
+    public ObservableCollection<ChangeRow> Changes { get; } = [];
+
+    [ObservableProperty]
+    private bool _isConfirming;
+
+    [ObservableProperty]
+    private string _confirmTitle = "";
+
+    [ObservableProperty]
+    private string _nextExtrasText = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRisk))]
+    private string? _risk;
+
+    [ObservableProperty]
+    private string _riskLabel = "";
+
+    [ObservableProperty]
+    private StatusTone _riskTone;
+
+    [ObservableProperty]
+    private string _applyLabel = "Apply plan";
+
+    [ObservableProperty]
+    private string? _notice;
+
+    [ObservableProperty]
+    private bool _canUndo;
+
+    public bool HasRisk => Risk is not null;
 
     public bool HasComparison => Columns.Count > 0;
 
@@ -158,12 +205,97 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     [RelayCommand]
     private void AddDebts() => _navigator.StartSetup(SetupStep.Debts, Destination.Scenarios);
 
-    public override void OnNavigatedTo() => Refresh();
+    [RelayCommand]
+    private void StartApply(ScenarioColumn column)
+    {
+        if (!_services.Context.IsUnlocked || !column.CanApply)
+        {
+            return;
+        }
+
+        var data = _services.Context.Current.Data;
+        var custom = column.Order == PayoffOrder.Custom ? CustomOrder.Select(d => d.Account).ToList() : [];
+        var plan = new DebtPlan(new Money(Extra, data.Settings().Currency), column.Order, custom);
+        if (Scenarios.Preview(data, Today, plan, Assumptions) is not { } preview)
+        {
+            return;
+        }
+
+        _pending = plan;
+        ConfirmTitle = $"Apply {PlanName(plan)}?";
+        Changes.Clear();
+        foreach (var row in Rows(preview))
+        {
+            Changes.Add(row);
+        }
+
+        NextExtrasText = preview.NextExtras.Count == 0 || plan.MonthlyExtra.IsZero
+            ? "No extra goes out; each paid-off debt's payment moves to the next one."
+            : $"The extra goes out with the first paycheck of each month: {string.Join(", ", preview.NextExtras.Select(d => d.ToString("d MMM", _culture)))} and on.";
+        (Risk, RiskLabel, RiskTone) = preview.After.Status switch
+        {
+            ExtraStatus.BelowCushion => ($"With this plan, checking would drop to {Describe.Money(preview.After.Lowest)} on {preview.After.LowestDate.ToString("d MMM yyyy", _culture)}, below the {Describe.Money(_cushion)} cushion.",
+                "Below cushion", StatusTone.Critical),
+            ExtraStatus.NeedsConfirmation => ($"Mossmint can't check this plan against your cash yet. {LargestBasis}", "Needs confirmation", StatusTone.Warning),
+            _ => ((string?)null, "", StatusTone.Neutral),
+        };
+        ApplyLabel = HasRisk ? "Apply anyway" : "Apply plan";
+        IsConfirming = true;
+    }
+
+    [RelayCommand]
+    private void ApplyPlan()
+    {
+        if (_pending is not { } plan || !_services.Context.IsUnlocked)
+        {
+            return;
+        }
+
+        _replaced = Scenarios.Apply(_services.Context.Current.Data, plan);
+        CanUndo = true;
+        Notice = $"{PlanName(plan)} applied. Cash Flow, Paychecks, Debts and Overview now follow it.";
+        Refresh();
+    }
+
+    [RelayCommand]
+    private void CancelApply()
+    {
+        (IsConfirming, _pending) = (false, null);
+        Changes.Clear();
+    }
+
+    // No timer: undo stays until the next plan is applied.
+    [RelayCommand]
+    private void UndoApply()
+    {
+        if (!CanUndo || !_services.Context.IsUnlocked)
+        {
+            return;
+        }
+
+        Scenarios.Apply(_services.Context.Current.Data, _replaced);
+        Notice = _replaced is { } back ? $"{PlanName(back)} is back." : "Plan removed. Each debt is back on its own payments.";
+        (_replaced, CanUndo) = (null, false);
+        Refresh();
+    }
+
+    // The first visit starts from the saved plan's extra.
+    public override void OnNavigatedTo()
+    {
+        if (!_seeded && _services.Context.IsUnlocked && _services.Context.Current.Data.Settings().DebtPlan is { } plan)
+        {
+            Extra = plan.MonthlyExtra.Amount;
+        }
+
+        _seeded = true;
+        Refresh();
+    }
 
     // The settle timer calls this once the amount stops changing.
     public void Refresh()
     {
         _settle.Stop();
+        CancelApply();
         Columns.Clear();
         (Unavailable, Largest, LargestText, LargestBasis) = (null, null, "", "");
         if (!_services.Context.IsUnlocked)
@@ -173,9 +305,9 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
         }
 
         var data = _services.Context.Current.Data;
-        var today = DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime);
-        var outcome = Scenarios.Compare(
-            data, today, new Money(Extra, data.Settings().Currency), [.. CustomOrder.Select(d => d.Account)], new ForecastAssumptions(Spending.Value, LatePaychecks));
+        var settings = data.Settings();
+        IReadOnlyList<AccountId>? custom = CustomOrder.Count > 0 ? [.. CustomOrder.Select(d => d.Account)] : settings.DebtPlan?.Custom;
+        var outcome = Scenarios.Compare(data, Today, new Money(Extra, settings.Currency), custom, Assumptions);
         HasNoDebts = data.Debts().Count == 0;
         if (outcome is PayoffComparison comparison)
         {
@@ -189,8 +321,14 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
         OnPropertyChanged(nameof(HasComparison));
     }
 
+    private DateOnly Today => DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime);
+
+    private ForecastAssumptions Assumptions => new(Spending.Value, LatePaychecks);
+
     private void Show(PayoffComparison comparison)
     {
+        (_applied, _cushion) = (comparison.Applied, comparison.Cushion);
+
         // Keep the user's order; debts added since go at the end.
         var custom = comparison.Options.Single(o => o.Order == PayoffOrder.Custom).Steps;
         if (!CustomOrder.Select(d => d.Account).SequenceEqual(custom.Select(s => s.Account)))
@@ -223,6 +361,7 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     {
         var (title, subtitle) = option.Order switch
         {
+            PayoffOrder.TodaysPlan when _applied is { } plan => ("Your plan", $"{PlanName(plan)}, saved"),
             PayoffOrder.TodaysPlan => ("Today's plan", "No extra; each debt on its own payments"),
             PayoffOrder.Avalanche => ("Avalanche", "Highest rate first"),
             PayoffOrder.Snowball => ("Snowball", "Smallest balance first"),
@@ -245,7 +384,37 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
             tone,
             [.. option.Steps.Select((s, i) => $"{i + 1}. {s.Name} · {(s.PaidOff is { } paid ? Month(paid) : "not paid off")}")],
             option.Problem,
-            TightNote(option));
+            TightNote(option),
+            option.Order);
+    }
+
+    private string PlanName(DebtPlan plan) =>
+        $"{plan.Order switch { PayoffOrder.Avalanche => "Avalanche", PayoffOrder.Snowball => "Snowball", _ => "Your order" }} with {Describe.Money(plan.MonthlyExtra)} a month";
+
+    private List<ChangeRow> Rows(PlanPreview preview)
+    {
+        var (before, after) = (preview.Before, preview.After);
+        string Amount(Money extra) => extra.IsZero ? "None" : Describe.Money(extra);
+        string Date(DateOnly? date) => date is { } d ? Month(d) : "No date";
+        string Order(PayoffOption option) => string.Join(", then ", option.Steps.Select(s => s.Name));
+        string Safe(SafeToSpendView view) => view.State switch
+        {
+            SafeToSpendState.Safe => Describe.Money(view.Amount!.Value),
+            SafeToSpendState.Shortfall => $"Short by {Describe.Money(view.Amount!.Value)}",
+            _ => "Needs confirmation",
+        };
+
+        List<ChangeRow> rows =
+        [
+            new("Extra each month", Amount(before.Extra), Amount(after.Extra)),
+            new("Order", _applied is null ? "Each debt on its own" : Order(before), Order(after)),
+        ];
+        rows.AddRange(after.Steps.Select(step =>
+            new ChangeRow($"{step.Name} paid off", Date(before.Steps.FirstOrDefault(s => s.Account == step.Account)?.PaidOff), Date(step.PaidOff))));
+        rows.Add(new("Debt-free", Date(before.DebtFree), Date(after.DebtFree)));
+        rows.Add(new("Interest", before.Interest is { } was ? Describe.Money(was) : "Unknown", after.Interest is { } will ? Describe.Money(will) : "Unknown"));
+        rows.Add(new("Safe to spend now", Safe(preview.SafeBefore), Safe(preview.SafeAfter)));
+        return rows;
     }
 
     // The far end of the debt-free range: what stress spending and late paychecks would leave room for.

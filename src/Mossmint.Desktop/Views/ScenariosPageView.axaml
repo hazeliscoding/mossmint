@@ -11,6 +11,12 @@
       <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
     </StackPanel>
 
+    <DockPanel IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Button DockPanel.Dock="Right" Classes="ghost" Content="Undo" Command="{Binding UndoApplyCommand}" IsVisible="{Binding CanUndo}"
+              AutomationProperties.Name="Undo the plan change" VerticalAlignment="Center" />
+      <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" VerticalAlignment="Center" />
+    </DockPanel>
+
     <Border Classes="card" Padding="24,20" IsVisible="{Binding HasNoDebts}">
       <StackPanel Spacing="12">
         <TextBlock Classes="prose secondary" TextWrapping="Wrap"
@@ -113,11 +119,62 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
               </Border>
+              <Button Content="Apply…" IsVisible="{Binding CanApply}" HorizontalAlignment="Left" CommandParameter="{Binding}"
+                      Command="{Binding $parent[UserControl].((vm:ScenariosPageViewModel)DataContext).StartApplyCommand}"
+                      AutomationProperties.Name="{Binding Title, StringFormat='Apply {0}'}" />
             </StackPanel>
           </Border>
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>
+
+    <!-- Scenarios never change the plan silently: applying always shows what changes first. -->
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="20,16" IsVisible="{Binding IsConfirming}">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="{Binding ConfirmTitle}" TextWrapping="Wrap" />
+        <TextBlock Classes="compact secondary" TextWrapping="Wrap"
+                   Text="Cash Flow, Paychecks, Debts and Overview will follow this plan. Undo puts the current one back." />
+        <StackPanel Spacing="6" IsVisible="{Binding HasRisk}">
+          <c:StatusBadge Tone="{Binding RiskTone}" Text="{Binding RiskLabel}" HorizontalAlignment="Left" />
+          <TextBlock Classes="prose" Text="{Binding Risk}" TextWrapping="Wrap" />
+        </StackPanel>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="4" Grid.IsSharedSizeScope="True">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition SharedSizeGroup="what" Width="Auto" MinWidth="180" />
+                <ColumnDefinition SharedSizeGroup="now" Width="Auto" MinWidth="160" />
+                <ColumnDefinition SharedSizeGroup="after" Width="Auto" MinWidth="160" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Classes="label" Text="What changes" />
+              <TextBlock Grid.Column="1" Classes="label" Text="Now" Margin="16,0,0,0" />
+              <TextBlock Grid.Column="2" Classes="label" Text="After" Margin="16,0,0,0" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Changes}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ChangeRow">
+                  <Grid Margin="0,2">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition SharedSizeGroup="what" Width="Auto" MinWidth="180" />
+                      <ColumnDefinition SharedSizeGroup="now" Width="Auto" MinWidth="160" />
+                      <ColumnDefinition SharedSizeGroup="after" Width="Auto" MinWidth="160" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Classes="compact secondary" Text="{Binding What}" />
+                    <TextBlock Grid.Column="1" Classes="mono compact" Text="{Binding Now}" Margin="16,0,0,0" />
+                    <TextBlock Grid.Column="2" Classes="mono compact" Text="{Binding After}" Margin="16,0,0,0" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+        <TextBlock Classes="compact secondary" Text="{Binding NextExtrasText}" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="primary" Content="{Binding ApplyLabel}" Command="{Binding ApplyPlanCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelApplyCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
 
     <Border Classes="card" Padding="16,14" IsVisible="{Binding HasComparison}">
       <StackPanel Spacing="8">

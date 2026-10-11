@@ -490,6 +490,12 @@ public partial class AccessibilityTests
         shell.Navigate(Destination.Debts);
         ((DebtsPageViewModel)shell.CurrentPage!).StartConfirmCommand.Execute(null);
         Check("Debts, confirm balance");
+        shell.Navigate(Destination.Scenarios);
+        var scenarios = (ScenariosPageViewModel)shell.CurrentPage!;
+        scenarios.Extra = scenarios.Largest!.Value + 1m;
+        scenarios.Refresh();
+        scenarios.StartApplyCommand.Execute(scenarios.Columns[1]);
+        Check("Scenarios, apply with a risk");
         shell.Navigate(Destination.Savings);
         var savings = (SavingsPageViewModel)shell.CurrentPage!;
         savings.StartAddCommand.Execute(null);
