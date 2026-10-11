@@ -42,3 +42,13 @@ Code: `src/Mossmint.Engine/CashFlow/SafeExtra.cs`. Tests: `tests/Mossmint.Engine
 - **Largest safe extra:** the largest whole-cent amount that keeps every day's low at or above the cushion under the chosen spending scenario; one cent more would not. It is found by bisection over whole cents on the real daily forecast, so it follows the forecast's own rules exactly.
 - **Safe** means at or below that amount. Cash already below the cushion with no extra is a `Shortfall`: no extra is safe. A balance that isn't confirmed and fresh, a bill with no amount, or no paycheck to pay from is `NeedsConfirmation`, as with safe to spend.
 - A property test checks the M5 rule over the three scenarios: an extra is called safe exactly when the forecast with it stays at or above the cushion, and one cent above the largest safe extra always dips below.
+
+## Applying a plan
+
+Code: `src/Mossmint.Application/Forecasting/` (`Scenarios.Apply`, `DebtBook.Follow`). Tests: `tests/Mossmint.Application.Tests/DebtPlanTests.cs`.
+
+- Applying saves the extra each month and the order: avalanche, snowball, or the user's own list. A saved avalanche or snowball plan takes its order from the balances and rates at each forecast; a custom plan keeps its list, with debts added later following it by name.
+- Every forecast then sets the extra aside from the first paycheck of each month, until the plan's debt-free date: Cash Flow, Paychecks and safe to spend all include it. The Debts page and Overview show the plan's payoff dates, rollover included.
+- The first Scenarios column becomes the saved plan, so a comparison always starts from what the forecast already assumes.
+- An extra must be zero or more, in whole cents. Zero still rolls each paid-off debt's payment to the next one.
+- Nothing is saved until the user applies, after a summary of what changes. Undo puts the previous plan back.

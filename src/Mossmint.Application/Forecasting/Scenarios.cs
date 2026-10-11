@@ -50,8 +50,13 @@ public sealed record PayoffOption(
 
 // LargestSafeExtra is the most that can go to debt each month: Safe with the
 // amount, Shortfall when cash already falls below the cushion with no extra, or
-// NeedsConfirmation with what to confirm first.
-public sealed record PayoffComparison(SafeToSpendView LargestSafeExtra, Money Cushion, DateOnly Through, IReadOnlyList<PayoffOption> Options) : ForecastOutcome;
+// NeedsConfirmation with what to confirm first. Applied is the saved plan, which
+// the first column (TodaysPlan) follows.
+public sealed record PayoffComparison(SafeToSpendView LargestSafeExtra, Money Cushion, DateOnly Through, IReadOnlyList<PayoffOption> Options, DebtPlan? Applied = null) : ForecastOutcome;
+
+// What applying Plan would change: Before is the plan followed now, After the
+// plan applied. NextExtras are the first dates its extra goes out.
+public sealed record PlanPreview(DebtPlan Plan, PayoffOption Before, PayoffOption After, SafeToSpendView SafeBefore, SafeToSpendView SafeAfter, IReadOnlyList<DateOnly> NextExtras);
 
 // Today's plan against avalanche, snowball and a custom order, all paying the
 // same extra each month (docs/financial-models/payoff.md). Nothing is saved.
@@ -92,14 +97,25 @@ public static class Scenarios
         var avalanche = book.Order(PayoffOrder.Avalanche, debts, null);
         var snowball = book.Order(PayoffOrder.Snowball, debts, null);
         var custom = book.Order(PayoffOrder.Custom, debts, customOrder);
+        var applied = data.Settings().DebtPlan;
+        var current = applied is null
+            ? Option(PayoffOrder.TodaysPlan, baseline, book.Order(PayoffOrder.TodaysPlan, debts, null), Money.Zero(extra.Currency), without)
+            : Current(applied);
 
         return new PayoffComparison(largest, cushion, through,
         [
-            Option(PayoffOrder.TodaysPlan, baseline, book.Order(PayoffOrder.TodaysPlan, debts, null), Money.Zero(extra.Currency), without),
+            current,
             Option(PayoffOrder.Avalanche, PayoffPlanner.Plan(debts, avalanche, extras), avalanche, extra, withExtra),
             Option(PayoffOrder.Snowball, PayoffPlanner.Plan(debts, snowball, extras), snowball, extra, withExtra),
             Option(PayoffOrder.Custom, PayoffPlanner.Plan(debts, custom, extras), custom, extra, withExtra),
-        ]);
+        ],
+        applied);
+
+        PayoffOption Current(DebtPlan saved)
+        {
+            var (payoff, savedExtras) = book.Follow(saved, debts, plan);
+            return Option(PayoffOrder.TodaysPlan, payoff, book.Order(saved.Order, debts, saved.Custom), saved.MonthlyExtra, CashFlowSimulator.Run(plan with { ExtraDebtPayments = savedExtras }));
+        }
 
         PayoffOption Option(PayoffOrder order, PayoffPlan payoff, IReadOnlyList<AccountId> sequence, Money amount, CashFlowForecast forecast)
         {
@@ -137,5 +153,47 @@ public static class Scenarios
                 ifTight is null ? null : tight,
                 problems.Count > 0 ? null : ifTight?.DebtFree);
         }
+    }
+
+    // Nothing is saved. Null when there's nothing to compare.
+    public static PlanPreview? Preview(IProfileData data, DateOnly today, DebtPlan plan, ForecastAssumptions? assumptions = null)
+    {
+        if (Compare(data, today, plan.MonthlyExtra, plan.Custom, assumptions) is not PayoffComparison comparison)
+        {
+            return null;
+        }
+
+        var before = Forecasts.Build(data, today) as ProfileForecast;
+        var after = Forecasts.Build(data, today, Forecasts.DefaultDays, null, plan) as ProfileForecast;
+        var book = DebtBook.Load(data);
+        var (cash, _) = Forecasts.CashPlan(data, today, book.Horizon(today));
+        var (_, extras) = book.Follow(plan, book.Debts(cash!.Plan), cash.Plan);
+        var unknown = new SafeToSpendView(SafeToSpendState.NeedsConfirmation, null, today, null, []);
+        return new PlanPreview(
+            plan,
+            comparison.Options.Single(o => o.Order == PayoffOrder.TodaysPlan),
+            comparison.Options.Single(o => o.Order == plan.Order),
+            before?.SafeToSpend ?? unknown,
+            after?.SafeToSpend ?? unknown,
+            [.. extras.Take(3).Select(e => e.Date)]);
+    }
+
+    // Saves the plan (null clears it) and returns the one it replaces, so undo can
+    // put that back. The plan is part of the settings, audited with them.
+    public static DebtPlan? Apply(IProfileData data, DebtPlan? plan)
+    {
+        if (plan is { MonthlyExtra.IsNegative: true } or { MonthlyExtra.IsWholeMinorUnits: false })
+        {
+            throw new ArgumentException("The extra each month must be zero or more, in whole cents.", nameof(plan));
+        }
+
+        if (plan is { Order: PayoffOrder.TodaysPlan })
+        {
+            throw new ArgumentException("A plan pays debts in avalanche, snowball or a custom order.", nameof(plan));
+        }
+
+        var settings = data.Settings();
+        data.SaveSettings(settings with { DebtPlan = plan });
+        return settings.DebtPlan;
     }
 }

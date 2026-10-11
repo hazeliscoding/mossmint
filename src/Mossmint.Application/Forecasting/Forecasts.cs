@@ -123,7 +123,11 @@ public static class Forecasts
     // ROADMAP M1: US Federal Reserve holidays move paydays, as a stated assumption.
     internal static readonly CalendarSpec Calendar = CalendarSpec.UsFederalReserve;
 
-    public static ForecastOutcome Build(IProfileData data, DateOnly today, int days = DefaultDays, ForecastAssumptions? assumptions = null)
+    // With a saved debt plan, the forecast sets its extra aside and debts follow it.
+    public static ForecastOutcome Build(IProfileData data, DateOnly today, int days = DefaultDays, ForecastAssumptions? assumptions = null) =>
+        Build(data, today, days, assumptions, data.Settings().DebtPlan);
+
+    internal static ForecastOutcome Build(IProfileData data, DateOnly today, int days, ForecastAssumptions? assumptions, DebtPlan? debtPlan)
     {
         var (cash, unavailable) = CashPlan(data, today, today.AddDays(days - 1), assumptions);
         if (cash is null)
@@ -132,6 +136,16 @@ public static class Forecasts
         }
 
         var (account, balance, entries, bills, plan) = cash;
+        Dictionary<AccountId, DebtPayoff>? followed = null;
+        if (debtPlan is not null)
+        {
+            var book = DebtBook.Load(data);
+            var (horizon, _) = CashPlan(data, today, book.Horizon(today), assumptions);
+            var (payoff, extras) = book.Follow(debtPlan, book.Debts(horizon!.Plan), horizon.Plan);
+            plan = plan with { ExtraDebtPayments = extras };
+            followed = payoff.Debts.ToDictionary(d => d.Account);
+        }
+
         var expanded = CashFlowPlanner.Expand(plan);
         var forecast = CashFlowSimulator.Run(plan, expanded);
         var paydays = expanded.Paydays.ToHashSet();
@@ -154,7 +168,7 @@ public static class Forecasts
             forecast.Lowest.Amount,
             Safe(plan),
             Paychecks(plan, PaycheckFunding.Plan(plan, expanded), forecastDays),
-            [.. data.Debts().Select(d => Debt(d, data, accounts, bills))],
+            [.. data.Debts().Select(d => Debt(d, data, accounts, bills, followed?.GetValueOrDefault(d.Account)))],
             entries.Count(e => RunningBalance.After(balance, e)));
     }
 
@@ -297,7 +311,8 @@ public static class Forecasts
             var other => throw new InvalidOperationException($"Unknown safe-to-spend result {other.GetType().Name}."),
         };
 
-    private static DebtView Debt(DebtAccount debt, IProfileData data, IReadOnlyList<Account> accounts, IReadOnlyList<RecurringBill> bills)
+    // A debt on its own payments, or as the saved plan pays it (followed).
+    private static DebtView Debt(DebtAccount debt, IProfileData data, IReadOnlyList<Account> accounts, IReadOnlyList<RecurringBill> bills, DebtPayoff? followed)
     {
         var name = DebtName(debt, accounts);
         if (data.Balances(debt.Account).FirstOrDefault() is not { } balance)
@@ -308,7 +323,7 @@ public static class Forecasts
         var (input, problem) = DebtInput(debt, balance, name, PaymentBill(debt, bills));
         var payoff = input is null
             ? new DebtPayoff(debt.Account, new InsufficientData([problem!]), Confidence.NeedsReview)
-            : PayoffPlanner.Baseline([new PayoffDebt(debt.Account, input, [])]).Debts[0];
+            : followed ?? PayoffPlanner.Baseline([new PayoffDebt(debt.Account, input, [])]).Debts[0];
         var asOf = balance.Provenance.AsOf;
         return payoff.Outcome switch
         {
