@@ -10,7 +10,7 @@
     <DockPanel>
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
         <TextBlock Classes="compact secondary" Text="Days ahead" VerticalAlignment="Center" />
-        <ListBox ItemsSource="{Binding Ranges}" SelectedItem="{Binding Days}" AutomationProperties.Name="Days ahead">
+        <ListBox Classes="segments" ItemsSource="{Binding Ranges}" SelectedItem="{Binding Days}" AutomationProperties.Name="Days ahead">
           <ListBox.Styles>
             <Style Selector="ListBoxItem" x:DataType="x:Int32">
               <Setter Property="AutomationProperties.Name" Value="{Binding StringFormat='{}{0} days'}" />
@@ -23,7 +23,7 @@
           </ListBox.ItemsPanel>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="x:Int32">
-              <TextBlock Classes="mono" Text="{Binding}" Margin="6,0" />
+              <TextBlock Classes="mono" Text="{Binding}" />
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
