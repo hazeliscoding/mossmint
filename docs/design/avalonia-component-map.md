@@ -68,7 +68,7 @@ Target: Avalonia 11, MVVM (CommunityToolkit.Mvvm or ReactiveUI), Fluent theme ba
 - Every status badge sets `AutomationProperties.Name="{Label}, {Status}"`.
 - Charts: `AutomationProperties.Name` describing the lowest point and cushion; `F6` cycles to the data table.
 - Reduce motion: read `PlatformSettings.GetColorValues()` / `IPlatformSettings` motion preference, set a global `TransitionsEnabled` resource.
-- Scaling: no fixed pixel widths on text containers; test `RenderScaling` 1.0–2.0; `MinWidth` of main window 1024.
+- Scaling: no fixed pixel widths on text containers; test `RenderScaling` 1.0–2.0; the main window's minimum is 760×480 (200% on a 1080p screen, or half of one at 125%). Tables scroll sideways rather than hide columns, card grids drop columns through container queries, and the sidebar collapses below 1200 px.
 
 ## Questions for the calculation engine (not to be faked in UI)
 
