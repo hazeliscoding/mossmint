@@ -30,7 +30,9 @@ public sealed record PayoffStep(AccountId Account, string Name, DateOnly? PaidOf
 
 // One column of the comparison. Steps are the debts in the order they're paid
 // off; Problem says why there's no debt-free date. Lowest is the lowest daily
-// cash through the horizon with this option's extra.
+// cash through the horizon with this option's extra. When stress spending and
+// late paychecks would leave room only for a smaller extra, ExtraIfTight is that
+// extra and DebtFreeIfTight the debt-free date it gives (null if none).
 public sealed record PayoffOption(
     PayoffOrder Order,
     Money Extra,
@@ -42,7 +44,9 @@ public sealed record PayoffOption(
     Money Lowest,
     ExtraStatus Status,
     Confidence Confidence,
-    bool IsApproximate);
+    bool IsApproximate,
+    Money? ExtraIfTight = null,
+    DateOnly? DebtFreeIfTight = null);
 
 // LargestSafeExtra is the most that can go to debt each month: Safe with the
 // amount, Shortfall when cash already falls below the cushion with no extra, or
@@ -57,7 +61,7 @@ public static class Scenarios
     // out: past that, today's paychecks and bills say little about the future.
     private const int MaxHorizonYears = 10;
 
-    public static ForecastOutcome Compare(IProfileData data, DateOnly today, Money extra, IReadOnlyList<AccountId>? customOrder = null)
+    public static ForecastOutcome Compare(IProfileData data, DateOnly today, Money extra, IReadOnlyList<AccountId>? customOrder = null, ForecastAssumptions? assumptions = null)
     {
         if (data.Debts() is not { Count: > 0 } debtAccounts)
         {
@@ -87,7 +91,7 @@ public static class Scenarios
         var baseline = PayoffPlanner.Baseline([.. known.Select(k => new PayoffDebt(k.Account, k.Input, []))]);
         var (earliest, latest) = (today.AddDays(Forecasts.DefaultDays - 1), today.AddYears(MaxHorizonYears));
         var through = baseline.DebtFree is { } free ? (free < earliest ? earliest : free > latest ? latest : free) : latest;
-        var (cash, unavailable) = Forecasts.CashPlan(data, today, through);
+        var (cash, unavailable) = Forecasts.CashPlan(data, today, through, assumptions);
         if (cash is null)
         {
             return unavailable!;
@@ -98,6 +102,15 @@ public static class Scenarios
         List<PayoffDebt> debts = [.. known.Select(k => new PayoffDebt(k.Account, k.Input, Payments(k.Bill, k.AsOf, plan)))];
         var extras = SafeExtra.Monthly(plan, extra);
         var largest = Forecasts.View(SafeExtra.Largest(plan), through);
+
+        // The extra that would still fit if things get tight; unknown until the inputs are confirmed.
+        var harshest = Forecasts.With(plan, ForecastAssumptions.Harshest);
+        Money? tight = SafeExtra.Largest(harshest) switch
+        {
+            SafeAmount s => s.Amount,
+            Shortfall => Money.Zero(extra.Currency),
+            _ => null,
+        };
         var without = CashFlowSimulator.Run(plan);
         var withExtra = CashFlowSimulator.Run(plan with { ExtraDebtPayments = extras });
         var avalanche = PayoffPlanner.Avalanche(debts);
@@ -116,6 +129,9 @@ public static class Scenarios
 
         PayoffOption Option(PayoffOrder order, PayoffPlan payoff, IReadOnlyList<AccountId> sequence, Money amount, CashFlowForecast forecast)
         {
+            var ifTight = tight is { } fits && amount > fits
+                ? PayoffPlanner.Plan(debts, sequence, SafeExtra.Monthly(harshest, fits))
+                : null;
             var paidOff = payoff.Debts.ToDictionary(d => d.Account, d => d.Outcome is PaysOff p ? p.PayoffDate : (DateOnly?)null);
             var names = known.ToDictionary(k => k.Account, k => k.Name);
             IEnumerable<AccountId> steps = order == PayoffOrder.TodaysPlan
@@ -143,7 +159,9 @@ public static class Scenarios
                 forecast.Lowest.Amount,
                 status,
                 payoff.Debts.Select(d => d.Confidence).DefaultIfEmpty(Confidence.NeedsReview).Min(),
-                known.Any(k => k.Input is CreditCardInput));
+                known.Any(k => k.Input is CreditCardInput),
+                ifTight is null ? null : tight,
+                problems.Count > 0 ? null : ifTight?.DebtFree);
         }
     }
 

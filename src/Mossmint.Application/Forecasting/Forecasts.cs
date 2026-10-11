@@ -25,6 +25,25 @@ public enum SafeToSpendState
 // until Reasons are dealt with.
 public sealed record SafeToSpendView(SafeToSpendState State, Money? Amount, DateOnly Through, Confidence? Confidence, IReadOnlyList<string> Reasons);
 
+public enum SpendingAssumption
+{
+    Base,
+    Cautious,
+    Stress,
+}
+
+// What the forecast assumes (ADR-0002: assumptions, not probabilities). Late
+// paychecks land LateBusinessDays business days after they're due.
+public sealed record ForecastAssumptions(SpendingAssumption Spending = SpendingAssumption.Base, bool LatePaychecks = false)
+{
+    public const int LateBusinessDays = 3;
+
+    public static ForecastAssumptions Expected { get; } = new();
+
+    // The harshest the app checks: stress spending and late paychecks.
+    public static ForecastAssumptions Harshest { get; } = new(SpendingAssumption.Stress, LatePaychecks: true);
+}
+
 public sealed record ForecastEvent(string Label, Money Amount, bool IsInflow, Confidence Confidence);
 
 public sealed record ForecastDay(DateOnly Date, Money Low, Money Closing, bool IsPayday, bool BelowCushion, IReadOnlyList<ForecastEvent> Events);
@@ -104,9 +123,9 @@ public static class Forecasts
     // ROADMAP M1: US Federal Reserve holidays move paydays, as a stated assumption.
     internal static readonly CalendarSpec Calendar = CalendarSpec.UsFederalReserve;
 
-    public static ForecastOutcome Build(IProfileData data, DateOnly today, int days = DefaultDays)
+    public static ForecastOutcome Build(IProfileData data, DateOnly today, int days = DefaultDays, ForecastAssumptions? assumptions = null)
     {
-        var (cash, unavailable) = CashPlan(data, today, today.AddDays(days - 1));
+        var (cash, unavailable) = CashPlan(data, today, today.AddDays(days - 1), assumptions);
         if (cash is null)
         {
             return unavailable!;
@@ -142,7 +161,7 @@ public static class Forecasts
     internal sealed record CashSetup(Account Account, BalanceSnapshot Balance, IReadOnlyList<Transaction> Entries, IReadOnlyList<RecurringBill> Bills, CashFlowPlan Plan);
 
     // The spending account's cash plan from today through `through`, or what's missing for one.
-    internal static (CashSetup? Setup, ForecastUnavailable? Unavailable) CashPlan(IProfileData data, DateOnly today, DateOnly through)
+    internal static (CashSetup? Setup, ForecastUnavailable? Unavailable) CashPlan(IProfileData data, DateOnly today, DateOnly through, ForecastAssumptions? assumptions = null)
     {
         var accounts = data.Accounts();
         var income = data.Income();
@@ -170,8 +189,19 @@ public static class Forecasts
             settings.SavingsTarget,
             settings.ReserveFloor,
             PaidBills: [.. entries.Where(e => e.Status != TransactionStatus.Void).Select(e => e.Pays).OfType<PaidBill>()]);
-        return (new CashSetup(account, balance, entries, bills, plan), null);
+        return (new CashSetup(account, balance, entries, bills, With(plan, assumptions ?? ForecastAssumptions.Expected)), null);
     }
+
+    internal static CashFlowPlan With(CashFlowPlan plan, ForecastAssumptions assumptions) => plan with
+    {
+        Scenario = assumptions.Spending switch
+        {
+            SpendingAssumption.Cautious => SpendingScenario.Cautious,
+            SpendingAssumption.Stress => SpendingScenario.Stress,
+            _ => SpendingScenario.Base,
+        },
+        LatePaycheckDays = assumptions.LatePaychecks ? ForecastAssumptions.LateBusinessDays : 0,
+    };
 
     public static IReadOnlyList<GoalView> Goals(IProfileData data, DateOnly today)
     {

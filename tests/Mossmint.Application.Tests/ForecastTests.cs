@@ -49,6 +49,16 @@ public class ForecastTests
     }
 
     [Fact]
+    public void Late_paychecks_land_three_business_days_late()
+    {
+        // Oct 15 -> 20; Oct 30 -> Nov 4; Nov 13 -> Nov 18 (Nov 14 and 15 are a weekend).
+        var forecast = Forecasts.Build(_data, Today, assumptions: new(LatePaychecks: true)).Should().BeOfType<ProfileForecast>().Subject;
+
+        forecast.Days.Where(d => d.IsPayday).Select(d => d.Date).Should().Equal(
+            new DateOnly(2026, 10, 20), new DateOnly(2026, 11, 4), new DateOnly(2026, 11, 18));
+    }
+
+    [Fact]
     public void Safe_to_spend_runs_to_the_day_before_payday_and_keeps_the_cushion()
     {
         var safe = Build().SafeToSpend;

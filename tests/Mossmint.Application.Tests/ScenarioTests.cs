@@ -21,6 +21,7 @@ public class ScenarioTests
         var checking = _entry.AddCashAccount("Checking", 2_400m, Today);
         _entry.AddPaycheck(new PaycheckEntry("Paycheck", 2_050m, PayPattern.TwiceMonthly), checking.Id);
         _entry.AddBill(new BillEntry("Rent", 1_150m, 1), checking.Id);
+        _entry.AddBill(new BillEntry("Electric", 70m, 12, IsEstimate: true, Low: 60m, High: 95m), checking.Id);
         _entry.SetSavings(null, 300m);
 
         // Avalanche starts with the card (24%), snowball with the car loan (smaller balance).
@@ -28,8 +29,8 @@ public class ScenarioTests
         _loan = _entry.AddLoan(new LoanEntry("Car loan", 1_500m, Today, 7m, 285m, 28), checking.Id);
     }
 
-    private PayoffComparison Compare(decimal extra, IReadOnlyList<AccountId>? custom = null) =>
-        Scenarios.Compare(_data, Today, Money.Usd(extra), custom).Should().BeOfType<PayoffComparison>().Subject;
+    private PayoffComparison Compare(decimal extra, IReadOnlyList<AccountId>? custom = null, ForecastAssumptions? assumptions = null) =>
+        Scenarios.Compare(_data, Today, Money.Usd(extra), custom, assumptions).Should().BeOfType<PayoffComparison>().Subject;
 
     private static PayoffOption Option(PayoffComparison c, PayoffOrder order) => c.Options.Single(o => o.Order == order);
 
@@ -89,6 +90,39 @@ public class ScenarioTests
     {
         Option(Compare(100m), PayoffOrder.Custom).Steps.Select(s => s.Name).Should().Equal("Car loan", "Card");
         Option(Compare(100m, [_card.Account]), PayoffOrder.Custom).Steps.Select(s => s.Name).Should().Equal("Card", "Car loan");
+    }
+
+    [Fact]
+    public void Harsher_assumptions_leave_room_for_less_extra()
+    {
+        Money Largest(ForecastAssumptions assumptions) => Compare(0m, assumptions: assumptions).LargestSafeExtra.Amount!.Value;
+
+        var expected = Largest(ForecastAssumptions.Expected);
+        var stress = Largest(new(SpendingAssumption.Stress));
+        var late = Largest(new(LatePaychecks: true));
+
+        stress.Should().BeLessThan(expected);
+        late.Should().BeLessThan(expected);
+        Largest(ForecastAssumptions.Harshest).Should().BeLessThanOrEqualTo(Money.Min(stress, late));
+    }
+
+    [Fact]
+    public void An_extra_that_wouldnt_fit_if_things_get_tight_shows_how_late_debt_free_could_be()
+    {
+        // Big enough that a smaller extra takes visibly longer.
+        _entry.AddLoan(new LoanEntry("Student loan", 60_000m, Today, 6m, 450m, 15), _data.Accounts().Single(a => a.Name == "Checking").Id);
+        var harshest = Compare(0m, assumptions: ForecastAssumptions.Harshest).LargestSafeExtra.Amount!.Value;
+        var expected = Compare(0m).LargestSafeExtra.Amount!.Value;
+        var between = ((harshest + expected) * 0.5m).Round(MidpointRounding.AwayFromZero);
+
+        var tight = Option(Compare(between.Amount), PayoffOrder.Avalanche);
+        var fits = Option(Compare(harshest.Amount), PayoffOrder.Avalanche);
+
+        tight.Status.Should().Be(ExtraStatus.Safe);
+        tight.ExtraIfTight.Should().Be(harshest);
+        tight.DebtFreeIfTight.Should().BeAfter(tight.DebtFree!.Value);
+        (fits.ExtraIfTight, fits.DebtFreeIfTight).Should().Be((null, null));
+        Option(Compare(between.Amount), PayoffOrder.TodaysPlan).DebtFreeIfTight.Should().BeNull();
     }
 
     [Fact]
