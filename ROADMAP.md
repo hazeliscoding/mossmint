@@ -125,6 +125,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Orders are fixed when the plan starts.** Avalanche goes by the rate charged today (a balance at a 0% promo counts as 0%), snowball by balance; ties break by the other key, then by account. A debt's freed payment (its debt-payment bill) and whatever its last day didn't need move to the next debt. The rules and an independent cross-check are in `docs/financial-models/payoff.md`.
 - **The largest safe extra is checked over the whole horizon:** every month until today's plan would be debt-free, at most 10 years out, under the chosen spending scenario. It is the largest whole cent that keeps every day at or above the cushion. A stale balance, a bill without an amount or no paycheck means *needs confirmation*, as with safe to spend.
 - **The custom order starts alphabetical** and isn't saved; applying a plan (below) is what keeps it.
+- **Stress is two assumptions:** spending (expected, cautious or stress, as in M1) and paychecks landing 3 business days late. Cash Flow and Scenarios re-run under them; Overview and Safe to spend stay on expected spending.
+- **The debt-free range is about whether the extra keeps fitting.** Its early end pays the chosen extra every month; its late end pays only the extra that stress spending and late paychecks would still leave room for (none, when cash already falls short). When the chosen extra fits even then, there's no range. Both ends are assumptions, not probabilities.
 
 ## M0: Skeleton and guardrails (v0.3.0)
 
@@ -198,7 +200,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 - [x] Payoff comparison: avalanche, snowball, custom.
 - [x] Largest feasible extra payment over the whole horizon, revalidated against daily cash.
-- [ ] Stress scenarios and a debt-free date range.
+- [x] Stress scenarios and a debt-free date range.
 - [ ] Apply to plan with a change summary; scenarios never change the real plan silently.
 
 **Done when:** an extra payment is never shown as safe if the forecast under the chosen assumption drops below the cushion.
