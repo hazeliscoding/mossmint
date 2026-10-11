@@ -73,6 +73,21 @@ var screens = new (string Name, Func<Window> Create)[]
         page.Extra = 100m;
         page.Refresh();
     })),
+    ("scenarios-apply", () => scenes.Unlocked(vm =>
+    {
+        vm.OpenApp(Destination.Scenarios);
+        var page = (ScenariosPageViewModel)vm.Shell.CurrentPage!;
+        page.Extra = 150m;
+        page.Refresh();
+        page.StartApplyCommand.Execute(page.Columns[1]);
+    })),
+    ("bills-edit", () => scenes.Unlocked(vm =>
+    {
+        vm.OpenApp(Destination.Bills);
+        var page = (BillsPageViewModel)vm.Shell.CurrentPage!;
+        page.StartEditCommand.Execute(page.Rows.First(r => r.View.Bill.Purpose == Mossmint.Domain.Planning.BillPurpose.Expense));
+        page.EditAmount = "15.99";
+    })),
     ("savings", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Savings))),
     ("transactions", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Transactions))),
     ("backups", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Backups))),
