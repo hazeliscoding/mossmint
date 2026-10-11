@@ -126,6 +126,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **The largest safe extra is checked over the whole horizon:** every month until today's plan would be debt-free, at most 10 years out, under the chosen spending scenario. It is the largest whole cent that keeps every day at or above the cushion. A stale balance, a bill without an amount or no paycheck means *needs confirmation*, as with safe to spend.
 - **The custom order starts alphabetical** and isn't saved; applying a plan (below) is what keeps it.
 - **Stress is two assumptions:** spending (expected, cautious or stress, as in M1) and paychecks landing 3 business days late. Cash Flow and Scenarios re-run under them; Overview and Safe to spend stay on expected spending.
+- **Applying a scenario saves a debt plan** (the owner's and the test user's pick over raising a bill, or saving it for Scenarios only). The extra and the order are saved in the profile; Cash Flow, Paychecks and safe to spend set the extra aside, and Debts and Overview follow the plan with rollover. A change summary comes first, with a warning when cash would drop below the cushion, and undo puts the previous plan back with no timer.
+- **Bills need editing before 0.5** (raised by the test user). Today a bill can only be added through *Start fresh*: a price change, a cancellation or a subscription's real billing day can't be recorded, and a cancelled bill keeps counting in the forecast. A price rise the forecast doesn't know about makes safe to spend too generous, so this lands in M5 instead of Later. A subscription whose charge date sits near a payday already moves between paychecks on its own, because each bill is paid by the last paycheck on or before its date.
 - **The debt-free range is about whether the extra keeps fitting.** Its early end pays the chosen extra every month; its late end pays only the extra that stress spending and late paychecks would still leave room for (none, when cash already falls short). When the chosen extra fits even then, there's no range. Both ends are assumptions, not probabilities.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -202,8 +204,13 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Largest feasible extra payment over the whole horizon, revalidated against daily cash.
 - [x] Stress scenarios and a debt-free date range.
 - [ ] Apply to plan with a change summary; scenarios never change the real plan silently.
+- [ ] Bills can be kept up to date from the Bills page (the test user's questions, see the M5 decisions):
+  - Add a bill there, not only through *Start fresh*.
+  - Edit a bill's name, amount (a price change) and day of the month (a subscription's real billing day).
+  - End a bill from a date (a cancellation), keeping its history, or remove one that was never paid.
+  - A bill the workbook import split across both paychecks can be put back on its own day.
 
-**Done when:** an extra payment is never shown as safe if the forecast under the chosen assumption drops below the cushion.
+**Done when:** an extra payment is never shown as safe if the forecast under the chosen assumption drops below the cushion, and a price change, a new billing day or a cancellation reaches the forecast the moment it's saved.
 
 ## M6: Windows release (v0.6)
 
