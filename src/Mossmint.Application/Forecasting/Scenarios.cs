@@ -57,40 +57,16 @@ public sealed record PayoffComparison(SafeToSpendView LargestSafeExtra, Money Cu
 // same extra each month (docs/financial-models/payoff.md). Nothing is saved.
 public static class Scenarios
 {
-    // Cash is checked until today's plan is debt-free, at most this many years
-    // out: past that, today's paychecks and bills say little about the future.
-    private const int MaxHorizonYears = 10;
-
     public static ForecastOutcome Compare(IProfileData data, DateOnly today, Money extra, IReadOnlyList<AccountId>? customOrder = null, ForecastAssumptions? assumptions = null)
     {
-        if (data.Debts() is not { Count: > 0 } debtAccounts)
+        if (data.Debts().Count == 0)
         {
             return new ForecastUnavailable(["Add a debt to compare ways of paying it off."]);
         }
 
-        var accounts = data.Accounts();
-        var bills = data.Bills();
-        var problems = new List<string>();
-        var known = new List<(AccountId Account, string Name, IDebtInput Input, RecurringBill? Bill, DateOnly AsOf)>();
-        foreach (var debt in debtAccounts)
-        {
-            var name = Forecasts.DebtName(debt, accounts);
-            var bill = Forecasts.PaymentBill(debt, bills);
-            var balance = data.Balances(debt.Account).FirstOrDefault();
-            var (input, problem) = balance is null ? (null, $"Enter the balance owed on {name}.") : Forecasts.DebtInput(debt, balance, name, bill);
-            if (input is null)
-            {
-                problems.Add(problem!);
-            }
-            else
-            {
-                known.Add((debt.Account, name, input, bill, balance!.Provenance.AsOf));
-            }
-        }
-
-        var baseline = PayoffPlanner.Baseline([.. known.Select(k => new PayoffDebt(k.Account, k.Input, []))]);
-        var (earliest, latest) = (today.AddDays(Forecasts.DefaultDays - 1), today.AddYears(MaxHorizonYears));
-        var through = baseline.DebtFree is { } free ? (free < earliest ? earliest : free > latest ? latest : free) : latest;
+        var book = DebtBook.Load(data);
+        var (known, problems, baseline) = book;
+        var through = book.Horizon(today);
         var (cash, unavailable) = Forecasts.CashPlan(data, today, through, assumptions);
         if (cash is null)
         {
@@ -99,7 +75,7 @@ public static class Scenarios
 
         var plan = cash.Plan;
         var cushion = plan.ReserveFloor?.Minimum ?? Money.Zero(extra.Currency);
-        List<PayoffDebt> debts = [.. known.Select(k => new PayoffDebt(k.Account, k.Input, Payments(k.Bill, k.AsOf, plan)))];
+        var debts = book.Debts(plan);
         var extras = SafeExtra.Monthly(plan, extra);
         var largest = Forecasts.View(SafeExtra.Largest(plan), through);
 
@@ -113,15 +89,13 @@ public static class Scenarios
         };
         var without = CashFlowSimulator.Run(plan);
         var withExtra = CashFlowSimulator.Run(plan with { ExtraDebtPayments = extras });
-        var avalanche = PayoffPlanner.Avalanche(debts);
-        var snowball = PayoffPlanner.Snowball(debts);
-        // Debts the custom order doesn't list follow it by name, so the default never depends on storage order.
-        var byName = known.OrderBy(k => k.Name, StringComparer.CurrentCultureIgnoreCase).ThenBy(k => k.Account.Value).Select(k => k.Account);
-        List<AccountId> custom = [.. (customOrder ?? []).Where(id => debts.Any(d => d.Account == id)).Concat(byName).Distinct()];
+        var avalanche = book.Order(PayoffOrder.Avalanche, debts, null);
+        var snowball = book.Order(PayoffOrder.Snowball, debts, null);
+        var custom = book.Order(PayoffOrder.Custom, debts, customOrder);
 
         return new PayoffComparison(largest, cushion, through,
         [
-            Option(PayoffOrder.TodaysPlan, baseline, [.. debts.Select(d => d.Account)], Money.Zero(extra.Currency), without),
+            Option(PayoffOrder.TodaysPlan, baseline, book.Order(PayoffOrder.TodaysPlan, debts, null), Money.Zero(extra.Currency), without),
             Option(PayoffOrder.Avalanche, PayoffPlanner.Plan(debts, avalanche, extras), avalanche, extra, withExtra),
             Option(PayoffOrder.Snowball, PayoffPlanner.Plan(debts, snowball, extras), snowball, extra, withExtra),
             Option(PayoffOrder.Custom, PayoffPlanner.Plan(debts, custom, extras), custom, extra, withExtra),
@@ -164,11 +138,4 @@ public static class Scenarios
                 problems.Count > 0 ? null : ifTight?.DebtFree);
         }
     }
-
-    // What the debt's bill pays, from the debt's balance date through the
-    // horizon, at the plan's scenario: the money that moves on once it's paid off.
-    private static List<PlannedPayment> Payments(RecurringBill? bill, DateOnly from, CashFlowPlan plan) =>
-        bill is null || CashFlowPlanner.ForScenario(bill.Amount, plan.Scenario) is not { } amount
-            ? []
-            : [.. bill.DueDates.Occurrences(from, plan.Through, plan.Calendar.Build()).Select(o => new PlannedPayment(o.Date, amount))];
 }
