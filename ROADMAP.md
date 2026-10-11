@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M4 (v0.4). The dashboard and daily flows, starting with the Overview and Cash Flow pages.
+**Next up:** releasing 0.4 (M4 is done), then M5: scenarios and debt planning.
 
 ## Releases
 
@@ -115,6 +115,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Savings goals don't move money.** A dated goal shows what's left divided over the paydays before its date, rounded up, and the Savings page says when the goals together need more than each paycheck sets aside. The rule is in `docs/financial-models/cash-flow.md`.
 - **The smallest window is 760×480** (M4, from the accessibility audit). That fits 200% on a 1080p screen, and half of one at 125%. In a narrow window, tables scroll sideways rather than hide columns, card grids drop to fewer columns, and the sidebar folds to icons below 1200 px. A smoke test checks every screen at both the default and the smallest size.
 - **Windows contrast themes use the user's own colours** (M4). While one is on, every Mossmint colour and Fluent's control colours come from the system colours, and Mossmint follows the setting live. Status hues drop out, which is safe because every status already has a shape and a label. The mapping is in `docs/design/design-system.md`. It was checked with sample palettes; a run on a real contrast theme is part of the hand Narrator pass.
+- **Onboarding is the Start fresh setup, not a tour** (M4). Welcome says what setup needs and how long it takes, setup ends on the first forecast with the day-to-day loop, and each empty page says what belongs there and opens that one setup step. Nothing is shown twice or blocks the app.
 - **Mark paid records a payment entry** (M4). The forecast starts from the latest confirmed balance plus the manual entries recorded after it, so a paid bill comes off the balance at once and its due date leaves the forecast. Imported entries don't move it: an imported balance already includes them. Undo stays on the row with no time limit, instead of the mockup's 10-second toast, so nobody has to beat a timer (WCAG 2.2.1). The rules are in `docs/financial-models/cash-flow.md`.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -181,7 +182,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Manual ledger entry, mark paid with undo, balance reconciliation.
 - [x] Every chart has a table twin; keyboard-only paths; 125–200% scaling; dark, light and high contrast.
 - [x] Automated accessibility checks in CI: every focusable control has an accessible name, and the theme's colour pairs meet contrast ratios. A Narrator pass by hand each milestone from here on.
-- [ ] Generic onboarding for a user with no spreadsheets.
+- [x] Generic onboarding for a user with no spreadsheets.
 
 **Done when:** a new user can onboard with no spreadsheet, an imported user can trace every record to its source, and no screen needs the network.
 
