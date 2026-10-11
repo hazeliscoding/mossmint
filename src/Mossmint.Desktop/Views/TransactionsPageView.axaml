@@ -6,7 +6,8 @@
              x:Class="Mossmint.Desktop.Views.TransactionsPageView"
              x:DataType="vm:TransactionsPageViewModel">
 
-  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+  <!-- Sizing="Width" takes the full width, so the table fills the page and scrolls only when it must. -->
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left" Container.Sizing="Width">
     <DockPanel>
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom"
                   IsVisible="{Binding Account, Converter={x:Static ObjectConverters.IsNotNull}}">
@@ -23,8 +24,8 @@
       <TextBlock Classes="prose secondary" Text="No cash accounts yet. Add a checking account with the Start fresh setup on the Overview page." TextWrapping="Wrap" />
     </Border>
 
-    <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding Account, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <ComboBox ItemsSource="{Binding Accounts}" SelectedItem="{Binding Account}" MinWidth="200" AutomationProperties.Name="Account">
+    <DockPanel IsVisible="{Binding Account, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding Accounts}" SelectedItem="{Binding Account}" MinWidth="200" Margin="0,0,12,0" AutomationProperties.Name="Account">
         <ComboBox.ItemTemplate>
           <DataTemplate x:DataType="accounts:Account">
             <TextBlock Text="{Binding Name}" />
@@ -32,7 +33,7 @@
         </ComboBox.ItemTemplate>
       </ComboBox>
       <TextBlock Classes="mono compact secondary" Text="{Binding Summary}" VerticalAlignment="Center" TextWrapping="Wrap" />
-    </StackPanel>
+    </DockPanel>
 
     <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
@@ -87,53 +88,57 @@
       </StackPanel>
     </Border>
 
-    <Border Classes="card" Padding="16,14" IsVisible="{Binding Account, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <StackPanel Spacing="4" Grid.IsSharedSizeScope="True">
-        <TextBlock Classes="prose secondary" Text="Nothing recorded for this account yet." IsVisible="{Binding IsEmpty}" />
-        <Grid Margin="0,0,0,4" IsVisible="{Binding !IsEmpty}">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition SharedSizeGroup="date" Width="Auto" MinWidth="110" />
-            <ColumnDefinition Width="*" MinWidth="300" />
-            <ColumnDefinition SharedSizeGroup="source" Width="Auto" MinWidth="100" />
-            <ColumnDefinition SharedSizeGroup="amount" Width="Auto" MinWidth="120" />
-            <ColumnDefinition SharedSizeGroup="status" Width="Auto" MinWidth="130" />
-            <ColumnDefinition SharedSizeGroup="action" Width="Auto" MinWidth="70" />
-          </Grid.ColumnDefinitions>
-          <TextBlock Classes="label" Text="DATE" />
-          <TextBlock Grid.Column="1" Classes="label" Text="DESCRIPTION" />
-          <TextBlock Grid.Column="2" Classes="label" Text="SOURCE" />
-          <TextBlock Grid.Column="3" Classes="label" Text="AMOUNT" TextAlignment="Right" />
-        </Grid>
-        <ItemsControl ItemsSource="{Binding Rows}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:LedgerRow">
-              <Border Classes="separator-top" Padding="0,7">
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition SharedSizeGroup="date" Width="Auto" MinWidth="110" />
-                    <ColumnDefinition Width="*" MinWidth="300" />
-                    <ColumnDefinition SharedSizeGroup="source" Width="Auto" MinWidth="100" />
-                    <ColumnDefinition SharedSizeGroup="amount" Width="Auto" MinWidth="120" />
-                    <ColumnDefinition SharedSizeGroup="status" Width="Auto" MinWidth="130" />
-                    <ColumnDefinition SharedSizeGroup="action" Width="Auto" MinWidth="70" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Classes="mono" Text="{Binding Date}" VerticalAlignment="Center" />
-                  <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center" Margin="0,0,12,0">
-                    <TextBlock Text="{Binding Description}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Description}" />
-                    <TextBlock Classes="compact faint" Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
-                  </StackPanel>
-                  <TextBlock Grid.Column="2" Classes="compact secondary" Text="{Binding Source}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="3" Classes="mono" Text="{Binding Amount}" TextAlignment="Right" VerticalAlignment="Center" />
-                  <c:StatusBadge Grid.Column="4" Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                  <Button Grid.Column="5" Classes="ghost" Content="Void" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"
-                          IsVisible="{Binding CanVoid}" AutomationProperties.Name="{Binding VoidName}"
-                          Command="{Binding $parent[UserControl].((vm:TransactionsPageViewModel)DataContext).VoidCommand}" CommandParameter="{Binding}" />
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
+    <Border Classes="card" Padding="16,14,16,4" IsVisible="{Binding Account, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <!-- Too narrow for every column? The table scrolls sideways instead of hiding them (WCAG 1.4.10).
+           It's measured at its natural width, so the description is capped to keep it from widening the table. -->
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="0,0,0,10">
+        <StackPanel Spacing="4" Grid.IsSharedSizeScope="True">
+          <TextBlock Classes="prose secondary" Text="Nothing recorded for this account yet." IsVisible="{Binding IsEmpty}" />
+          <Grid Margin="0,0,0,4" IsVisible="{Binding !IsEmpty}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition SharedSizeGroup="date" Width="Auto" MinWidth="110" />
+              <ColumnDefinition Width="*" MinWidth="220" />
+              <ColumnDefinition SharedSizeGroup="source" Width="Auto" MinWidth="100" />
+              <ColumnDefinition SharedSizeGroup="amount" Width="Auto" MinWidth="120" />
+              <ColumnDefinition SharedSizeGroup="status" Width="Auto" MinWidth="130" />
+              <ColumnDefinition SharedSizeGroup="action" Width="Auto" MinWidth="70" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Classes="label" Text="DATE" />
+            <TextBlock Grid.Column="1" Classes="label" Text="DESCRIPTION" />
+            <TextBlock Grid.Column="2" Classes="label" Text="SOURCE" />
+            <TextBlock Grid.Column="3" Classes="label" Text="AMOUNT" TextAlignment="Right" />
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:LedgerRow">
+                <Border Classes="separator-top" Padding="0,7">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition SharedSizeGroup="date" Width="Auto" MinWidth="110" />
+                      <ColumnDefinition Width="*" MinWidth="220" />
+                      <ColumnDefinition SharedSizeGroup="source" Width="Auto" MinWidth="100" />
+                      <ColumnDefinition SharedSizeGroup="amount" Width="Auto" MinWidth="120" />
+                      <ColumnDefinition SharedSizeGroup="status" Width="Auto" MinWidth="130" />
+                      <ColumnDefinition SharedSizeGroup="action" Width="Auto" MinWidth="70" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Classes="mono" Text="{Binding Date}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center" Margin="0,0,12,0" MaxWidth="360" HorizontalAlignment="Left">
+                      <TextBlock Text="{Binding Description}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Description}" />
+                      <TextBlock Classes="compact faint" Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Classes="compact secondary" Text="{Binding Source}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Classes="mono" Text="{Binding Amount}" TextAlignment="Right" VerticalAlignment="Center" />
+                    <c:StatusBadge Grid.Column="4" Tone="{Binding Tone}" Text="{Binding Status}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    <Button Grid.Column="5" Classes="ghost" Content="Void" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"
+                            IsVisible="{Binding CanVoid}" AutomationProperties.Name="{Binding VoidName}"
+                            Command="{Binding $parent[UserControl].((vm:TransactionsPageViewModel)DataContext).VoidCommand}" CommandParameter="{Binding}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
     </Border>
   </StackPanel>
 </UserControl>

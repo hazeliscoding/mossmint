@@ -6,67 +6,87 @@
              x:Class="Mossmint.Desktop.Views.UnlockView"
              x:DataType="vm:UnlockViewModel">
 
-  <Grid ColumnDefinitions="*,*">
-    <Border Grid.Column="0" Background="{DynamicResource BgPanel}" BorderBrush="{DynamicResource BorderHairline}"
-            BorderThickness="0,0,1,0" Padding="64,72">
-      <StackPanel Spacing="20" MaxWidth="440" HorizontalAlignment="Left">
-        <c:BrandMark Width="44" Height="44" HorizontalAlignment="Left" />
-        <TextBlock Classes="display" Text="Welcome back." />
-        <TextBlock Classes="prose secondary" FontSize="14" LineHeight="22"
-                   Text="Your profile is encrypted on this PC. Unlock it with your passphrase, or with the recovery key you saved when you created it." />
-        <WrapPanel ItemSpacing="12" LineSpacing="8">
-          <c:StatusBadge Tone="Neutral" Text="Offline · nothing leaves this device" />
-          <c:StatusBadge Tone="Healthy" Text="Encrypted at rest" />
-        </WrapPanel>
-      </StackPanel>
-    </Border>
+  <!-- Half the gutters in a narrow window, so the text keeps room to wrap. -->
+  <UserControl.Styles>
+    <Style Selector="Border.promise">
+      <Setter Property="Padding" Value="64,72" />
+    </Style>
+    <Style Selector="StackPanel.begin">
+      <Setter Property="Margin" Value="64,0" />
+    </Style>
+    <ContainerQuery Name="screen" Query="max-width:1000">
+      <Style Selector="Border.promise">
+        <Setter Property="Padding" Value="32,40" />
+      </Style>
+      <Style Selector="StackPanel.begin">
+        <Setter Property="Margin" Value="32,24" />
+      </Style>
+    </ContainerQuery>
+  </UserControl.Styles>
 
-    <StackPanel Grid.Column="1" Spacing="16" Margin="64,0" MaxWidth="480" VerticalAlignment="Center">
-      <TextBlock Classes="notice" Text="{Binding Notice}" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  <ScrollViewer Container.Name="screen" Container.Sizing="Width">
+    <Grid ColumnDefinitions="*,*">
+      <Border Grid.Column="0" Background="{DynamicResource BgPanel}" BorderBrush="{DynamicResource BorderHairline}"
+              BorderThickness="0,0,1,0" Classes="promise">
+        <StackPanel Spacing="20" MaxWidth="440" HorizontalAlignment="Left">
+          <c:BrandMark Width="44" Height="44" HorizontalAlignment="Left" />
+          <TextBlock Classes="display" Text="Welcome back." TextWrapping="Wrap" />
+          <TextBlock Classes="prose secondary" FontSize="14" LineHeight="22"
+                     Text="Your profile is encrypted on this PC. Unlock it with your passphrase, or with the recovery key you saved when you created it." />
+          <WrapPanel ItemSpacing="12" LineSpacing="8">
+            <c:StatusBadge Tone="Neutral" Text="Offline · nothing leaves this device" />
+            <c:StatusBadge Tone="Healthy" Text="Encrypted at rest" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
 
-      <StackPanel Spacing="6">
-        <TextBlock Classes="field-label" Text="Profile" />
-        <ListBox Classes="nav" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" AutomationProperties.Name="Profiles">
-          <ListBox.Styles>
-            <Style Selector="ListBoxItem" x:DataType="p:ProfileSummary">
-              <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
-            </Style>
-          </ListBox.Styles>
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="p:ProfileSummary">
-              <StackPanel Orientation="Horizontal" Spacing="10" Margin="12,9">
-                <c:Icon Data="{StaticResource IconLock}" Foreground="{DynamicResource TextFaint}" />
-                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </StackPanel>
+      <StackPanel Grid.Column="1" Classes="begin" Spacing="16" MaxWidth="480" VerticalAlignment="Center">
+        <TextBlock Classes="notice" Text="{Binding Notice}" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
-      <StackPanel Spacing="4" IsVisible="{Binding !UseRecoveryKey}">
-        <TextBlock Classes="field-label" Text="Passphrase" />
-        <TextBox Text="{Binding Passphrase}" PasswordChar="•" AutomationProperties.Name="Passphrase" />
-      </StackPanel>
-      <StackPanel Spacing="4" IsVisible="{Binding UseRecoveryKey}">
-        <TextBlock Classes="field-label" Text="Recovery key" />
-        <TextBox Text="{Binding RecoveryKey}" Classes="money" TextAlignment="Left" PlaceholderText="ABCD-EFGH-…"
-                 AutomationProperties.Name="Recovery key" />
-      </StackPanel>
-      <CheckBox IsChecked="{Binding UseRecoveryKey}" Content="Use my recovery key instead" />
+        <StackPanel Spacing="6">
+          <TextBlock Classes="field-label" Text="Profile" />
+          <ListBox Classes="nav" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" AutomationProperties.Name="Profiles">
+            <ListBox.Styles>
+              <Style Selector="ListBoxItem" x:DataType="p:ProfileSummary">
+                <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+              </Style>
+            </ListBox.Styles>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="p:ProfileSummary">
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="12,9">
+                  <c:Icon Data="{StaticResource IconLock}" Foreground="{DynamicResource TextFaint}" />
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
 
-      <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
-      <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        <StackPanel Spacing="4" IsVisible="{Binding !UseRecoveryKey}">
+          <TextBlock Classes="field-label" Text="Passphrase" />
+          <TextBox Text="{Binding Passphrase}" PasswordChar="•" AutomationProperties.Name="Passphrase" />
+        </StackPanel>
+        <StackPanel Spacing="4" IsVisible="{Binding UseRecoveryKey}">
+          <TextBlock Classes="field-label" Text="Recovery key" />
+          <TextBox Text="{Binding RecoveryKey}" Classes="money" TextAlignment="Left" PlaceholderText="ABCD-EFGH-…"
+                   AutomationProperties.Name="Recovery key" />
+        </StackPanel>
+        <CheckBox IsChecked="{Binding UseRecoveryKey}" Content="Use my recovery key instead" />
 
-      <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-        <Button Content="Unlock with this PC" Command="{Binding UnlockWithThisDeviceCommand}" IsVisible="{Binding CanUnlockWithThisDevice}" />
-        <Button Classes="primary" Content="Unlock" Command="{Binding UnlockCommand}" IsDefault="True" />
-      </StackPanel>
+        <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
 
-      <Border Classes="separator" Margin="0,8" />
-      <StackPanel Orientation="Horizontal" Spacing="16">
-        <Button Classes="link" FontSize="12" Content="Create another profile" Command="{Binding CreateProfileCommand}" />
-        <Button Classes="link" FontSize="12" Content="Restore an encrypted backup" Command="{Binding RestoreCommand}" />
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+          <Button Content="Unlock with this PC" Command="{Binding UnlockWithThisDeviceCommand}" IsVisible="{Binding CanUnlockWithThisDevice}" />
+          <Button Classes="primary" Content="Unlock" Command="{Binding UnlockCommand}" IsDefault="True" />
+        </StackPanel>
+
+        <Border Classes="separator" Margin="0,8" />
+        <StackPanel Orientation="Horizontal" Spacing="16">
+          <Button Classes="link" FontSize="12" Content="Create another profile" Command="{Binding CreateProfileCommand}" />
+          <Button Classes="link" FontSize="12" Content="Restore an encrypted backup" Command="{Binding RestoreCommand}" />
+        </StackPanel>
       </StackPanel>
-    </StackPanel>
-  </Grid>
+    </Grid>
+  </ScrollViewer>
 </UserControl>

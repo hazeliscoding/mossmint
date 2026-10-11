@@ -5,7 +5,7 @@
         x:Class="Mossmint.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Mossmint"
-        Width="1440" Height="900" MinWidth="1024" MinHeight="640"
+        Width="1440" Height="900" MinWidth="760" MinHeight="480"
         WindowStartupLocation="CenterScreen"
         Icon="/Assets/mossmint.ico"
         ExtendClientAreaToDecorationsHint="True">

@@ -159,4 +159,30 @@ public class ShellTests
 
         window.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("sidebar")).Bounds.Width.Should().Be(48);
     }
+
+    [AvaloniaFact]
+    public async Task The_sidebar_collapses_itself_in_a_narrow_window()
+    {
+        using var app = new Harness();
+        app.CreateProfile();
+        var window = app.Open();
+        window.Width = 1000;
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        Harness.Pump();
+        var sidebar = window.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("sidebar"));
+        var widths = new List<double> { sidebar.Bounds.Width };
+
+        window.Width = 1440;
+        Harness.Pump();
+        widths.Add(sidebar.Bounds.Width);
+        app.ViewModel.Shell.ToggleSidebarCommand.Execute(null);
+        window.Width = 1300;
+        Harness.Pump();
+        widths.Add(sidebar.Bounds.Width);
+
+        // Collapsed when it starts narrow, open once wide, and a toggle holds above the line.
+        widths.Should().Equal(48, 216, 48);
+    }
 }

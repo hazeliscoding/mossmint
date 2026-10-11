@@ -5,7 +5,18 @@
              x:Class="Mossmint.Desktop.Views.SavingsPageView"
              x:DataType="vm:SavingsPageViewModel">
 
-  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+  <UserControl.Styles>
+    <Style Selector="UniformGrid.tiles">
+      <Setter Property="Columns" Value="3" />
+    </Style>
+    <ContainerQuery Name="page" Query="max-width:600">
+      <Style Selector="UniformGrid.tiles">
+        <Setter Property="Columns" Value="1" />
+      </Style>
+    </ContainerQuery>
+  </UserControl.Styles>
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left" Container.Name="page" Container.Sizing="Width">
     <DockPanel>
       <Button DockPanel.Dock="Right" Content="Add goal" VerticalAlignment="Bottom" Command="{Binding StartAddCommand}" IsVisible="{Binding !IsAdding}" />
       <StackPanel Spacing="4">
@@ -19,7 +30,7 @@
     <ItemsControl ItemsSource="{Binding Plan}" Margin="0,0,-12,0">
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>
-          <UniformGrid Columns="3" />
+          <UniformGrid Classes="tiles" />
         </ItemsPanelTemplate>
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
@@ -28,7 +39,7 @@
             <StackPanel Spacing="6">
               <DockPanel>
                 <c:StatusBadge DockPanel.Dock="Right" Tone="{Binding Tone}" Text="{Binding Status}" VerticalAlignment="Top" />
-                <TextBlock Classes="label" Text="{Binding Label}" Margin="0,0,8,0" />
+                <TextBlock Classes="label" Text="{Binding Label}" TextWrapping="Wrap" Margin="0,0,8,0" />
               </DockPanel>
               <TextBlock Classes="mono" FontSize="24" Text="{Binding Value}" />
               <TextBlock Classes="compact secondary" Text="{Binding Note}" TextWrapping="Wrap" />
@@ -41,7 +52,7 @@
     <Border c:FormFocus.IsForm="True" Classes="card" Padding="20,16" IsVisible="{Binding IsAdding}">
       <StackPanel Spacing="10">
         <TextBlock Classes="card-title" Text="Add a savings goal" />
-        <StackPanel Orientation="Horizontal" Spacing="12">
+        <WrapPanel ItemSpacing="12" LineSpacing="8">
           <StackPanel Spacing="4" Width="220">
             <TextBlock Classes="field-label" Text="Name" />
             <TextBox Text="{Binding GoalName}" AutomationProperties.Name="Goal name" />
@@ -58,7 +69,7 @@
             <TextBlock Classes="field-label" Text="By (optional)" />
             <CalendarDatePicker SelectedDate="{Binding GoalBy}" HorizontalAlignment="Stretch" AutomationProperties.Name="Reach it by" />
           </StackPanel>
-        </StackPanel>
+        </WrapPanel>
         <TextBlock Classes="error" Text="{Binding FormError}" TextWrapping="Wrap" IsVisible="{Binding FormError, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Classes="primary" Content="Save goal" Command="{Binding SaveGoalCommand}" />
@@ -75,7 +86,7 @@
     <ItemsControl ItemsSource="{Binding Goals}" IsVisible="{Binding HasGoals}" Margin="0,0,-12,0">
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>
-          <UniformGrid Columns="3" />
+          <UniformGrid Classes="tiles" />
         </ItemsPanelTemplate>
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>

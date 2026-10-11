@@ -5,7 +5,18 @@
              x:Class="Mossmint.Desktop.Views.PaychecksPageView"
              x:DataType="vm:PaychecksPageViewModel">
 
-  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left">
+  <UserControl.Styles>
+    <Style Selector="UniformGrid.cards">
+      <Setter Property="Columns" Value="2" />
+    </Style>
+    <ContainerQuery Name="page" Query="max-width:720">
+      <Style Selector="UniformGrid.cards">
+        <Setter Property="Columns" Value="1" />
+      </Style>
+    </ContainerQuery>
+  </UserControl.Styles>
+
+  <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left" Container.Name="page" Container.Sizing="Width">
     <StackPanel Spacing="4">
       <TextBlock Classes="page-title" Text="{Binding Title}" />
       <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
@@ -43,7 +54,7 @@
     <ItemsControl ItemsSource="{Binding Cards}" IsVisible="{Binding HasCards}" Margin="0,0,-12,0">
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>
-          <UniformGrid Columns="2" />
+          <UniformGrid Classes="cards" />
         </ItemsPanelTemplate>
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
