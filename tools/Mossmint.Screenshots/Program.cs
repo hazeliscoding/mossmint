@@ -1,10 +1,12 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Mossmint.Desktop;
+using Mossmint.Desktop.Services;
 using Mossmint.Desktop.ViewModels;
 using Mossmint.Screenshots;
 using Mossmint.Screenshots.EnginePreview;
@@ -12,7 +14,7 @@ using Mossmint.Screenshots.EnginePreview;
 // Renders Mossmint screens to PNG without a visible window, through the real
 // Skia renderer. Screens only ever show synthetic data, from throwaway profiles
 // in a temporary folder; the app's own data root is pointed there as well.
-// Usage: dotnet run --project tools/Mossmint.Screenshots -- [--size=WxH] [out-dir] [screen ...]
+// Usage: dotnet run --project tools/Mossmint.Screenshots -- [--size=WxH] [--contrast] [out-dir] [screen ...]
 //        dotnet run --project tools/Mossmint.Screenshots -- --icons src/Mossmint.Desktop/Assets [docs/brand]
 Environment.SetEnvironmentVariable(Mossmint.Desktop.Services.DataRoot.Variable, Path.Combine(Path.GetTempPath(), "mossmint-screenshots", "app-root"));
 AppBuilder.Configure<App>()
@@ -37,6 +39,11 @@ var sizeArg = args.FirstOrDefault(a => a.StartsWith("--size=", StringComparison.
 args = [.. args.Where(a => a != sizeArg)];
 var size = sizeArg?["--size=".Length..].Split('x').Select(int.Parse).ToArray() ?? [1440, 900];
 var suffix = sizeArg is null ? "" : $"-{size[0]}x{size[1]}";
+
+// --contrast renders with two sample Windows contrast themes (close to Night sky and Desert)
+// instead of dark and light.
+var contrast = args.Contains("--contrast");
+args = [.. args.Where(a => a != "--contrast")];
 
 var outDir = Path.GetFullPath(args.Length > 0 ? args[0] : Path.Combine("artifacts", "screenshots"));
 var only = args.Skip(1).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -72,9 +79,16 @@ var screens = new (string Name, Func<Window> Create)[]
     ("engine-preview", EnginePreviewWindow.Create),
 };
 
-foreach (var theme in new[] { ThemeVariant.Dark, ThemeVariant.Light })
+(string Name, Action Apply)[] looks = contrast
+    ?
+    [
+        ("night-sky", () => ContrastTheme.Apply(app, new(Color.Parse("#000000"), Color.Parse("#FFFFFF"), Color.Parse("#D6B4FD"), Color.Parse("#2B2B2B"), Color.Parse("#8080FF"), Color.Parse("#A6A6A6")))),
+        ("desert", () => ContrastTheme.Apply(app, new(Color.Parse("#FFFAEF"), Color.Parse("#3D3D3D"), Color.Parse("#903909"), Color.Parse("#FFF5E3"), Color.Parse("#1C5E75"), Color.Parse("#676767")))),
+    ]
+    : [("dark", () => app.RequestedThemeVariant = ThemeVariant.Dark), ("light", () => app.RequestedThemeVariant = ThemeVariant.Light)];
+foreach (var (look, apply) in looks)
 {
-    app.RequestedThemeVariant = theme;
+    apply();
     foreach (var (name, create) in screens)
     {
         if (only.Count > 0 && !only.Contains(name))
@@ -88,7 +102,7 @@ foreach (var theme in new[] { ThemeVariant.Dark, ThemeVariant.Light })
         window.Height = size[1];
         window.Show();
 
-        var path = Path.Combine(outDir, $"{name}-{theme.Key.ToString()!.ToLowerInvariant()}{suffix}.png");
+        var path = Path.Combine(outDir, $"{name}-{look}{suffix}.png");
         Capture(window, path);
         window.Close();
         Console.WriteLine(path);
