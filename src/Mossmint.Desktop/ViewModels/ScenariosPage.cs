@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mossmint.Application.Data;
 using Mossmint.Application.Forecasting;
+using Mossmint.Application.Profiles;
 using Mossmint.Desktop.Controls;
 using Mossmint.Desktop.Services;
 using Mossmint.Domain;
@@ -52,6 +53,7 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     private readonly DispatcherTimer _settle = new() { Interval = TimeSpan.FromMilliseconds(120) };
     private bool _syncing;
     private bool _seeded;
+    private IProfileSession? _session;
     private Money _cushion;
     private DebtPlan? _applied;
     private DebtPlan? _pending;
@@ -246,6 +248,7 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     [RelayCommand]
     private void ApplyPlan()
     {
+        StayWithProfile();
         if (_pending is not { } plan || !_services.Context.IsUnlocked)
         {
             return;
@@ -268,6 +271,7 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     [RelayCommand]
     private void UndoApply()
     {
+        StayWithProfile();
         if (!CanUndo || !_services.Context.IsUnlocked)
         {
             return;
@@ -282,6 +286,7 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
     // The first visit starts from the saved plan's extra.
     public override void OnNavigatedTo()
     {
+        StayWithProfile();
         if (!_seeded && _services.Context.IsUnlocked && _services.Context.Current.Data.Settings().DebtPlan is { } plan)
         {
             Extra = plan.MonthlyExtra.Amount;
@@ -319,6 +324,24 @@ public sealed partial class ScenariosPageViewModel : PageViewModel
         }
 
         OnPropertyChanged(nameof(HasComparison));
+    }
+
+    // The page outlives a profile session: after a lock, whatever it held for the
+    // last profile (the extra, the order, a plan waiting to be applied, the plan
+    // undo would restore) is dropped, so none of it can be written to another one.
+    private void StayWithProfile()
+    {
+        var session = _services.Context.IsUnlocked ? _services.Context.Current : null;
+        if (ReferenceEquals(session, _session))
+        {
+            return;
+        }
+
+        _session = session;
+        (_seeded, _applied, _replaced, CanUndo, Notice) = (false, null, null, false, null);
+        CancelApply();
+        CustomOrder.Clear();
+        Extra = 0m;
     }
 
     private DateOnly Today => DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime);

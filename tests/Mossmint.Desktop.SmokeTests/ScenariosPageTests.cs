@@ -87,6 +87,8 @@ public class ScenariosPageTests
         page.IsConfirming.Should().BeFalse();
         page.Notice.Should().Contain("Avalanche");
         page.Columns[0].Title.Should().Be("Your plan");
+        app.ViewModel.Shell.Navigate(Destination.Debts);
+        ((DebtsPageViewModel)app.ViewModel.Shell.CurrentPage!).Summary.Should().Contain("payoff dates follow your plan");
         app.ViewModel.Shell.Navigate(Destination.CashFlow);
         ((CashFlowPageViewModel)app.ViewModel.Shell.CurrentPage!).Rows.Should().Contain(r => r.Events.Contains("Extra debt payment"));
 
@@ -116,6 +118,38 @@ public class ScenariosPageTests
 
         page.IsConfirming.Should().BeFalse();
         app.Services.Context.Current.Data.Settings().DebtPlan.Should().BeNull();
+    }
+
+    // The page outlives a profile: what it holds for undo must never reach the next one.
+    [AvaloniaFact]
+    public async Task Undo_and_the_pending_plan_stay_with_the_profile_they_came_from()
+    {
+        using var app = new Harness();
+        app.CreateProfile("Juniper");
+        app.CreateProfile("Rowan");
+        app.Open();
+        await UnlockAs(app, "Juniper");
+        AddDebts(app);
+        var page = Open(app);
+        page.Extra = 150m;
+        page.Refresh();
+        page.StartApplyCommand.Execute(page.Columns[1]);
+        page.ApplyPlanCommand.Execute(null);
+        page.StartApplyCommand.Execute(page.Columns[2]);
+
+        app.ViewModel.Shell.LockCommand.Execute(null);
+        await UnlockAs(app, "Rowan");
+        AddDebts(app);
+        page = Open(app);
+
+        (page.CanUndo, page.IsConfirming, page.Notice, page.Extra).Should().Be((false, false, (string?)null, 0m));
+        page.UndoApplyCommand.Execute(null);
+        page.ApplyPlanCommand.Execute(null);
+        app.Services.Context.Current.Data.Settings().DebtPlan.Should().BeNull();
+
+        app.ViewModel.Shell.LockCommand.Execute(null);
+        await UnlockAs(app, "Juniper");
+        app.Services.Context.Current.Data.Settings().DebtPlan!.Order.Should().Be(Application.Forecasting.PayoffOrder.Avalanche);
     }
 
     [AvaloniaFact]
@@ -160,9 +194,23 @@ public class ScenariosPageTests
         return (ScenariosPageViewModel)app.ViewModel.Shell.CurrentPage!;
     }
 
+    private static async Task UnlockAs(Harness app, string name)
+    {
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.SelectedProfile = unlock.Profiles.Single(p => p.Name == name);
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+    }
+
     private static async Task<Harness> WithDebts()
     {
         var app = await Unlocked();
+        AddDebts(app);
+        return app;
+    }
+
+    private static void AddDebts(Harness app)
+    {
         var entry = new ManualEntry(app.Services.Context.Current.Data, TimeProvider.System);
         var today = DateOnly.FromDateTime(DateTime.Now);
         var checking = entry.AddCashAccount("Checking", 1_240m);
@@ -172,7 +220,6 @@ public class ScenariosPageTests
         entry.AddLoan(new LoanEntry("Car loan", 9_800m, today, 7.4m, 285m, 28), checking.Id);
         entry.AddCard(new CardEntry("Card", 2_300m, today, 24.99m, 150m, 21, 3), checking.Id);
         entry.SetSavings(150m, 300m);
-        return app;
     }
 
     private static async Task<Harness> Unlocked()
