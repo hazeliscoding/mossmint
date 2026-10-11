@@ -63,6 +63,16 @@ Fixed amounts are the same in every scenario.
 
 **Late paychecks** are a separate assumption that combines with any scenario: every paycheck due from today on lands a number of business days late (the app uses 3), and the savings contribution and any extra debt payment move with it. A paycheck pushed past the forecast's last day drops out of it. Paychecks already due before today aren't moved: the confirmed balance already includes them.
 
+## Changing a bill
+
+Code: `ManualEntry.UpdateBill`, `EndBill` and `RemoveBill`. Tests: `tests/Mossmint.Application.Tests/BillEditingTests.cs`.
+
+- **A price change** replaces the amount for every due date the forecast hasn't seen paid; payments already recorded keep their own amounts. The schedule stays as it was.
+- **A new day of the month** starts a plain monthly schedule on that day. Skipped months and weekend moves belong to the old day, so they go. This is also how a bill the workbook import split across both paychecks goes back to its real billing day; the other half is ended or removed.
+- **A loan or card payment** keeps the debt in step: a loan's regular payment and, when the day moves, its payment dates follow the bill, and a card's due day follows a new day. Payoff dates and the cash forecast then use the same payment.
+- **A cancellation** ends the bill from a date: nothing is due on or after it, and its paid history stays. A debt's payment isn't ended or removed while the debt is owed.
+- **Removing** is only for a bill that was never paid, such as a typo.
+
 ## Paycheck funding
 
 Each obligation is funded by the **latest paycheck on or before its due date**, exactly once. Anything due before the first payday is funded by the cash on hand. Due dates never move.

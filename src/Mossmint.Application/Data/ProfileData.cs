@@ -53,6 +53,9 @@ public interface IProfileData
 
     void SaveBill(RecurringBill bill);
 
+    // Deletes a bill outright; callers keep paid bills and end them instead.
+    void RemoveBill(BillId bill);
+
     IReadOnlyList<IncomeSchedule> Income();
 
     void SaveIncome(IncomeSchedule income);

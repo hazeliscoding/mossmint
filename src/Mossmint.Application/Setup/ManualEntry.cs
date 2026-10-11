@@ -95,14 +95,48 @@ public sealed class ManualEntry(IProfileData data, TimeProvider clock)
 
     public RecurringBill AddBill(BillEntry entry, AccountId? payFrom = null, AccountId? payTo = null)
     {
-        Require(entry.Amount > 0m, "The amount must be more than zero.");
-        var amount = entry.IsEstimate
-            ? AmountPolicy.Estimated(Cents(entry.Amount), entry.Low is { } low ? Cents(low) : null, entry.High is { } high ? Cents(high) : null)
-            : AmountPolicy.Fixed(Cents(entry.Amount));
-        var bill = new RecurringBill(new BillId(NewId()), Clean(entry.Name), amount, new Schedule(new MonthlyRule(Day(entry.DueDay))),
-            entry.Purpose, entry.IsEstimate ? Provenance.Estimated(Today) : Provenance.UserConfirmed(Today), payFrom, payTo);
+        var (name, amount, provenance) = (Clean(entry.Name), Amount(entry), BillProvenance(entry));
+        var bill = new RecurringBill(new BillId(NewId()), name, amount, new Schedule(new MonthlyRule(Day(entry.DueDay))),
+            entry.Purpose, provenance, payFrom, payTo);
         data.SaveBill(bill);
         return bill;
+    }
+
+    // A price change, a new name or a subscription's real billing day. A new day
+    // starts a plain monthly schedule on it, since skips and business-day moves
+    // belong to the old day; otherwise the schedule stays. A loan or card payment
+    // keeps the debt's terms in step, so payoff dates and cash use the same payment.
+    public RecurringBill UpdateBill(RecurringBill bill, BillEntry entry)
+    {
+        var (name, amount, provenance, day) = (Clean(entry.Name), Amount(entry), BillProvenance(entry), Day(entry.DueDay));
+        Schedule? moved = bill.DueDates.Rule is MonthlyRule(var current) && current == day ? null : new Schedule(new MonthlyRule(day));
+        var changed = bill with { Name = name, Amount = amount, DueDates = moved ?? bill.DueDates, Provenance = provenance };
+        if (bill.Purpose == BillPurpose.DebtPayment && data.Debts().FirstOrDefault(d => d.Account == bill.TargetAccount) is { } debt)
+        {
+            data.SaveDebt(debt with { Terms = InStep(debt.Terms, amount.Expected!.Value, moved) });
+        }
+
+        data.SaveBill(changed);
+        return changed;
+    }
+
+    // A cancellation: nothing is due from `from` on, and the bill's history stays.
+    public RecurringBill EndBill(RecurringBill bill, DateOnly from)
+    {
+        Require(bill.Purpose != BillPurpose.DebtPayment, "A debt's payment stays while the debt is owed. Change its amount instead.");
+        var ended = bill with { DueDates = bill.DueDates with { EndsOn = from.AddDays(-1) } };
+        data.SaveBill(ended);
+        return ended;
+    }
+
+    // Only a bill that was never paid, such as a typo: one with payments is ended
+    // instead, so its history stays.
+    public void RemoveBill(RecurringBill bill)
+    {
+        Require(bill.Purpose != BillPurpose.DebtPayment, "A debt's payment stays while the debt is owed. Change its amount instead.");
+        var paid = data.Accounts().Any(a => data.Transactions(a.Id).Any(t => t.Status != TransactionStatus.Void && t.Pays?.Bill == bill.Id));
+        Require(!paid, $"{bill.Name} has payments recorded. End it instead, so its history stays.");
+        data.RemoveBill(bill.Id);
     }
 
     public DebtAccount AddLoan(LoanEntry entry, AccountId? payFrom = null)
@@ -234,6 +268,25 @@ public sealed class ManualEntry(IProfileData data, TimeProvider clock)
     }
 
     public void Undo(Transaction entry) => data.VoidTransaction(entry.Id);
+
+    private AmountPolicy Amount(BillEntry entry)
+    {
+        Require(entry.Amount > 0m, "The amount must be more than zero.");
+        return entry.IsEstimate
+            ? AmountPolicy.Estimated(Cents(entry.Amount), entry.Low is { } low ? Cents(low) : null, entry.High is { } high ? Cents(high) : null)
+            : AmountPolicy.Fixed(Cents(entry.Amount));
+    }
+
+    private Provenance BillProvenance(BillEntry entry) => entry.IsEstimate ? Provenance.Estimated(Today) : Provenance.UserConfirmed(Today);
+
+    // Dates follow the bill only when its day changed: an imported loan keeps its own schedule otherwise.
+    private static DebtTerms InStep(DebtTerms terms, Money payment, Schedule? moved) => terms switch
+    {
+        SimpleInterestLoanTerms t => t with { RegularPayment = payment, PaymentDates = moved ?? t.PaymentDates },
+        AmortizingLoanTerms t => t with { ScheduledPayment = payment, PaymentDates = moved ?? t.PaymentDates },
+        CreditCardTerms t when moved?.Rule is MonthlyRule(var day) => t with { PaymentDue = PaymentDueRule.OnDay(day) },
+        _ => terms,
+    };
 
     private Money Saved(decimal saved)
     {

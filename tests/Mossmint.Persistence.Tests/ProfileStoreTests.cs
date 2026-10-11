@@ -198,6 +198,30 @@ public class ProfileStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_removed_bill_is_gone_after_unlocking_and_the_removal_is_audited()
+    {
+        var store = _root.Store();
+        var created = store.Create("Juniper", Passphrase, false);
+        var id = created.Session.Profile.Id;
+        var keep = new RecurringBill(new BillId(Guid.NewGuid()), "Rent", AmountPolicy.Fixed(Money.Usd(1_150m)),
+            new Schedule(new MonthlyRule(DayOfMonth.Of(1))), BillPurpose.Expense, Provenance.UserConfirmed(Today));
+        var typo = keep with { Id = new BillId(Guid.NewGuid()), Name = "Rnet" };
+        int auditBefore;
+        using (var s = created.Session)
+        {
+            s.Data.SaveBill(keep);
+            s.Data.SaveBill(typo);
+            auditBefore = s.Data.Counts().AuditEvents;
+            s.Data.RemoveBill(typo.Id);
+            s.Data.RemoveBill(typo.Id);
+        }
+
+        using var session = Unlocks(store.Unlock(id, new UnlockSecret.Passphrase(Passphrase)));
+        session.Data.Bills().Should().ContainSingle().Which.Should().BeEquivalentTo(keep);
+        session.Data.Counts().AuditEvents.Should().Be(auditBefore + 1);
+    }
+
+    [Fact]
     public void Manual_entries_keep_the_bill_they_pay_and_undo_leaves_them_void()
     {
         var created = _root.Store().Create("Juniper", Passphrase, false);

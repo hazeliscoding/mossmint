@@ -57,6 +57,20 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         db.SaveChanges();
     }
 
+    // Its import links go too: a later import that still finds the line adds it back as new.
+    public void RemoveBill(BillId bill)
+    {
+        if (db.Bills.Find(bill.Value) is not { } row)
+        {
+            return;
+        }
+
+        db.Bills.Remove(row);
+        db.ImportLinks.RemoveRange(db.ImportLinks.Where(l => l.Entity == nameof(LinkedEntity.Bill) && l.EntityId == bill.Value));
+        Audit("bill.removed", "Bill", bill.Value, row.Name);
+        db.SaveChanges();
+    }
+
     public IReadOnlyList<Transaction> Transactions(AccountId account) =>
         [.. db.Transactions.AsNoTracking()
             .Where(t => t.AccountId == account.Value && !t.RemovedAtSource)

@@ -146,6 +146,8 @@ internal sealed class InMemoryProfileData : IProfileData
 
     public void SaveBill(RecurringBill bill) => _bills[bill.Id] = bill;
 
+    public void RemoveBill(BillId bill) => _bills.Remove(bill);
+
     public IReadOnlyList<IncomeSchedule> Income() => [.. _income.Values];
 
     public void SaveIncome(IncomeSchedule income) => _income[income.Id] = income;
