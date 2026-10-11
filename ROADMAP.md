@@ -118,6 +118,14 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Onboarding is the Start fresh setup, not a tour** (M4). Welcome says what setup needs and how long it takes, setup ends on the first forecast with the day-to-day loop, and each empty page says what belongs there and opens that one setup step. Nothing is shown twice or blocks the app.
 - **Mark paid records a payment entry** (M4). The forecast starts from the latest confirmed balance plus the manual entries recorded after it, so a paid bill comes off the balance at once and its due date leaves the forecast. Imported entries don't move it: an imported balance already includes them. Undo stays on the row with no time limit, instead of the mockup's 10-second toast, so nobody has to beat a timer (WCAG 2.2.1). The rules are in `docs/financial-models/cash-flow.md`.
 
+## Decisions (2026-10-11, M5)
+
+- **Scenarios compares ways to pay, with one extra** (the owner's and the test user's choice between two mockups). The columns are today's plan, avalanche, snowball and the user's own order, all paying the same monthly extra. Each shows the debt-free date, interest, the lowest daily cash and whether that cash stays above the cushion. The +$25 and +$50 steps from the user journey are slider positions instead of columns.
+- **The extra comes out of the first paycheck of each month,** after the paycheck lands. The same dates feed the payoff plan and the cash check, so a payoff date and its safety label always describe the same payments.
+- **Orders are fixed when the plan starts.** Avalanche goes by the rate charged today (a balance at a 0% promo counts as 0%), snowball by balance; ties break by the other key, then by account. A debt's freed payment (its debt-payment bill) and whatever its last day didn't need move to the next debt. The rules and an independent cross-check are in `docs/financial-models/payoff.md`.
+- **The largest safe extra is checked over the whole horizon:** every month until today's plan would be debt-free, at most 10 years out, under the chosen spending scenario. It is the largest whole cent that keeps every day at or above the cushion. A stale balance, a bill without an amount or no paycheck means *needs confirmation*, as with safe to spend.
+- **The custom order starts alphabetical** and isn't saved; applying a plan (below) is what keeps it.
+
 ## M0: Skeleton and guardrails (v0.3.0)
 
 - [x] Repo files: `README`, `ROADMAP`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `.editorconfig`, `.gitattributes`, `.gitignore`.
@@ -188,8 +196,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 ## M5: Scenarios and debt planning (v0.5)
 
-- [ ] Payoff comparison: avalanche, snowball, custom.
-- [ ] Largest feasible extra payment over the whole horizon, revalidated against daily cash.
+- [x] Payoff comparison: avalanche, snowball, custom.
+- [x] Largest feasible extra payment over the whole horizon, revalidated against daily cash.
 - [ ] Stress scenarios and a debt-free date range.
 - [ ] Apply to plan with a change summary; scenarios never change the real plan silently.
 
