@@ -59,6 +59,8 @@ var screens = new (string Name, Func<Window> Create)[]
     ("recovery-key", scenes.RecoveryKey),
     ("unlock", scenes.Locked),
     ("setup", scenes.Setup),
+    ("setup-done", scenes.SetupDone),
+    ("bills-empty", () => scenes.Fresh(vm => vm.OpenApp(Destination.Bills))),
     ("overview", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Overview))),
     ("cash-flow", () => scenes.Unlocked(vm => vm.OpenApp(Destination.CashFlow))),
     ("paychecks", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Paychecks))),

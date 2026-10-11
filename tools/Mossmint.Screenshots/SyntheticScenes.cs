@@ -30,6 +30,16 @@ internal sealed class SyntheticScenes : IDisposable
         return Window(services);
     }
 
+    // A brand-new profile with nothing in it yet: the empty pages.
+    public MainWindow Fresh(Action<MainWindowViewModel> show)
+    {
+        var services = Services(NewRoot());
+        services.Context.Open(services.Profiles.Create(SyntheticProfile.Name, Passphrase, false).Session);
+        var window = Window(services);
+        show((MainWindowViewModel)window.DataContext!);
+        return window;
+    }
+
     public MainWindow Unlocked(Action<MainWindowViewModel> show)
     {
         var services = Services(NewRoot());
@@ -64,6 +74,13 @@ internal sealed class SyntheticScenes : IDisposable
         setup.SkipCommand.Execute(null);
         setup.SkipCommand.Execute(null);
         (setup.BillName, setup.BillAmount, setup.BillDueDay) = ("Phone", "45.00", 20);
+    });
+
+    // The end of setup on the synthetic profile: its first forecast.
+    public MainWindow SetupDone() => Unlocked(vm =>
+    {
+        vm.StartSetup();
+        ((SetupViewModel)vm.CurrentScreen).Step = SetupStep.Done;
     });
 
     // A fresh profile on the Imports page with the synthetic workbooks picked:
