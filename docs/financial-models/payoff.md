@@ -25,7 +25,7 @@ flowchart TD
 
 - Every debt keeps its own regular payment until it is paid off.
 - **Extras** go to the first debt in the order that is still owed on their date, after that debt's own payment on the same day. On loans they go to principal.
-- **Rollover:** once a debt is paid off, its payment (the amount and dates of its debt-payment bill, which is what the cash forecast pays) goes to the first debt still owed. A debt that pays off on its own before its turn frees its payment the same way.
+- **Rollover:** once a debt is paid off, its payment (the amount and dates of its debt-payment bill, which is what the cash forecast pays) goes to the first debt still owed. A debt that pays off on its own before its turn frees its payment the same way, along with what its last payment didn't need.
 - **The last day:** on the day a debt is paid off, whatever that day's payments didn't need goes on to the next debt the same day. Extras are tracked exactly. The debt's own payment is taken from its bill, so its unused part is exact while the bill matches what the projection paid, and never more than the bill.
 - **Today's plan** (`Baseline`) is each debt on its own payments, with nothing moving between them.
 - A debt that can't be projected (`InsufficientData`) is never paid extra, and the plan has no debt-free date. A debt that never pays off even with everything sent its way keeps everything from then on.

@@ -19,9 +19,9 @@ public class PayoffPlannerTests
     private static List<PlannedPayment> Monthly(DateOnly first, decimal amount) =>
         [.. Enumerable.Range(0, 108).Select(i => new PlannedPayment(first.AddMonths(i), Money.Usd(amount)))];
 
-    // A loan charged APR / 12 on the 1st of each month from February. Its bill
-    // pays the same amount on the same days.
-    private static PayoffDebt Loan(int id, decimal principal, decimal payment, decimal aprPercent = 0m) =>
+    // A loan charged APR / 12 on the given day of each month (the 1st by default,
+    // from February). Its bill pays the same amount on the same days.
+    private static PayoffDebt Loan(int id, decimal principal, decimal payment, decimal aprPercent = 0m, int day = 1) =>
         new(
             Id(id),
             new AmortizingLoanInput(
@@ -29,10 +29,10 @@ public class PayoffPlannerTests
                 new AmortizingLoanTerms(
                     RateSchedule.Fixed(AnnualRate.FromPercent(aprPercent), LongAgo),
                     12,
-                    new Schedule(new MonthlyRule(DayOfMonth.Of(1)), StartsOn: AsOf.AddDays(1)),
+                    new Schedule(new MonthlyRule(DayOfMonth.Of(day)), StartsOn: AsOf.AddDays(1)),
                     Money.Usd(payment)),
                 CalendarSpec.WeekendsOnly),
-            Monthly(new DateOnly(2027, 2, 1), payment));
+            Monthly(day == 1 ? new DateOnly(2027, 2, 1) : new DateOnly(2027, 1, day), payment));
 
     private static DateOnly? PayoffOf(PayoffPlan plan, int id) =>
         plan.Debts.Single(d => d.Account == Id(id)).Outcome is PaysOff p ? p.PayoffDate : null;
@@ -145,6 +145,19 @@ public class PayoffPlannerTests
         var plan = PayoffPlanner.Plan([Loan(1, 1_000m, 100m), Loan(2, 300m, 100m)], [Id(1), Id(2)], []);
 
         (PayoffOf(plan, 1), PayoffOf(plan, 2)).Should().Be((new DateOnly(2027, 8, 1), new DateOnly(2027, 4, 1)));
+    }
+
+    [Fact]
+    public void A_debt_paid_off_on_its_own_hands_on_what_its_last_payment_didnt_need()
+    {
+        // B (100 on the 15th) is last in the order but pays off by itself: 250 -> 150 (Jan 15) -> 50 (Feb 15)
+        // -> 0 (Mar 15, its 100 needs only 50). The other 50 goes to A that day, then B's 100 each 15th.
+        // A: 1,020 -> 920 (Feb 1) -> 820 (Mar 1) -> 770 (Mar 15) -> 670 (Apr 1) -> 570 (Apr 15) -> 470 (May 1)
+        //    -> 370 (May 15) -> 270 (Jun 1) -> 170 (Jun 15) -> 70 (Jul 1) -> 0 (Jul 15).
+        // Without B's unused 50, A would be at 120 on Jul 1 and 20 on Jul 15, lasting until Aug 1.
+        var plan = PayoffPlanner.Plan([Loan(1, 1_020m, 100m), Loan(2, 250m, 100m, day: 15)], [Id(1), Id(2)], []);
+
+        (PayoffOf(plan, 1), PayoffOf(plan, 2)).Should().Be((new DateOnly(2027, 7, 15), new DateOnly(2027, 3, 15)));
     }
 
     [Fact]

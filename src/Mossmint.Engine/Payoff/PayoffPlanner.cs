@@ -57,47 +57,54 @@ public static class PayoffPlanner
     {
         var results = debts.ToDictionary(d => d.Account, d => Project(d, []));
 
-        // Until its turn comes, a debt gets nothing extra, so it pays off as it would
-        // on its own; from then on its payments go to whichever debt is first.
-        var pool = new List<PlannedPayment>(extras);
+        // Until its turn comes, a debt gets nothing extra and pays off as it would
+        // on its own; what its payments no longer need then goes to whichever debt
+        // is first. Owner marks that money, so the debt can take it back if its
+        // turn comes before it would have paid off.
+        var pool = extras.Select(p => (Payment: p, Owner: (AccountId?)null)).ToList();
         foreach (var debt in debts)
         {
-            if (results[debt.Account].Payoff.Outcome is PaysOff alone)
-            {
-                pool.AddRange(debt.Payments.Where(p => p.Date > alone.PayoffDate));
-            }
+            pool.AddRange(Freed(debt, results[debt.Account]).Select(p => (p, (AccountId?)debt.Account)));
         }
 
+        // The day the next debt in the order becomes first; null once one never pays off.
+        DateOnly? turn = DateOnly.MinValue;
         foreach (var debt in order.Distinct().Select(id => debts.FirstOrDefault(d => d.Account == id)).OfType<PayoffDebt>())
         {
             var onItsOwn = results[debt.Account].Payoff.Outcome;
-            if (onItsOwn is InsufficientData)
+            if (turn is null || onItsOwn is InsufficientData || (onItsOwn is PaysOff alone && alone.PayoffDate <= turn))
             {
                 continue;
             }
 
-            var result = Project(debt, pool);
+            pool.RemoveAll(p => p.Owner == debt.Account);
+            var result = Project(debt, [.. pool.Select(p => p.Payment)]);
             results[debt.Account] = result;
             if (result.Payoff.Outcome is not PaysOff paid)
             {
                 // It takes everything from here on and still never pays off.
-                pool = [];
+                (pool, turn) = ([], null);
                 continue;
             }
 
-            var day = paid.PayoffDate;
-            pool =
-            [
-                .. pool.Where(p => p.Date > day),
-                .. debt.Payments.Where(p => p.Date > day && (onItsOwn is not PaysOff alone || p.Date <= alone.PayoffDate)),
-            ];
-            if (result.Unused.IsPositive)
-            {
-                pool.Add(new PlannedPayment(day, result.Unused));
-            }
+            pool = [.. pool.Where(p => p.Payment.Date > paid.PayoffDate), .. Freed(debt, result).Select(p => (p, (AccountId?)null))];
+            turn = paid.PayoffDate;
         }
 
         return new PayoffPlan([.. debts.Select(d => results[d.Account].Payoff)]);
+    }
+
+    // What a paid-off debt's payments no longer need: the unused part of its last
+    // day, then every payment after it.
+    private static IEnumerable<PlannedPayment> Freed(PayoffDebt debt, (DebtPayoff Payoff, Money Unused) result)
+    {
+        if (result.Payoff.Outcome is not PaysOff paid)
+        {
+            return [];
+        }
+
+        var payments = debt.Payments.Where(p => p.Date > paid.PayoffDate);
+        return result.Unused.IsPositive ? payments.Prepend(new PlannedPayment(paid.PayoffDate, result.Unused)) : payments;
     }
 
     // The planner's extras replace any extra payments already on the input.
