@@ -258,6 +258,27 @@ public partial class AccessibilityTests
     }
 
     [AvaloniaFact]
+    public async Task An_error_marks_the_field_it_names_and_moves_focus_there()
+    {
+        using var app = await Unlocked();
+        app.ViewModel.StartSetup(SetupStep.Bills);
+        var setup = app.Screen<SetupViewModel>();
+        (setup.BillName, setup.BillAmount) = ("Phone", "4five");
+
+        setup.AddBillCommand.Execute(null);
+        Harness.Pump();
+        var amount = app.Window!.GetVisualDescendants().OfType<TextBox>().Single(t => AutomationProperties.GetName(t) == "Amount");
+        var marked = (amount.Classes.Contains("invalid"), AutomationProperties.GetHelpText(amount), Focused(app));
+
+        setup.BillAmount = "45";
+        setup.AddBillCommand.Execute(null);
+        Harness.Pump();
+
+        marked.Should().Be((true, "Amount: \"4five\" isn't an amount.", "Amount"));
+        (amount.Classes.Contains("invalid"), AutomationProperties.GetHelpText(amount)).Should().Be((false, null));
+    }
+
+    [AvaloniaFact]
     public void Errors_and_notices_are_announced_when_they_change()
     {
         using var app = new Harness();

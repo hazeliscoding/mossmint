@@ -239,8 +239,8 @@ public sealed partial class SetupViewModel : ViewModelBase
         var amount = MoneyInput.Required(BillAmount, _culture, "Amount");
         var bill = _entry.AddBill(new BillEntry(
             BillName, amount, BillDueLastDay ? 0 : (int)(BillDueDay ?? 0), BillPurpose.Expense, BillIsEstimate,
-            BillIsEstimate ? MoneyInput.Optional(BillLow, _culture, "Low") : null,
-            BillIsEstimate ? MoneyInput.Optional(BillHigh, _culture, "High") : null), _cashAccount);
+            BillIsEstimate ? MoneyInput.Optional(BillLow, _culture, "Lowest usual amount") : null,
+            BillIsEstimate ? MoneyInput.Optional(BillHigh, _culture, "Highest usual amount") : null), _cashAccount);
         Added.Add($"Bill · {bill.Name}");
         _saved.Add(SetupStep.Bills);
         OnPropertyChanged(nameof(Steps));
@@ -252,7 +252,7 @@ public sealed partial class SetupViewModel : ViewModelBase
         var asOf = DateOnly.FromDateTime(CashAsOf ?? DateTime.Today);
         var balance = MoneyInput.Required(DebtBalance, _culture, "Balance owed");
         var apr = ParsePercent(DebtApr);
-        var payment = MoneyInput.Optional(DebtPayment, _culture, "Payment") ?? 0m;
+        var payment = MoneyInput.Optional(DebtPayment, _culture, "Monthly payment") ?? 0m;
         var due = (int)(DebtDueDay ?? 0);
         var name = DebtName.Trim();
         if (DebtIsCard)
@@ -312,7 +312,7 @@ public sealed partial class SetupViewModel : ViewModelBase
 
                 break;
             case SetupStep.Savings:
-                _entry.SetSavings(MoneyInput.Optional(SavingsPerPaycheck, _culture, "Savings per paycheck"), MoneyInput.Optional(Cushion, _culture, "Cushion"));
+                _entry.SetSavings(MoneyInput.Optional(SavingsPerPaycheck, _culture, "Save from each paycheck"), MoneyInput.Optional(Cushion, _culture, "Cushion"));
                 if (_saved.Add(SetupStep.Savings))
                 {
                     Added.Add("Savings and cushion");

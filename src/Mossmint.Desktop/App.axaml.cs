@@ -3,6 +3,7 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Mossmint.Application.Backups;
 using Mossmint.Application.Profiles;
+using Mossmint.Desktop.Controls;
 using Mossmint.Desktop.Services;
 using Mossmint.Desktop.ViewModels;
 using Mossmint.Desktop.Views;
@@ -23,6 +24,7 @@ public partial class App : Avalonia.Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        FieldErrors.Install();
         Services = ConfigureServices().BuildServiceProvider();
     }
 

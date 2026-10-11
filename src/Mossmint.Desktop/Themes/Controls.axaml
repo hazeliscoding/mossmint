@@ -427,6 +427,19 @@
     <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
     <Setter Property="FontSize" Value="13" />
   </Style>
+  <!-- The field an error names (Controls/FieldErrors.cs): a thicker critical border, focused or not. -->
+  <Style Selector="TextBox.invalid /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource SignalCritical}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="TextBox.invalid:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource SignalCritical}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="TextBox.invalid:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource SignalCritical}" />
+  </Style>
+
   <Style Selector="TextBox.money">
     <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
     <Setter Property="FontFeatures" Value="+tnum" />
