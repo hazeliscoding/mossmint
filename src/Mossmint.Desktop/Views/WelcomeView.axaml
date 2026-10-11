@@ -40,7 +40,7 @@
               <TextBlock Grid.Row="1" Classes="compact secondary" Text="Stored at" />
               <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono" Text="%LOCALAPPDATA%\Mossmint\Profiles" TextWrapping="Wrap" />
               <TextBlock Grid.Row="2" Classes="compact secondary" Text="Unlock" />
-              <TextBlock Grid.Row="2" Grid.Column="1" Classes="compact" Text="Passphrase, encrypted at rest (arrives in M2)" TextWrapping="Wrap" />
+              <TextBlock Grid.Row="2" Grid.Column="1" Classes="compact" Text="A passphrase you choose; encrypted at rest" TextWrapping="Wrap" />
             </Grid>
           </StackPanel>
 
@@ -72,8 +72,7 @@
                 <Border Classes="tag"><TextBlock Text="Preview first" /></Border>
                 <Border Classes="tag"><TextBlock Text="Originals preserved" /></Border>
                 <Border Classes="tag"><TextBlock Text="Multiple workbooks" /></Border>
-                <c:StatusBadge Tone="Info" Text="Arrives in M3" />
-              </WrapPanel>
+                </WrapPanel>
             </StackPanel>
           </DockPanel>
         </Button>
@@ -87,6 +86,8 @@
               <TextBlock Classes="section" FontSize="18" Text="Start fresh" />
               <TextBlock Classes="prose secondary"
                          Text="Add a cash account, your paychecks, recurring bills, debts and savings goals, one short step at a time. Every step can be skipped and revisited; the forecast works with whatever you have entered so far." />
+              <TextBlock Classes="compact secondary" TextWrapping="Wrap"
+                         Text="About five minutes, with your bank balance, a pay stub and your bills to hand." />
               <WrapPanel ItemSpacing="6" LineSpacing="6">
                 <Border Classes="tag"><TextBlock Text="Cash" /></Border>
                 <Border Classes="tag"><TextBlock Text="Paychecks" /></Border>
