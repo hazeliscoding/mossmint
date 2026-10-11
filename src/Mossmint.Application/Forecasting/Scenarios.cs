@@ -102,7 +102,9 @@ public static class Scenarios
         var withExtra = CashFlowSimulator.Run(plan with { ExtraDebtPayments = extras });
         var avalanche = PayoffPlanner.Avalanche(debts);
         var snowball = PayoffPlanner.Snowball(debts);
-        List<AccountId> custom = [.. (customOrder ?? []).Concat(debts.Select(d => d.Account)).Where(id => debts.Any(d => d.Account == id)).Distinct()];
+        // Debts the custom order doesn't list follow it by name, so the default never depends on storage order.
+        var byName = known.OrderBy(k => k.Name, StringComparer.CurrentCultureIgnoreCase).ThenBy(k => k.Account.Value).Select(k => k.Account);
+        List<AccountId> custom = [.. (customOrder ?? []).Where(id => debts.Any(d => d.Account == id)).Concat(byName).Distinct()];
 
         return new PayoffComparison(largest, cushion, through,
         [

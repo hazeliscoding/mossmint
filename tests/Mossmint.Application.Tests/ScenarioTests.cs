@@ -85,6 +85,13 @@ public class ScenarioTests
     }
 
     [Fact]
+    public void Without_an_order_the_custom_column_starts_alphabetical()
+    {
+        Option(Compare(100m), PayoffOrder.Custom).Steps.Select(s => s.Name).Should().Equal("Car loan", "Card");
+        Option(Compare(100m, [_card.Account]), PayoffOrder.Custom).Steps.Select(s => s.Name).Should().Equal("Card", "Car loan");
+    }
+
+    [Fact]
     public void The_custom_column_follows_the_order_given()
     {
         var comparison = Compare(100m, [_loan.Account, _card.Account]);
