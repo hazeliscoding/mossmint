@@ -23,7 +23,7 @@ public sealed class PlaceholderPageViewModel(
     string emptyBody) : PageViewModel(destination, title, purpose)
 {
     public string Milestone { get; } = milestone;
-    public string MilestoneLabel => $"Arrives in {Milestone}";
+    public string MilestoneLabel => $"Coming in version {Milestone}";
     public string EmptyTitle { get; } = emptyTitle;
     public string EmptyBody { get; } = emptyBody;
 }

@@ -43,7 +43,7 @@ public sealed record DebtCard(
 }
 
 public sealed partial class DebtsPageViewModel(AppServices services, IAppNavigator navigator)
-    : PageViewModel(Destination.Debts, "Debts", "Balances, terms and payoff dates. Extra-payment comparisons arrive with Scenarios in M5.")
+    : PageViewModel(Destination.Debts, "Debts", "Balances, terms and payoff dates. Extra-payment comparisons come with Scenarios in version 0.5.")
 {
     // The empty page's way in: that one setup step, then back here.
     [RelayCommand]
