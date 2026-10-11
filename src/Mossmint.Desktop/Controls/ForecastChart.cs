@@ -54,6 +54,8 @@ public sealed class ForecastChart : Control
         var faint = Brush("TextFaint");
         var info = Brush("SignalInfo");
         var warning = Brush("SignalWarning");
+        var warningText = Brush("SignalWarningText");
+        var secondary = Brush("TextSecondary");
         var mono = new Typeface(new FontFamily("avares://Mossmint.Desktop/Assets/Fonts#IBM Plex Mono"));
 
         var width = Bounds.Width - Left - Right;
@@ -81,7 +83,7 @@ public sealed class ForecastChart : Control
             if (days[i].IsPayday)
             {
                 context.DrawLine(new Pen(info, 1), new Point(X(i), Top), new Point(X(i), Top + height));
-                Text(context, "PAY", new Point(X(i) + 4, Top - 2), info, mono, 10);
+                Text(context, "PAY", new Point(X(i) + 4, Top - 2), info, mono, 11);
             }
         }
 
@@ -113,7 +115,9 @@ public sealed class ForecastChart : Control
 
         var cushionY = Y(forecast.Cushion.Amount);
         context.DrawLine(new Pen(faint, 1.2, new DashStyle([4, 4], 0)), new Point(Left, cushionY), new Point(Left + width, cushionY));
-        Text(context, $"{MoneyInput.Format(forecast.Cushion, culture)} cushion", new Point(Left + width - 120, cushionY - 18), faint, mono, 11);
+        // Secondary, not faint: it sits over the area fill, where faint fell to 4.2:1.
+        var cushionLabel = Format($"{MoneyInput.Format(forecast.Cushion, culture)} cushion", secondary, mono, 11);
+        context.DrawText(cushionLabel, new Point(Left + width - cushionLabel.Width - 4, cushionY - 18));
 
         var lowIndex = Math.Max(0, days.ToList().FindIndex(d => d.Date == forecast.LowestDate));
         var lowPoint = new Point(X(lowIndex), Y(forecast.Lowest.Amount));
@@ -128,7 +132,10 @@ public sealed class ForecastChart : Control
         }
 
         context.DrawGeometry(warning, null, diamond);
-        Text(context, $"Lowest {MoneyInput.Format(forecast.Lowest, culture)} · {forecast.LowestDate.ToString("d MMM", culture)}", lowPoint + new Point(10, 4), warning, mono, 11);
+        // Beside the point, on whichever side keeps it inside the plot.
+        var lowLabel = Format($"Lowest {MoneyInput.Format(forecast.Lowest, culture)} · {forecast.LowestDate.ToString("d MMM", culture)}", warningText, mono, 11);
+        var lowX = lowPoint.X + 10 + lowLabel.Width <= Left + width ? lowPoint.X + 10 : lowPoint.X - 10 - lowLabel.Width;
+        context.DrawText(lowLabel, new Point(lowX, lowPoint.Y + 4));
     }
 
     // Gridlines at 1, 2, 2.5 or 5 times a power of ten, so the axis reads in round amounts.
@@ -142,5 +149,8 @@ public sealed class ForecastChart : Control
         this.TryFindResource(key, ActualThemeVariant, out var value) && value is IBrush brush ? brush : Brushes.Magenta;
 
     private static void Text(DrawingContext context, string text, Point at, IBrush brush, Typeface typeface, double size) =>
-        context.DrawText(new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, size, brush), at);
+        context.DrawText(Format(text, brush, typeface, size), at);
+
+    private static FormattedText Format(string text, IBrush brush, Typeface typeface, double size) =>
+        new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, size, brush);
 }
