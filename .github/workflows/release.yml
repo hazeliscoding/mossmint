@@ -111,6 +111,12 @@ jobs:
             Where-Object FullName -like '*\x64\*' | Sort-Object FullName -Descending | Select-Object -First 1
           & $signtool.FullName verify /pa /v "releases\$env:PACK_ID-$env:CHANNEL-Setup.exe"
           if ($LASTEXITCODE -ne 0) { throw "Mossmint-Setup.exe isn't signed" }
+          # The app itself, as the portable zip and the update packages ship it. The smoke test expands its own copy.
+          Expand-Archive "releases\$env:PACK_ID-$env:CHANNEL-Portable.zip" signed-check
+          $app = Get-ChildItem signed-check -Recurse -Filter Mossmint.Desktop.exe | Where-Object FullName -like '*\current\*' | Select-Object -First 1
+          if (-not $app) { throw "The portable package has no app" }
+          & $signtool.FullName verify /pa $app.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Mossmint.Desktop.exe isn't signed" }
       - name: Smoke test the packaged app
         shell: pwsh
         run: |
