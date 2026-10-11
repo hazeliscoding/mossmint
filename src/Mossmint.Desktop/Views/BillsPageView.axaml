@@ -7,10 +7,13 @@
 
   <!-- Sizing="Width" takes the full width, so the table fills the page and scrolls only when it must. -->
   <StackPanel Spacing="16" MaxWidth="1240" HorizontalAlignment="Left" Container.Sizing="Width" c:FormFocus.Target="{Binding FocusTarget}">
-    <StackPanel Spacing="4">
-      <TextBlock Classes="page-title" Text="{Binding Title}" />
-      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
-    </StackPanel>
+    <DockPanel>
+      <Button DockPanel.Dock="Right" Content="Add a bill" Command="{Binding AddBillsCommand}" IsVisible="{Binding !IsEmpty}" VerticalAlignment="Bottom" />
+      <StackPanel Spacing="4" Margin="0,0,12,0">
+        <TextBlock Classes="page-title" Text="{Binding Title}" />
+        <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+      </StackPanel>
+    </DockPanel>
 
     <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
@@ -60,6 +63,8 @@
                               Command="{Binding $parent[UserControl].((vm:BillsPageViewModel)DataContext).MarkPaidCommand}" CommandParameter="{Binding}" />
                       <Button Classes="ghost" Content="Undo" IsVisible="{Binding CanUndo}" AutomationProperties.Name="{Binding UndoName}"
                               Command="{Binding $parent[UserControl].((vm:BillsPageViewModel)DataContext).UndoCommand}" CommandParameter="{Binding}" />
+                      <Button Classes="ghost" Content="Edit" AutomationProperties.Name="{Binding EditName}"
+                              Command="{Binding $parent[UserControl].((vm:BillsPageViewModel)DataContext).StartEditCommand}" CommandParameter="{Binding}" />
                     </StackPanel>
                   </Grid>
                 </Border>
@@ -68,6 +73,57 @@
           </ItemsControl>
         </StackPanel>
       </ScrollViewer>
+    </Border>
+
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="20,16" IsVisible="{Binding IsEditing}">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="card-title" Text="{Binding EditTitle}" />
+        <TextBlock Classes="compact secondary" TextWrapping="Wrap"
+                   Text="A new price or day applies from now on; payments already recorded keep theirs. A new day starts a plain monthly schedule on it." />
+        <WrapPanel>
+          <StackPanel Spacing="4" Width="220" Margin="0,0,12,8">
+            <TextBlock Classes="field-label" Text="Name" />
+            <TextBox Text="{Binding EditName}" AutomationProperties.Name="Bill name" />
+          </StackPanel>
+          <StackPanel Spacing="4" Width="160" Margin="0,0,12,8">
+            <TextBlock Classes="field-label" Text="Amount" />
+            <TextBox Classes="money" Text="{Binding EditAmount}" PlaceholderText="0.00" AutomationProperties.Name="Amount" />
+          </StackPanel>
+          <StackPanel Spacing="4" Width="140" Margin="0,0,12,8">
+            <TextBlock Classes="field-label" Text="Due day" />
+            <NumericUpDown Value="{Binding EditDay}" Minimum="1" Maximum="31" Increment="1" FormatString="0"
+                           IsEnabled="{Binding !EditLastDay}" AutomationProperties.Name="Due day" />
+          </StackPanel>
+        </WrapPanel>
+        <CheckBox IsChecked="{Binding EditLastDay}" Content="Due on the last day of the month" />
+        <CheckBox IsChecked="{Binding EditIsEstimate}" Content="The amount changes (estimate)" />
+        <WrapPanel IsVisible="{Binding EditIsEstimate}">
+          <StackPanel Spacing="4" Width="160" Margin="0,0,12,8">
+            <TextBlock Classes="field-label" Text="Lowest usual amount" />
+            <TextBox Classes="money" Text="{Binding EditLow}" PlaceholderText="optional" AutomationProperties.Name="Lowest usual amount" />
+          </StackPanel>
+          <StackPanel Spacing="4" Width="160" Margin="0,0,12,8">
+            <TextBlock Classes="field-label" Text="Highest usual amount" />
+            <TextBox Classes="money" Text="{Binding EditHigh}" PlaceholderText="optional" AutomationProperties.Name="Highest usual amount" />
+          </StackPanel>
+        </WrapPanel>
+        <TextBlock Classes="error" Text="{Binding FormError}" TextWrapping="Wrap" IsVisible="{Binding FormError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="primary" Content="Save changes" Command="{Binding SaveEditCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelEditCommand}" />
+        </StackPanel>
+        <Border Classes="separator-top" Padding="0,12,0,0" IsVisible="{Binding CanEnd}">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="compact secondary" TextWrapping="Wrap"
+                       Text="Cancelled it? End it from a date: nothing is due from then on, and its paid history stays. Remove is only for a bill that was never paid." />
+            <WrapPanel>
+              <CalendarDatePicker SelectedDate="{Binding EndFrom}" Margin="0,0,8,8" AutomationProperties.Name="Nothing due from" />
+              <Button Content="End from this date" Command="{Binding EndBillCommand}" Margin="0,0,8,8" />
+              <Button Classes="ghost" Content="Remove" Command="{Binding RemoveBillCommand}" Margin="0,0,8,8" AutomationProperties.Name="Remove this bill" />
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
     </Border>
 
     <TextBlock Classes="compact secondary" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"

@@ -20,6 +20,7 @@ using Mossmint.Application.Setup;
 using Mossmint.Desktop.Services;
 using Mossmint.Desktop.ViewModels;
 using Mossmint.Domain.Accounts;
+using Mossmint.Domain.Planning;
 
 namespace Mossmint.Desktop.SmokeTests;
 
@@ -496,6 +497,11 @@ public partial class AccessibilityTests
         scenarios.Refresh();
         scenarios.StartApplyCommand.Execute(scenarios.Columns[1]);
         Check("Scenarios, apply with a risk");
+        shell.Navigate(Destination.Bills);
+        var bills = (BillsPageViewModel)shell.CurrentPage!;
+        bills.StartEditCommand.Execute(bills.Rows.First(r => r.View.Bill.Purpose == BillPurpose.Expense));
+        bills.EditIsEstimate = true;
+        Check("Bills, change a bill");
         shell.Navigate(Destination.Savings);
         var savings = (SavingsPageViewModel)shell.CurrentPage!;
         savings.StartAddCommand.Execute(null);
