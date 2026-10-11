@@ -21,6 +21,18 @@ public class CashFlowTests
     }
 
     [Fact]
+    public void Late_paychecks_land_business_days_later_and_deepen_the_low()
+    {
+        // 3 business days late: Oct 15 -> Oct 20, Oct 30 -> Nov 4; Nov 13 -> Nov 18 falls past the forecast.
+        // By Nov 3: 2,725 after the Oct 20 paycheck and savings, less 14 days of groceries (350) and
+        // streaming, car, rent and card (1,628) = 747; Nov 4 spends 25 before the paycheck lands: 722.
+        var plan = Juniper.Plan() with { LatePaycheckDays = 3 };
+
+        CashFlowPlanner.Expand(plan).Paydays.Should().Equal(D(10, 20), D(11, 4));
+        CashFlowSimulator.Run(plan).Lowest.Should().Be(new LowPoint(D(11, 4), Usd(722m)));
+    }
+
+    [Fact]
     public void The_lowest_point_is_the_morning_of_payday_not_the_month_end()
     {
         // Hand-worked: 1,240 - 25/day groceries - 70 electric (Oct 12) leaves 1,020 by Oct 14;

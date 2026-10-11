@@ -43,7 +43,8 @@ public sealed record SpendingAllowance(string Category, AmountPolicy PerDay);
 
 // Scenarios are assumptions, not probabilities: Base uses expected amounts,
 // Cautious the midpoint between expected and high, Stress the high end plus any
-// one-off expenses.
+// one-off expenses. LatePaycheckDays, a separate assumption, lands every paycheck
+// due from today on that many business days late.
 public enum SpendingScenario
 {
     Base,
@@ -69,7 +70,8 @@ public sealed record CashFlowPlan(
     SpendingScenario Scenario = SpendingScenario.Base,
     IReadOnlyList<OneOffExpense>? StressOneOffs = null,
     IReadOnlyList<PaidBill>? PaidBills = null,
-    IReadOnlyList<PlannedPayment>? ExtraDebtPayments = null);
+    IReadOnlyList<PlannedPayment>? ExtraDebtPayments = null,
+    int LatePaycheckDays = 0);
 
 public sealed record ExpandedPlan(IReadOnlyList<CashEvent> Events, IReadOnlyList<UnvaluedObligation> Unvalued, IReadOnlyList<DateOnly> Paydays);
 
@@ -89,9 +91,15 @@ public static class CashFlowPlanner
             var overrides = (income.AmountOverrides ?? []).ToDictionary(o => o.Nominal, o => o.NetPay);
             foreach (var pay in income.PayDates.Occurrences(plan.Today, plan.Through, calendar))
             {
+                var date = Late(pay.Date, plan.LatePaycheckDays, calendar);
+                if (date > plan.Through)
+                {
+                    continue;
+                }
+
                 var amount = overrides.TryGetValue(pay.Nominal, out var changed) ? changed : income.NetPay;
-                events.Add(new CashEvent(pay.Date, CashEventKind.Income, income.Name, amount, Weakest(income.Provenance.Confidence, Confidence.Scheduled), $"income:{income.Id.Value}"));
-                paydays.Add(pay.Date);
+                events.Add(new CashEvent(date, CashEventKind.Income, income.Name, amount, Weakest(income.Provenance.Confidence, Confidence.Scheduled), $"income:{income.Id.Value}"));
+                paydays.Add(date);
             }
         }
 
@@ -160,6 +168,16 @@ public static class CashFlowPlanner
         (_, SpendingScenario.Stress) => policy.High ?? policy.Expected,
         _ => policy.Expected,
     };
+
+    private static DateOnly Late(DateOnly date, int businessDays, IBusinessCalendar calendar)
+    {
+        for (var i = 0; i < businessDays; i++)
+        {
+            date = BusinessDays.Adjust(date.AddDays(1), BusinessDayAdjustment.NextBusinessDay, calendar);
+        }
+
+        return date;
+    }
 
     private static CashEventKind KindOf(BillPurpose purpose) => purpose switch
     {

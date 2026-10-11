@@ -61,6 +61,8 @@ Scenarios are assumptions, not probabilities.
 
 Fixed amounts are the same in every scenario.
 
+**Late paychecks** are a separate assumption that combines with any scenario: every paycheck due from today on lands a number of business days late (the app uses 3), and the savings contribution and any extra debt payment move with it. A paycheck pushed past the forecast's last day drops out of it. Paychecks already due before today aren't moved: the confirmed balance already includes them.
+
 ## Paycheck funding
 
 Each obligation is funded by the **latest paycheck on or before its due date**, exactly once. Anything due before the first payday is funded by the cash on hand. Due dates never move.
