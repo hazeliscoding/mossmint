@@ -4,15 +4,15 @@
 
 Mossmint is a local-first desktop app for paycheck forecasting and debt payoff planning. It tells you what is safe to spend before the next paycheck, which bills each paycheck has to cover, and what an extra debt payment really does to your cash. It works with the network off, it has no account to create, and nothing leaves your computer.
 
-> **Status:** early development; [v0.3.0 is out](https://github.com/hazeliscoding/mossmint/releases/latest) for Windows x64. The financial engine (loans, cards, daily cash flow, safe to spend), encrypted profiles with verified backups, and read-only workbook import with a review queue are in place. The dashboard comes next (Milestone 4). See [ROADMAP.md](ROADMAP.md).
+> **Status:** early development; [v0.3.0 is out](https://github.com/hazeliscoding/mossmint/releases/latest) for Windows x64. The financial engine, encrypted profiles with verified backups and read-only workbook import shipped in 0.3. The dashboard and daily flows (Overview, Cash Flow, Paychecks, Bills, Debts, Savings, Transactions, and setup for anyone without spreadsheets) are done and ship in 0.4. See [ROADMAP.md](ROADMAP.md).
 
-![Mossmint welcome screen in the dark theme](docs/screenshots/welcome-dark.png)
+![Overview: safe to spend until the next paycheck, the lowest point before payday, the next paycheck and a debt-free forecast, above 45 days of checking balance](docs/screenshots/overview-dark.png)
 
-![Engine preview: safe to spend, the lowest point before payday, paycheck funding and debt projections for a synthetic profile](docs/screenshots/engine-preview-dark.png)
+![Cash Flow in the light theme: the daily balance chart and its table, with every day's money in and out, its low and its closing balance](docs/screenshots/cash-flow-light.png)
 
 ![Workbook import: the dry run lists every file with its SHA-256, what would change, and what needs review](docs/screenshots/import-preview-dark.png)
 
-<sub>Screenshots are rendered headlessly from synthetic data. The engine preview shows real engine output for the synthetic *Juniper* profile; the dashboard itself arrives in Milestone 4.</sub>
+<sub>Screenshots are rendered headlessly from the synthetic *Juniper* profile; none of it is real financial data.</sub>
 
 ## What makes it different
 
