@@ -478,6 +478,12 @@ public partial class AccessibilityTests
         {
             app.ViewModel.OpenApp(destination);
             Check(destination.ToString());
+
+            // A page that didn't render would pass every check with nothing to look at.
+            if (app.PageTitle() is null)
+            {
+                found.Add($"{destination}: the page didn't render");
+            }
         }
 
         // The inline forms, open.
