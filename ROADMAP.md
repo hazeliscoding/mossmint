@@ -267,6 +267,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 - macOS and Linux builds.
 - A live Safe to spend preview while typing an entry, and *Override a date* for a single paycheck.
+- Page or virtualize the ledger and the forecast table once months of entries pile up; every row is drawn today, which is fine at current sizes (0.4 accessibility audit).
 - Plaid relay (a stretch goal after 1.0), only if demand justifies it, behind its own ADR and threat model.
 
 ## Maybe later
