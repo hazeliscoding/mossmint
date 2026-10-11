@@ -32,3 +32,13 @@ flowchart TD
 - **Debt-free date** is the last payoff date, and **interest** the sum of each debt's interest, both only when every debt pays off.
 
 Cross-check (a test): the debt-management skill's worked example (5,000 at 22%, 12,000 at 6%, 3,000 at 15%, with 500 extra a month) gives the same payoff months as its independent month-by-month model, and totals within a cent per debt: avalanche 1,945.91 against 1,945.92, snowball within 0.05 of 2,104.35. The cent comes from rounding each month's interest.
+
+## How much extra is safe
+
+Code: `src/Mossmint.Engine/CashFlow/SafeExtra.cs`. Tests: `tests/Mossmint.Engine.Tests/CashFlow/SafeExtraTests.cs`.
+
+- **When it's paid:** the extra comes out of the first paycheck of each month, after the paycheck lands (the same step as the savings contribution in the [daily order](cash-flow.md#order-within-a-day)). The same dates feed the payoff plan and the cash forecast, so a payoff date and its cash check always describe the same payments.
+- **Horizon:** every month through the forecast's last day, whatever the order. A plan that pays everything off sooner keeps the extra in checking instead, so the check never undercounts.
+- **Largest safe extra:** the largest whole-cent amount that keeps every day's low at or above the cushion under the chosen spending scenario; one cent more would not. It is found by bisection over whole cents on the real daily forecast, so it follows the forecast's own rules exactly.
+- **Safe** means at or below that amount. Cash already below the cushion with no extra is a `Shortfall`: no extra is safe. A balance that isn't confirmed and fresh, a bill with no amount, or no paycheck to pay from is `NeedsConfirmation`, as with safe to spend.
+- A property test checks the M5 rule over the three scenarios: an extra is called safe exactly when the forecast with it stays at or above the cushion, and one cent above the largest safe extra always dips below.

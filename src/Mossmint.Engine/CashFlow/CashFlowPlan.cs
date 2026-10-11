@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Mossmint.Domain;
 using Mossmint.Domain.Planning;
 using Mossmint.Domain.Scheduling;
+using Mossmint.Engine.Payoff;
 
 namespace Mossmint.Engine.CashFlow;
 
@@ -17,6 +18,9 @@ public enum CashEventKind
     SavingsContribution,
     TransferOut,
     TransferIn,
+
+    // An extra debt payment, paid from the paycheck once it lands.
+    ExtraDebtPayment,
 }
 
 // One dated movement of the spending account. Amount is always positive; the
@@ -64,7 +68,8 @@ public sealed record CashFlowPlan(
     CashReserveFloor? ReserveFloor = null,
     SpendingScenario Scenario = SpendingScenario.Base,
     IReadOnlyList<OneOffExpense>? StressOneOffs = null,
-    IReadOnlyList<PaidBill>? PaidBills = null);
+    IReadOnlyList<PaidBill>? PaidBills = null,
+    IReadOnlyList<PlannedPayment>? ExtraDebtPayments = null);
 
 public sealed record ExpandedPlan(IReadOnlyList<CashEvent> Events, IReadOnlyList<UnvaluedObligation> Unvalued, IReadOnlyList<DateOnly> Paydays);
 
@@ -137,8 +142,14 @@ public static class CashFlowPlanner
                 .Select(o => new CashEvent(o.Date, CashEventKind.Expense, o.Label, o.Amount, Confidence.Estimated, "stress")));
         }
 
+        events.AddRange(ExtraEvents(plan, plan.ExtraDebtPayments ?? []));
         return new ExpandedPlan(events, unvalued, [.. paydays]);
     }
+
+    internal static IEnumerable<CashEvent> ExtraEvents(CashFlowPlan plan, IEnumerable<PlannedPayment> payments) =>
+        payments
+            .Where(p => p.Date >= plan.Today && p.Date <= plan.Through)
+            .Select(p => new CashEvent(p.Date, CashEventKind.ExtraDebtPayment, "Extra debt payment", p.Amount, Confidence.Scheduled, "extra"));
 
     public static Money? ForScenario(AmountPolicy policy, SpendingScenario scenario) => (policy.Kind, scenario) switch
     {

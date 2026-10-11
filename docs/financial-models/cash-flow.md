@@ -32,6 +32,7 @@ The opening keeps the balance's provenance and as-of date, so Safe to spend stil
 - **Income:** each paycheck occurrence, at its net pay (or a one-off override for that paycheck).
 - **Bills:** each due-date occurrence not already marked paid. Fixed amounts are used as they are; estimates follow the scenario; a bill with no amount is listed as *unvalued* and left out, which drops the forecast's confidence to `NeedsReview`.
 - **Savings contribution:** the per-paycheck target, on each payday.
+- **Extra debt payments:** a scenario's or plan's extra payment, from the first paycheck of each month ([payoff](payoff.md#how-much-extra-is-safe)).
 - **Allowances:** the daily variable-spending allowance for each category, on every day.
 - **Stress one-offs:** extra expenses that apply only in the Stress scenario.
 
@@ -41,10 +42,10 @@ Only expenses and allowances count as spending. Debt payments and transfers move
 
 ```mermaid
 flowchart LR
-    open["Opening balance"] --> out["Outflows<br/>bills, debt payments,<br/>transfers out, allowances"] --> in["Inflows<br/>paychecks, transfers in"] --> save["Savings contribution<br/>funded by that paycheck"] --> close["Closing balance"]
+    open["Opening balance"] --> out["Outflows<br/>bills, debt payments,<br/>transfers out, allowances"] --> in["Inflows<br/>paychecks, transfers in"] --> save["Savings contribution and extra<br/>debt payment, funded by that paycheck"] --> close["Closing balance"]
 ```
 
-The day's **low** is the lowest running balance. Paying outflows before the paycheck lands is conservative: it shows the lowest point a day can reach when the deposit arrives later than the bills. The savings contribution comes after the paycheck because the paycheck triggers it.
+The day's **low** is the lowest running balance. Paying outflows before the paycheck lands is conservative: it shows the lowest point a day can reach when the deposit arrives later than the bills. The savings contribution and an extra debt payment come after the paycheck because the paycheck pays for them.
 
 The forecast reports, for every day: opening, inflows, outflows, low, closing, whether the low is under the reserve floor or below zero, and the weakest confidence among that day's events. It also reports the lowest point overall, the first day under the floor and the first negative day. Negative cash is reported as it is, never floored at zero.
 

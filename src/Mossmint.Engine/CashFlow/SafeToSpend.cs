@@ -37,21 +37,9 @@ public static class SafeToSpend
 {
     public static SafeToSpendResult Calculate(CashFlowPlan plan, SafeToSpendPolicy? policy = null)
     {
-        policy ??= SafeToSpendPolicy.Default;
         var opening = plan.Opening.Provenance;
-        var missing = new List<string>();
-
-        if (opening.Confidence != Confidence.Confirmed)
-        {
-            missing.Add($"Confirm the checking balance: the current figure is {opening.Source} ({opening.Confidence}).");
-        }
-        else if (!opening.IsFreshOn(plan.Today, policy.MaxOpeningBalanceAgeDays))
-        {
-            missing.Add($"Confirm the checking balance: it was last confirmed on {opening.AsOf:yyyy-MM-dd}, more than {policy.MaxOpeningBalanceAgeDays} days ago.");
-        }
-
         var expanded = CashFlowPlanner.Expand(plan, conservativeBills: true);
-        missing.AddRange(expanded.Unvalued.Select(u => $"Enter an amount for {u.Name}, due {u.Date:yyyy-MM-dd}."));
+        var missing = Unconfirmed(plan, expanded, policy ?? SafeToSpendPolicy.Default);
         if (missing.Count > 0)
         {
             return new NeedsConfirmation(missing);
@@ -71,6 +59,24 @@ public static class SafeToSpend
         return headroom.IsNegative
             ? new Shortfall(-headroom, forecast.Lowest, floor, basis)
             : new SafeAmount(headroom, plan.Through, forecast.Lowest, floor, forecast.Confidence, basis);
+    }
+
+    // What to confirm before the forecast can back an amount.
+    internal static List<string> Unconfirmed(CashFlowPlan plan, ExpandedPlan expanded, SafeToSpendPolicy policy)
+    {
+        var opening = plan.Opening.Provenance;
+        var missing = new List<string>();
+        if (opening.Confidence != Confidence.Confirmed)
+        {
+            missing.Add($"Confirm the checking balance: the current figure is {opening.Source} ({opening.Confidence}).");
+        }
+        else if (!opening.IsFreshOn(plan.Today, policy.MaxOpeningBalanceAgeDays))
+        {
+            missing.Add($"Confirm the checking balance: it was last confirmed on {opening.AsOf:yyyy-MM-dd}, more than {policy.MaxOpeningBalanceAgeDays} days ago.");
+        }
+
+        missing.AddRange(expanded.Unvalued.Select(u => $"Enter an amount for {u.Name}, due {u.Date:yyyy-MM-dd}."));
+        return missing;
     }
 
     // The horizon most screens want: through the day before the next paycheck.

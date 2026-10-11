@@ -120,7 +120,7 @@ public static class CashFlowSimulator
         var totals = new CashFlowTotals(
             Sum(e => e.Kind == CashEventKind.Income),
             Sum(e => e.IsSpending),
-            Sum(e => e.Kind == CashEventKind.DebtPayment),
+            Sum(e => e.Kind is CashEventKind.DebtPayment or CashEventKind.ExtraDebtPayment),
             Sum(e => e.Kind is CashEventKind.SavingsTransfer or CashEventKind.SavingsContribution),
             Sum(e => e.Kind == CashEventKind.TransferOut),
             Sum(e => e.Kind == CashEventKind.TransferIn));
@@ -136,7 +136,7 @@ public static class CashFlowSimulator
 
     private static int Phase(CashEvent e) => e.Kind switch
     {
-        CashEventKind.SavingsContribution => 2,
+        CashEventKind.SavingsContribution or CashEventKind.ExtraDebtPayment => 2,
         _ when e.IsInflow => 1,
         _ => 0,
     };
