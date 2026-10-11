@@ -155,7 +155,8 @@ public sealed partial class DebtsPageViewModel(AppServices services, IAppNavigat
         var balances = Debts.Select(d => data.Balances(d.Account).FirstOrDefault()).OfType<BalanceSnapshot>().ToList();
         var owed = balances.Count > 0 ? Describe.Money(balances.Select(b => b.Balance).Aggregate((a, b) => a + b)) : "—";
         var unconfirmed = Debts.Count(d => d.Tone != StatusTone.Healthy);
-        return $"{Plural(Debts.Count, "debt")} · {owed} owed" + (unconfirmed > 0 ? $" · {Plural(unconfirmed, "balance")} to confirm" : "");
+        return $"{Plural(Debts.Count, "debt")} · {owed} owed" + (unconfirmed > 0 ? $" · {Plural(unconfirmed, "balance")} to confirm" : "")
+            + (data.Settings().DebtPlan is { } plan ? $" · payoff dates follow your plan, {Describe.Money(plan.MonthlyExtra)} extra a month" : "");
     }
 
     private static DebtCard Card(DebtAccount debt, string name, IProfileData data, IReadOnlyList<RecurringBill> bills, DebtView? view, DateOnly today)
