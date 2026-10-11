@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** releasing 0.4 (M4 is done), then M5: scenarios and debt planning.
+**Next up:** M5 (v0.5): scenarios and debt planning.
 
 ## Releases
 
@@ -11,8 +11,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 | Version | Milestones | Status |
 |---|---|---|
 | [0.3.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.3.0) | M0–M3: skeleton, financial engine, encrypted profiles, workbook import | Released 2026-10-09 |
-| 0.4 | M4: dashboard and daily flows | Next |
-| 0.5 | M5: scenarios and debt planning | Planned |
+| [0.4.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.4.0) | M4: dashboard and daily flows | Released 2026-10-10 |
+| 0.5 | M5: scenarios and debt planning | Next |
 | 0.6 | M6: Windows release (update check, export, signing, upgrade test, user docs) | Planned |
 | 0.7 | M7: bank data in (CSV, OFX/QFX, SimpleFIN) | Planned |
 | 0.8 | M8: matching real activity to the plan | Planned |
@@ -176,7 +176,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 **Done when:** synthetic imports pass, a failed import leaves the profile untouched, and the handoff DB opens in Mossmint with its review queue intact.
 
-## M4: Desktop dashboard and daily flows (v0.4)
+## M4: Desktop dashboard and daily flows (v0.4.0)
 
 - [x] Overview, Cash Flow, Paychecks, Debts, Bills, Savings, Transactions, following the mockup. (What waits is listed in the M4 decisions.)
 - [x] Manual ledger entry, mark paid with undo, balance reconciliation.
