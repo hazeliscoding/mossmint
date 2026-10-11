@@ -22,9 +22,13 @@ public sealed record BillLine(BillView View, string Name, string Detail, string 
     public string UndoName => $"Undo {Name} paid";
 }
 
-public sealed partial class BillsPageViewModel(AppServices services)
+public sealed partial class BillsPageViewModel(AppServices services, IAppNavigator navigator)
     : PageViewModel(Destination.Bills, "Bills", "Recurring bills and payments. Mark one paid when the money leaves your account.")
 {
+    // The empty page's way in: that one setup step, then back here.
+    [RelayCommand]
+    private void AddBills() => navigator.StartSetup(SetupStep.Bills, Destination.Bills);
+
     public ObservableCollection<BillLine> Rows { get; } = [];
 
     public bool IsEmpty => Rows.Count == 0;

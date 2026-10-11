@@ -63,7 +63,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAppNavigator
         CurrentScreen = NewUnlock();
     }
 
-    public void StartSetup() => CurrentScreen = new SetupViewModel(_services, () => OpenApp(Destination.Overview));
+    public void StartSetup(SetupStep? only = null, Destination returnTo = Destination.Overview) =>
+        CurrentScreen = new SetupViewModel(_services, () => OpenApp(returnTo), only);
 
     public void ShowRestore() =>
         CurrentScreen = new RestoreViewModel(_services, profile => ShowUnlock(profile.Id, $"Restored “{profile.Name}”. Unlock it to continue."), Back);
@@ -86,7 +87,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAppNavigator
 
     private void ShowUnlock(ProfileId? select, string? notice) => CurrentScreen = NewUnlock(select, notice);
 
-    private void ShowCreateThenSetup() => ShowCreate(StartSetup);
+    private void ShowCreateThenSetup() => ShowCreate(() => StartSetup());
 
     private void ShowCreateThenImport() => ShowCreate(() => OpenApp(Destination.Imports));
 
@@ -103,7 +104,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAppNavigator
         {
             OpenAppCommand.NotifyCanExecuteChanged();
             OpenApp(Destination.Overview);
-        }, () => ShowCreate(StartSetup), ShowRestore, select, notice);
+        }, () => ShowCreate(() => StartSetup()), ShowRestore, select, notice);
 
     private void Back()
     {

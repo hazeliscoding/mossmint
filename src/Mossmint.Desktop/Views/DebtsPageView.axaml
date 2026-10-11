@@ -39,7 +39,11 @@
     <TextBlock Classes="notice" Text="{Binding Notice}" TextWrapping="Wrap" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
     <Border Classes="card" Padding="24,20" IsVisible="{Binding IsEmpty}">
-      <TextBlock Classes="prose secondary" Text="No debts yet. Add loans and cards with the Start fresh setup on the Overview page." TextWrapping="Wrap" />
+      <StackPanel Spacing="12">
+        <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                   Text="No debts yet. Add your loans and cards to see when each one is paid off. Their payments move money to the debt, so they never count as spending." />
+        <Button Classes="primary" Content="Add a loan or card" Command="{Binding AddDebtsCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
     </Border>
 
     <ListBox Classes="debts" ItemsSource="{Binding Debts}" SelectedItem="{Binding Selected}" IsVisible="{Binding !IsEmpty}"

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Mossmint.Application.Forecasting;
 using Mossmint.Desktop.Controls;
 using Mossmint.Domain;
@@ -24,9 +25,13 @@ public sealed record PaycheckCard(
     public string AccessibleName => $"{Title}, {Value} {ValueNote}. {Subtitle}. Leftover {Leftover}. Lowest {Lowest}, {LowestNote}. {Status}.";
 }
 
-public sealed partial class PaychecksPageViewModel(AppServices services)
+public sealed partial class PaychecksPageViewModel(AppServices services, IAppNavigator navigator)
     : PageViewModel(Destination.Paychecks, "Paychecks", "What each paycheck pays for, and the lowest cash before the next one.")
 {
+    // The empty page's way in: that one setup step, then back here.
+    [RelayCommand]
+    private void AddPaycheck() => navigator.StartSetup(SetupStep.Paychecks, Destination.Paychecks);
+
     [ObservableProperty]
     private string? _unavailable;
 

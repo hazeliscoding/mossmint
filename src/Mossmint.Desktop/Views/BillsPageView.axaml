@@ -19,7 +19,11 @@
            It's measured at its natural width, so the description is capped to keep it from widening the table. -->
       <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="0,0,0,10">
         <StackPanel Spacing="4" Grid.IsSharedSizeScope="True">
-          <TextBlock Classes="prose secondary" Text="No bills yet. Add them with the Start fresh setup on the Overview page." IsVisible="{Binding IsEmpty}" />
+          <StackPanel Spacing="12" IsVisible="{Binding IsEmpty}">
+          <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                     Text="No bills yet. Rent, utilities and subscriptions go here, so the forecast knows what comes out of your account and when." />
+          <Button Classes="primary" Content="Add bills" Command="{Binding AddBillsCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
           <Grid Margin="0,0,0,4" IsVisible="{Binding !IsEmpty}">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*" MinWidth="220" />

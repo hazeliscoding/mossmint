@@ -22,7 +22,8 @@ public interface IAppNavigator
 {
     void Lock();
 
-    void StartSetup();
+    // A single step, from an empty page, returns to that page when it's done.
+    void StartSetup(SetupStep? only = null, Destination returnTo = Destination.Overview);
 
     void ShowRestore();
 

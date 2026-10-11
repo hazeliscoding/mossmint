@@ -21,7 +21,11 @@
     </DockPanel>
 
     <Border Classes="card" Padding="24,20" IsVisible="{Binding Account, Converter={x:Static ObjectConverters.IsNull}}">
-      <TextBlock Classes="prose secondary" Text="No cash accounts yet. Add a checking account with the Start fresh setup on the Overview page." TextWrapping="Wrap" />
+      <StackPanel Spacing="12">
+        <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                   Text="No cash accounts yet. Add the checking account your pay lands in, with today's balance; everything here starts from it." />
+        <Button Classes="primary" Content="Add a checking account" Command="{Binding AddAccountCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
     </Border>
 
     <DockPanel IsVisible="{Binding Account, Converter={x:Static ObjectConverters.IsNotNull}}">

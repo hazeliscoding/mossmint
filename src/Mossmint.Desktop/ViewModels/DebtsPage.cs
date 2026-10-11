@@ -42,9 +42,13 @@ public sealed record DebtCard(
     public string AccessibleName => $"{Name}, {Type}. {Balance} owed, {AsOf}. {Status}. Payoff {Payoff}.";
 }
 
-public sealed partial class DebtsPageViewModel(AppServices services)
+public sealed partial class DebtsPageViewModel(AppServices services, IAppNavigator navigator)
     : PageViewModel(Destination.Debts, "Debts", "Balances, terms and payoff dates. Extra-payment comparisons arrive with Scenarios in M5.")
 {
+    // The empty page's way in: that one setup step, then back here.
+    [RelayCommand]
+    private void AddDebts() => navigator.StartSetup(SetupStep.Debts, Destination.Debts);
+
     // Older than one statement cycle, a balance no longer says much about today.
     private const int StaleAfterDays = 31;
 

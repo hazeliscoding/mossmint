@@ -22,9 +22,13 @@ public sealed record LedgerRow(string Date, string Description, string Detail, s
     public string VoidName => $"Void {Description} on {Date}";
 }
 
-public sealed partial class TransactionsPageViewModel(AppServices services)
+public sealed partial class TransactionsPageViewModel(AppServices services, IAppNavigator navigator)
     : PageViewModel(Destination.Transactions, "Transactions", "What went in and out by hand, and the balances your bank showed.")
 {
+    // The empty page's way in: that one setup step, then back here.
+    [RelayCommand]
+    private void AddAccount() => navigator.StartSetup(SetupStep.Cash, Destination.Transactions);
+
     private readonly CultureInfo _culture = CultureInfo.CurrentCulture;
 
     public ObservableCollection<Account> Accounts { get; } = [];
