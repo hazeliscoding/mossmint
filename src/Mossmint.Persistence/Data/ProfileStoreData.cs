@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Mossmint.Application.Data;
+using Mossmint.Application.Forecasting;
 using Mossmint.Application.Import;
 using Mossmint.Domain;
 using Mossmint.Domain.Accounts;
@@ -130,7 +131,13 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
             currency,
             row.SavingsTargetMinor is { } target ? new SavingsContributionTarget(Money.FromMinorUnits(target, currency)) : null,
             row.ReserveFloorMinor is { } floor ? new CashReserveFloor(Money.FromMinorUnits(floor, currency)) : null,
-            row.AllowancesJson is { } json ? JsonSerializer.Deserialize<List<SpendingAllowance>>(json, Json) : null);
+            row.AllowancesJson is { } json ? JsonSerializer.Deserialize<List<SpendingAllowance>>(json, Json) : null,
+            row.DebtOrder is { } order
+                ? new DebtPlan(
+                    Money.FromMinorUnits(row.DebtExtraMinor ?? 0, currency),
+                    Enum.Parse<PayoffOrder>(order),
+                    [.. JsonSerializer.Deserialize<List<Guid>>(row.DebtCustomJson ?? "[]", Json)!.Select(g => new AccountId(g))])
+                : null);
     }
 
     public void SaveSettings(PlanSettings settings)
@@ -353,6 +360,9 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         row.SavingsTargetMinor = settings.SavingsTarget?.PerPaycheck.ToMinorUnits();
         row.ReserveFloorMinor = settings.ReserveFloor?.Minimum.ToMinorUnits();
         row.AllowancesJson = settings.Allowances is { Count: > 0 } a ? JsonSerializer.Serialize(a, Json) : null;
+        row.DebtExtraMinor = settings.DebtPlan?.MonthlyExtra.ToMinorUnits();
+        row.DebtOrder = settings.DebtPlan?.Order.ToString();
+        row.DebtCustomJson = settings.DebtPlan is { } plan ? JsonSerializer.Serialize(plan.Custom.Select(a => a.Value), Json) : null;
         row.UpdatedAt = clock.GetUtcNow();
         Audit("settings.changed", "PlanSettings", Guid.Empty, "Plan settings");
     }

@@ -448,6 +448,15 @@ namespace Mossmint.Persistence.Data.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DebtCustomJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("DebtExtraMinor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DebtOrder")
+                        .HasColumnType("TEXT");
+
                     b.Property<long?>("ReserveFloorMinor")
                         .HasColumnType("INTEGER");
 

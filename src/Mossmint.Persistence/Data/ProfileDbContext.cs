@@ -86,6 +86,9 @@ internal sealed class SettingsRow
     public long? SavingsTargetMinor { get; set; }
     public long? ReserveFloorMinor { get; set; }
     public string? AllowancesJson { get; set; }
+    public long? DebtExtraMinor { get; set; }
+    public string? DebtOrder { get; set; }
+    public string? DebtCustomJson { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
 

@@ -1,3 +1,4 @@
+using Mossmint.Application.Forecasting;
 using Mossmint.Domain;
 using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Debts;
@@ -6,15 +7,21 @@ using Mossmint.Engine.CashFlow;
 
 namespace Mossmint.Application.Data;
 
-// Plan-wide settings that aren't tied to one account.
+// Plan-wide settings that aren't tied to one account. DebtPlan is the payoff plan
+// applied from Scenarios; without one, each debt is paid on its own.
 public sealed record PlanSettings(
     Currency Currency,
     SavingsContributionTarget? SavingsTarget = null,
     CashReserveFloor? ReserveFloor = null,
-    IReadOnlyList<SpendingAllowance>? Allowances = null)
+    IReadOnlyList<SpendingAllowance>? Allowances = null,
+    DebtPlan? DebtPlan = null)
 {
     public static PlanSettings Empty(Currency currency) => new(currency);
 }
+
+// An extra each month from the first paycheck, paid to the debts in Order's way
+// (docs/financial-models/payoff.md). Custom is the user's order for a custom plan.
+public sealed record DebtPlan(Money MonthlyExtra, PayoffOrder Order, IReadOnlyList<AccountId> Custom);
 
 // Row counts per record type: a restored backup must match its source exactly.
 // Later counts default to zero so backups written before they existed still verify.

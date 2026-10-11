@@ -173,7 +173,8 @@ public class ProfileStoreTests : IDisposable
         var debt = new DebtAccount(loanAccount.Id, new SimpleInterestLoanTerms(
             RateSchedule.Fixed(AnnualRate.FromPercent(7.4m), new DateOnly(2024, 1, 1)), DayCountConvention.Actual365Fixed, Money.Usd(285m),
             new Schedule(new MonthlyRule(DayOfMonth.Of(28)))), Money.Usd(18_000m), new DateOnly(2024, 1, 28));
-        var settings = new Application.Data.PlanSettings(Currency.Usd, new SavingsContributionTarget(Money.Usd(150m)), new CashReserveFloor(Money.Usd(300m)));
+        var settings = new Application.Data.PlanSettings(Currency.Usd, new SavingsContributionTarget(Money.Usd(150m)), new CashReserveFloor(Money.Usd(300m)),
+            DebtPlan: new Application.Data.DebtPlan(Money.Usd(150m), Application.Forecasting.PayoffOrder.Custom, [loanAccount.Id]));
 
         using (var s = created.Session)
         {
