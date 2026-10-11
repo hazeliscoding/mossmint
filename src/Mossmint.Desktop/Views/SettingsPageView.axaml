@@ -21,11 +21,11 @@
         <Grid ColumnDefinitions="*,16,*">
           <StackPanel Spacing="4">
             <TextBlock Classes="field-label" Text="New passphrase" />
-            <TextBox Text="{Binding NewPassphrase}" PasswordChar="•" AutomationProperties.Name="New passphrase" />
+            <c:PassphraseBox Text="{Binding NewPassphrase}" AutomationProperties.Name="New passphrase" />
           </StackPanel>
           <StackPanel Grid.Column="2" Spacing="4">
             <TextBlock Classes="field-label" Text="Again" />
-            <TextBox Text="{Binding ConfirmPassphrase}" PasswordChar="•" AutomationProperties.Name="New passphrase again" />
+            <c:PassphraseBox Text="{Binding ConfirmPassphrase}" AutomationProperties.Name="New passphrase again" />
           </StackPanel>
         </Grid>
         <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Changing the passphrase" IsVisible="{Binding IsBusy}" />

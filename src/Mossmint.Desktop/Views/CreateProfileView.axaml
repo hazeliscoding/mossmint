@@ -24,14 +24,14 @@
 
         <StackPanel Spacing="4">
           <TextBlock Classes="field-label" Text="Passphrase" />
-          <TextBox Text="{Binding Passphrase}" PasswordChar="•" RevealPassword="False"
+          <c:PassphraseBox Text="{Binding Passphrase}" RevealPassword="False"
                    AutomationProperties.Name="Passphrase" />
           <TextBlock Classes="hint" Text="{Binding PassphraseHint}" />
         </StackPanel>
 
         <StackPanel Spacing="4">
           <TextBlock Classes="field-label" Text="Passphrase again" />
-          <TextBox Text="{Binding Confirm}" PasswordChar="•" AutomationProperties.Name="Passphrase again" />
+          <c:PassphraseBox Text="{Binding Confirm}" AutomationProperties.Name="Passphrase again" />
         </StackPanel>
 
         <StackPanel Spacing="4" IsVisible="{Binding CanUseThisDevice}">

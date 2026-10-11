@@ -26,7 +26,7 @@
 
         <StackPanel Spacing="4" IsVisible="{Binding !UseRecoveryKey}">
           <TextBlock Classes="field-label" Text="Passphrase" />
-          <TextBox Text="{Binding Passphrase}" PasswordChar="•" AutomationProperties.Name="Passphrase" />
+          <c:PassphraseBox Text="{Binding Passphrase}" AutomationProperties.Name="Passphrase" />
         </StackPanel>
         <StackPanel Spacing="4" IsVisible="{Binding UseRecoveryKey}">
           <TextBlock Classes="field-label" Text="Recovery key" />
