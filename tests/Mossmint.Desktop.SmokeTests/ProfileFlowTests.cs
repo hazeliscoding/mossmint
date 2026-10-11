@@ -111,6 +111,70 @@ public class ProfileFlowTests
     }
 
     [AvaloniaFact]
+    public void Going_back_to_a_saved_step_shows_it_instead_of_adding_it_again()
+    {
+        using var app = new Harness();
+        app.Services.Context.Open(app.Services.Profiles.Create("Juniper", Harness.Passphrase, false).Session);
+        app.Open();
+        app.ViewModel.StartSetup();
+        var setup = app.Screen<SetupViewModel>();
+        setup.CashBalance = "1240";
+        setup.SaveAndContinueCommand.Execute(null);
+
+        setup.BackCommand.Execute(null);
+        var shown = (setup.IsSaved, setup.ShowCashForm, setup.PrimaryText, setup.SavedNote);
+        setup.SaveAndContinueCommand.Execute(null);
+
+        shown.Should().Be((true, false, "Continue", "Checking, $1,240.00 as of " + $"{DateTime.Today:d MMM}" + ". To correct it later, reconcile the balance on Transactions."));
+        (setup.IsPaychecks, app.Services.Context.Current.Data.Accounts().Count).Should().Be((true, 1));
+        setup.Steps[0].AccessibleName.Should().Be("Cash, step 1 of 5, added");
+    }
+
+    [AvaloniaFact]
+    public void Setup_ends_with_the_first_forecast_or_what_it_still_needs()
+    {
+        using var app = new Harness();
+        app.Services.Context.Open(app.Services.Profiles.Create("Juniper", Harness.Passphrase, false).Session);
+        app.Open();
+        app.ViewModel.StartSetup();
+        var setup = app.Screen<SetupViewModel>();
+        setup.Step = SetupStep.Done;
+        var missing = setup.Missing;
+
+        setup.Step = SetupStep.Cash;
+        setup.CashBalance = "1240";
+        setup.SaveAndContinueCommand.Execute(null);
+        setup.Step = SetupStep.Done;
+
+        missing.Should().Contain("checking account");
+        (setup.Missing, setup.Results.Count).Should().Be((null, 2));
+        setup.Results[0].Label.Should().StartWith("SAFE TO SPEND");
+    }
+
+    [AvaloniaFact]
+    public async Task An_empty_page_opens_its_own_setup_step_and_comes_back()
+    {
+        using var app = new Harness();
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        app.ViewModel.Shell.Navigate(Destination.Bills);
+
+        ((BillsPageViewModel)app.ViewModel.Shell.CurrentPage!).AddBillsCommand.Execute(null);
+        var setup = app.Screen<SetupViewModel>();
+        var opened = (setup.Step, setup.CanGoBack);
+        (setup.BillName, setup.BillAmount) = ("Rent", "1150");
+        setup.SaveAndContinueCommand.Execute(null);
+        var after = setup.Step;
+        setup.FinishCommand.Execute(null);
+
+        (opened, after).Should().Be(((SetupStep.Bills, false), SetupStep.Done));
+        app.ViewModel.Shell.CurrentPage.Should().BeOfType<BillsPageViewModel>().Which.Rows.Should().ContainSingle(r => r.Name == "Rent");
+    }
+
+    [AvaloniaFact]
     public async Task A_backup_can_be_made_and_restored_from_the_app()
     {
         using var app = new Harness();
