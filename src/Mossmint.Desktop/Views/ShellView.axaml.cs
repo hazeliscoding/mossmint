@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using Mossmint.Desktop.ViewModels;
 
 namespace Mossmint.Desktop.Views;
@@ -11,6 +12,16 @@ public partial class ShellView : UserControl
     public ShellView()
     {
         InitializeComponent();
+
+        // A new page starts at its top, not where the last one was scrolled to.
+        Page.PropertyChanged += (_, e) =>
+        {
+            // Found, not named: a name would also become its UI Automation id.
+            if (e.Property == ContentControl.ContentProperty && Page.FindAncestorOfType<ScrollViewer>() is { } scroller)
+            {
+                scroller.Offset = default;
+            }
+        };
     }
 
     // Only when the width crosses the line (or first lays out narrow), so the toggle still

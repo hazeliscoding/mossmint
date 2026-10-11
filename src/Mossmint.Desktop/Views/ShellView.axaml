@@ -108,7 +108,7 @@
       </Border>
 
       <ScrollViewer>
-        <ContentControl Content="{Binding CurrentPage}" Margin="24,20,24,24" AutomationProperties.LandmarkType="Main" AutomationProperties.Name="Page"
+        <ContentControl x:Name="Page" Content="{Binding CurrentPage}" Margin="24,20,24,24" AutomationProperties.LandmarkType="Main" AutomationProperties.Name="Page"
                         AutomationProperties.ControlTypeOverride="Group" AutomationProperties.IsControlElementOverride="True" />
       </ScrollViewer>
     </DockPanel>

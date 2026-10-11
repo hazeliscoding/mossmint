@@ -161,6 +161,29 @@ public class ShellTests
     }
 
     [AvaloniaFact]
+    public async Task A_new_page_starts_at_its_top()
+    {
+        using var app = new Harness();
+        app.CreateProfile();
+        var window = app.Open();
+        window.Height = 500;
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        app.ViewModel.OpenApp(Destination.Settings);
+        Harness.Pump();
+        var scroller = window.GetVisualDescendants().OfType<ContentControl>().Single(c => c.Name == "Page").FindAncestorOfType<ScrollViewer>()!;
+        scroller.Offset = new Avalonia.Vector(0, 300);
+        Harness.Pump();
+        var scrolled = scroller.Offset.Y;
+
+        app.ViewModel.OpenApp(Destination.Backups);
+        Harness.Pump();
+
+        (scrolled, scroller.Offset.Y).Should().Be((300, 0));
+    }
+
+    [AvaloniaFact]
     public async Task The_sidebar_collapses_itself_in_a_narrow_window()
     {
         using var app = new Harness();
