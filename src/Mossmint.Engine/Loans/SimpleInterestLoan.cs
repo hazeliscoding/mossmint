@@ -1,6 +1,7 @@
 using Mossmint.Domain;
 using Mossmint.Domain.Debts;
 using Mossmint.Domain.Scheduling;
+using Mossmint.Engine.Payoff;
 
 namespace Mossmint.Engine.Loans;
 
@@ -10,7 +11,7 @@ public sealed record SimpleInterestLoanInput(
     CalendarSpec Calendar,
     IReadOnlyList<PlannedPaymentAmount>? PlannedAmounts = null,
     IReadOnlyList<ExtraPayment>? ExtraPayments = null,
-    int MaxPayments = 600);
+    int MaxPayments = 600) : IDebtInput;
 
 // Daily simple interest (docs/financial-models/loans.md):
 // - interest accrues on principal only, at the day-count daily rate, for each day

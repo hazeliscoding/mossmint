@@ -1,6 +1,7 @@
 using Mossmint.Domain;
 using Mossmint.Domain.Debts;
 using Mossmint.Engine.Loans;
+using Mossmint.Engine.Payoff;
 
 namespace Mossmint.Engine.Cards;
 
@@ -30,7 +31,7 @@ public sealed record CreditCardInput(
     Money RegularPayment,
     IReadOnlyList<CardPayment>? ExtraPayments = null,
     IReadOnlyList<PlannedCardPurchase>? Purchases = null,
-    int MaxCycles = 600);
+    int MaxCycles = 600) : IDebtInput;
 
 public sealed record CardCycle(
     DateOnly StatementDate,
@@ -48,7 +49,8 @@ public sealed record CardProjection(
     PayoffOutcome Outcome,
     Confidence Confidence,
     IReadOnlyList<string> Assumptions,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    Money ExtraPaid);
 
 // An approximation of a card's statement cycles (docs/financial-models/cards.md).
 // Interest accrues daily on each bucket's balance and is charged at statement
@@ -68,7 +70,7 @@ public static class CreditCard
         var missing = Validate(input);
         if (missing.Count > 0)
         {
-            return new CardProjection([], new InsufficientData(missing), confidence, assumptions, warnings);
+            return new CardProjection([], new InsufficientData(missing), confidence, assumptions, warnings, Money.Zero(input.RegularPayment.Currency));
         }
 
         var currency = input.RegularPayment.Currency;
@@ -98,7 +100,7 @@ public static class CreditCard
 
         var cycles = new List<CardCycle>();
         var (cyclePurchases, cyclePayments) = (0m, 0m);
-        var (totalPaid, totalInterest) = (0m, 0m);
+        var (totalPaid, totalInterest, extraPaid) = (0m, 0m, 0m);
         var stagnant = 0;
         decimal? balanceAfterLastCycle = null;
         var nextClose = NextClose(terms, position.AsOf);
@@ -119,26 +121,27 @@ public static class CreditCard
                 cyclePurchases += purchase.Amount.Amount;
             }
 
-            var paymentToday = extras[day].Sum(p => p.Amount.Amount);
+            var regularToday = 0m;
             if (day == dueDate)
             {
-                var regular = input.RegularPayment.Amount;
-                if (regular < minimumOutstanding)
+                regularToday = input.RegularPayment.Amount;
+                if (regularToday < minimumOutstanding)
                 {
                     warnings.Add($"{day:yyyy-MM-dd}: the planned payment is below the minimum due; the minimum is used.");
-                    regular = minimumOutstanding;
+                    regularToday = minimumOutstanding;
                 }
-
-                paymentToday += regular;
             }
 
             var owedToday = balance.Values.Sum() + pending.Values.Sum(p => Round(p, terms));
-            paymentToday = Math.Min(paymentToday, Math.Max(owedToday, 0m));
+            var paymentToday = Math.Min(extras[day].Sum(p => p.Amount.Amount) + regularToday, Math.Max(owedToday, 0m));
             if (paymentToday > 0m)
             {
                 // Paying off between statements also pays the interest accrued
                 // since the last one, which counts as interest charged.
                 totalInterest += Allocate(paymentToday, minimumOutstanding, balance, pending, buckets, day, terms);
+
+                // The regular payment counts first; the rest of what was paid is extra.
+                extraPaid += paymentToday - Math.Min(regularToday, paymentToday);
                 minimumOutstanding = Math.Max(0m, minimumOutstanding - paymentToday);
                 statementOutstanding = Math.Max(0m, statementOutstanding - paymentToday);
                 cyclePayments += paymentToday;
@@ -154,7 +157,7 @@ public static class CreditCard
 
             if (day >= lastPurchase && balance.Values.Sum() == 0m && pending.Values.All(p => Round(p, terms) == 0m))
             {
-                return new CardProjection(cycles, new PaysOff(day, cycles.Count, new Money(totalPaid, currency), new Money(totalInterest, currency), zero), confidence, assumptions, warnings);
+                return new CardProjection(cycles, new PaysOff(day, cycles.Count, new Money(totalPaid, currency), new Money(totalInterest, currency), zero), confidence, assumptions, warnings, new Money(extraPaid, currency));
             }
 
             foreach (var bucket in terms.Buckets)
@@ -163,7 +166,7 @@ public static class CreditCard
                 var rate = bucket.Rates.SegmentOn(day);
                 if (rate is null)
                 {
-                    return new CardProjection(cycles, new InsufficientData([$"No APR is known for {bucket.Name} on {day:yyyy-MM-dd}."]), confidence, assumptions, warnings);
+                    return new CardProjection(cycles, new InsufficientData([$"No APR is known for {bucket.Name} on {day:yyyy-MM-dd}."]), confidence, assumptions, warnings, new Money(extraPaid, currency));
                 }
 
                 if (!graceExempt && balance[bucket.Name] > 0m)
@@ -206,12 +209,12 @@ public static class CreditCard
             if (stagnant >= StagnantCycleLimit && nothingCanHelp)
             {
                 return new CardProjection(cycles, new NeverPaysOff(
-                    "Payments don't cover the interest charged each cycle.", cycles[^StagnantCycleLimit].StatementDate, null), confidence, assumptions, warnings);
+                    "Payments don't cover the interest charged each cycle.", cycles[^StagnantCycleLimit].StatementDate, null), confidence, assumptions, warnings, new Money(extraPaid, currency));
             }
 
             if (cycles.Count >= input.MaxCycles)
             {
-                return new CardProjection(cycles, new NeverPaysOff($"Not paid off within {input.MaxCycles} statement cycles.", null, null), confidence, assumptions, warnings);
+                return new CardProjection(cycles, new NeverPaysOff($"Not paid off within {input.MaxCycles} statement cycles.", null, null), confidence, assumptions, warnings, new Money(extraPaid, currency));
             }
         }
     }

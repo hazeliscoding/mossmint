@@ -5,6 +5,7 @@ How Mossmint's engine turns inputs into numbers. Every rule here has tests in `t
 - [Loans](loans.md): daily simple interest and amortizing loans.
 - [Credit cards](cards.md): the statement-cycle approximation.
 - [Cash flow](cash-flow.md): the daily forecast, paycheck funding, safe to spend and scenarios.
+- [Paying off several debts](payoff.md): avalanche, snowball, custom orders and rollover.
 
 ## Conventions that apply everywhere
 

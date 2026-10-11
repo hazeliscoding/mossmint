@@ -1,6 +1,7 @@
 using Mossmint.Domain;
 using Mossmint.Domain.Debts;
 using Mossmint.Domain.Scheduling;
+using Mossmint.Engine.Payoff;
 
 namespace Mossmint.Engine.Loans;
 
@@ -9,7 +10,7 @@ public sealed record AmortizingLoanInput(
     AmortizingLoanTerms Terms,
     CalendarSpec Calendar,
     IReadOnlyList<ExtraPayment>? ExtraPayments = null,
-    int MaxPayments = 600);
+    int MaxPayments = 600) : IDebtInput;
 
 // A loan charged a periodic rate (annual rate / periods per year) once per
 // scheduled payment, whatever the number of days (docs/financial-models/loans.md).
