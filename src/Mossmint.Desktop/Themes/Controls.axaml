@@ -128,8 +128,9 @@
   <Style Selector="NumericUpDown /template/ TextBox#PART_TextBox">
     <Setter Property="AutomationProperties.Name" Value="{Binding $parent[NumericUpDown].(AutomationProperties.Name)}" />
   </Style>
+  <!-- The spinner is only a frame: its text box and arrows take focus, so it isn't a tab stop. -->
   <Style Selector="NumericUpDown /template/ ButtonSpinner#PART_Spinner">
-    <Setter Property="AutomationProperties.Name" Value="{Binding $parent[NumericUpDown].(AutomationProperties.Name)}" />
+    <Setter Property="Focusable" Value="False" />
   </Style>
   <Style Selector="ButtonSpinner /template/ RepeatButton#PART_IncreaseButton">
     <Setter Property="AutomationProperties.Name" Value="Increase" />
@@ -150,15 +151,19 @@
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="LetterSpacing" Value="-0.7" />
   </Style>
+  <!-- Headings, so Narrator can jump between a page's title and its sections (H key). -->
   <Style Selector="TextBlock.page-title">
+    <Setter Property="AutomationProperties.HeadingLevel" Value="1" />
     <Setter Property="FontSize" Value="20" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.section">
+    <Setter Property="AutomationProperties.HeadingLevel" Value="2" />
     <Setter Property="FontSize" Value="15" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.card-title">
+    <Setter Property="AutomationProperties.HeadingLevel" Value="2" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>

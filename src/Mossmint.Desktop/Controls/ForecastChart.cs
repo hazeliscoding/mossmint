@@ -1,5 +1,7 @@
 using System.Globalization;
 using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Mossmint.Application.Forecasting;
@@ -23,6 +25,9 @@ public sealed class ForecastChart : Control
     // Colours are looked up while drawing, so redraw when the theme or a contrast theme changes them.
     public ForecastChart()
     {
+        // An image to UI Automation, so Narrator reads its description; the table twin has the numbers.
+        AutomationProperties.SetControlTypeOverride(this, AutomationControlType.Image);
+        AutomationProperties.SetIsControlElementOverride(this, true);
         ActualThemeVariantChanged += (_, _) => InvalidateVisual();
         ResourcesChanged += (_, _) => InvalidateVisual();
     }

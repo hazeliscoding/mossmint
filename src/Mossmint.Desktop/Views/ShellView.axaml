@@ -41,7 +41,8 @@
         <ListBox Classes="nav"
                  ItemsSource="{Binding NavItems}"
                  SelectedItem="{Binding SelectedItem}"
-                 AutomationProperties.Name="Primary navigation">
+                 AutomationProperties.Name="Primary navigation"
+                 AutomationProperties.LandmarkType="Navigation">
           <!-- Narrator reads the focused item, so the name goes on the item, not inside it. -->
           <ListBox.Styles>
             <Style Selector="ListBoxItem" x:DataType="vm:NavItemViewModel">
@@ -73,16 +74,8 @@
               BorderBrush="{DynamicResource BorderHairline}"
               BorderThickness="0,0,0,1"
               Padding="12,0,16,0">
-        <DockPanel>
-          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-            <c:StatusBadge Tone="Neutral" Text="Offline · Manual" />
-            <Button Classes="ghost" Command="{Binding LockCommand}" ToolTip.Tip="Lock the profile" AutomationProperties.Name="Lock">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <c:Icon Width="14" Height="14" Data="{StaticResource IconLock}" />
-                <TextBlock Text="Lock" VerticalAlignment="Center" />
-              </StackPanel>
-            </Button>
-          </StackPanel>
+        <!-- Left before right in the markup, so Tab goes the way the eye reads. -->
+        <Grid ColumnDefinitions="*,Auto">
           <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
             <Button Classes="ghost icon" Command="{Binding ToggleSidebarCommand}"
                     ToolTip.Tip="Collapse or expand the sidebar"
@@ -95,17 +88,27 @@
                          HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <TextBlock Text="{Binding Context.ProfileName}" FontWeight="SemiBold" VerticalAlignment="Center"
-                       AutomationProperties.Name="Unlocked profile" />
+                       AutomationProperties.Name="{Binding Context.ProfileName, StringFormat='Unlocked profile: {0}'}" />
             <Border Width="1" Height="18" Background="{DynamicResource BorderHairline}" />
             <TextBlock Classes="compact faint" Text="Forecast as of" VerticalAlignment="Center" />
             <TextBlock Classes="mono faint" Text="{Binding ForecastAsOf}" VerticalAlignment="Center"
                        ToolTip.Tip="{Binding ForecastAsOfTip}" AutomationProperties.HelpText="{Binding ForecastAsOfTip}" />
           </StackPanel>
-        </DockPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+            <c:StatusBadge Tone="Neutral" Text="Offline · Manual" />
+            <Button Classes="ghost" Command="{Binding LockCommand}" ToolTip.Tip="Lock the profile" AutomationProperties.Name="Lock">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Width="14" Height="14" Data="{StaticResource IconLock}" />
+                <TextBlock Text="Lock" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
       </Border>
 
       <ScrollViewer>
-        <ContentControl Content="{Binding CurrentPage}" Margin="24,20,24,24" />
+        <ContentControl Content="{Binding CurrentPage}" Margin="24,20,24,24" AutomationProperties.LandmarkType="Main" AutomationProperties.Name="Page"
+                        AutomationProperties.ControlTypeOverride="Group" AutomationProperties.IsControlElementOverride="True" />
       </ScrollViewer>
     </DockPanel>
   </Grid>

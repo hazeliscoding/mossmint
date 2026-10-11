@@ -1,5 +1,4 @@
 using Avalonia;
-using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 
@@ -48,10 +47,6 @@ public sealed class StatusBadge : TemplatedControl
         if (change.Property == ToneProperty)
         {
             UpdateTone(change.GetNewValue<StatusTone>());
-        }
-        else if (change.Property == TextProperty)
-        {
-            AutomationProperties.SetName(this, change.GetNewValue<string?>());
         }
     }
 

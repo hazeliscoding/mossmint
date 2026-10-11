@@ -101,6 +101,58 @@ public partial class AccessibilityTests
         string.Join(Environment.NewLine, await Tour(app, where => Unnamed(app.Window!, where))).Should().BeEmpty();
     }
 
+    [AvaloniaFact]
+    public async Task Every_name_given_reaches_narrator()
+    {
+        using var app = new Harness();
+
+        string.Join(Environment.NewLine, await Tour(app, where => Inert(app.Window!, where))).Should().BeEmpty();
+    }
+
+    [AvaloniaFact]
+    public async Task Each_page_has_a_heading_inside_a_main_landmark_beside_the_navigation()
+    {
+        using var app = await Unlocked();
+        var missing = new List<string>();
+        foreach (var destination in Enum.GetValues<Destination>())
+        {
+            app.ViewModel.OpenApp(destination);
+            Harness.Pump();
+            var title = app.Window!.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("page-title") && t.IsEffectivelyVisible);
+            var main = title.GetVisualAncestors().OfType<Control>().Select(ControlAutomationPeer.CreatePeerForElement).FirstOrDefault(p => p.GetLandmarkType() is not null);
+            if (ControlAutomationPeer.CreatePeerForElement(title).GetHeadingLevel() != 1 || main?.GetLandmarkType() != AutomationLandmarkType.Main)
+            {
+                missing.Add(destination.ToString());
+            }
+        }
+
+        var nav = app.Window!.GetVisualDescendants().OfType<ListBox>().Single(l => l.Classes.Contains("nav"));
+        (missing, ControlAutomationPeer.CreatePeerForElement(nav).GetLandmarkType()).Should().BeEquivalentTo((new List<string>(), (AutomationLandmarkType?)AutomationLandmarkType.Navigation));
+    }
+
+    [AvaloniaFact]
+    public void The_inert_name_check_sees_a_name_narrator_skips()
+    {
+        using var app = new Harness();
+
+        // Positive control: a plain Border isn't a control element, so its name is never read.
+        var window = new Window
+        {
+            Content = new StackPanel
+            {
+                Children =
+                {
+                    new Border { [AutomationProperties.NameProperty] = "Card" },
+                    new Border { [AutomationProperties.NameProperty] = "Group", [AutomationProperties.IsControlElementOverrideProperty] = true },
+                },
+            },
+        };
+        window.Show();
+
+        Inert(window, "Sample").Should().ContainSingle().Which.Should().Contain("'Card'");
+        window.Close();
+    }
+
     // The smallest window fits 200% on a 1080p screen (about 960x490 above the taskbar)
     // and half of one at 125% (768 wide).
     [AvaloniaTheory]
@@ -415,6 +467,14 @@ public partial class AccessibilityTests
         Check("Unlock");
         return found;
     }
+
+    // A name set on something UI Automation treats as layout is silently dropped.
+    private static List<string> Inert(Visual root, string where) =>
+        [.. root.GetVisualDescendants().OfType<Control>()
+            .Where(c => c.IsEffectivelyVisible && AutomationProperties.GetName(c) is { Length: > 0 }
+                && !ControlAutomationPeer.CreatePeerForElement(c).IsControlElement())
+            .Select(c => $"{where}: {c.GetType().Name} '{AutomationProperties.GetName(c)}'")
+            .Distinct()];
 
     // Each control that takes focus, each badge and each figure either fits or sits in a
     // ScrollViewer that can bring it into view (WCAG 1.4.10 Reflow, 1.4.4 Resize Text).

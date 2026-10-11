@@ -91,7 +91,7 @@
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:GoalCard">
-          <Border Classes="card" Margin="0,0,12,12" Padding="16,14" VerticalAlignment="Top" AutomationProperties.Name="{Binding AccessibleName}">
+          <Border Classes="card" Margin="0,0,12,12" Padding="16,14" VerticalAlignment="Top" AutomationProperties.Name="{Binding AccessibleName}" AutomationProperties.ControlTypeOverride="Group" AutomationProperties.IsControlElementOverride="True">
             <StackPanel Spacing="8">
               <DockPanel>
                 <c:StatusBadge DockPanel.Dock="Right" Tone="{Binding Tone}" Text="{Binding Status}" VerticalAlignment="Top" />
