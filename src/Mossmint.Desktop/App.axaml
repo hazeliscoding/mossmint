@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Mossmint.Desktop.ViewModels"
              xmlns:views="using:Mossmint.Desktop.Views"
+             xmlns:c="using:Mossmint.Desktop.Controls"
              x:Class="Mossmint.Desktop.App"
              Name="Mossmint"
              RequestedThemeVariant="Default">
@@ -26,6 +27,26 @@
   </Application.Styles>
 
   <Application.DataTemplates>
+    <!-- Overview and the end of setup show the same cards. -->
+    <DataTemplate DataType="vm:MetricCard">
+      <Border Classes="card" Margin="0,0,12,0" Padding="16,14" AutomationProperties.Name="{Binding AccessibleName}">
+        <StackPanel Spacing="6">
+          <DockPanel>
+            <c:StatusBadge DockPanel.Dock="Right" Tone="{Binding Tone}" Text="{Binding Status}" VerticalAlignment="Top" />
+            <TextBlock Classes="label" Text="{Binding Label}" TextWrapping="Wrap" Margin="0,0,8,0" />
+          </DockPanel>
+          <TextBlock Classes="card-title" Text="{Binding Headline}" TextWrapping="Wrap" />
+          <TextBlock Classes="mono" FontSize="28" Foreground="{DynamicResource AccentText}" Text="{Binding Value}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Value}" />
+          <ItemsControl ItemsSource="{Binding Facts}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Classes="mono faint" Text="{Binding}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
     <DataTemplate DataType="vm:WelcomeViewModel">
       <views:WelcomeView />
     </DataTemplate>

@@ -21,15 +21,20 @@
           <TextBlock Text="Start fresh" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
         </StackPanel>
         <TextBlock Classes="hint" Text="Each step can be skipped and changed later. Everything you enter is stored encrypted on this PC." />
+        <!-- A step that's been added gets a check; Narrator hears "Bills, step 3 of 5, current step". -->
         <ItemsControl ItemsSource="{Binding Steps}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:SetupStepItem">
-              <TextBlock Text="{Binding Label}" Margin="0,6" Classes="secondary" Classes.current="{Binding IsCurrent}" />
+              <DockPanel Margin="0,6">
+                <c:Icon DockPanel.Dock="Right" Width="14" Height="14" Data="{StaticResource IconCheck}" Foreground="{DynamicResource SignalHealthy}"
+                        IsVisible="{Binding IsSaved}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Label}" Classes="secondary" Classes.current="{Binding IsCurrent}" AutomationProperties.Name="{Binding AccessibleName}" />
+              </DockPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <Border Classes="separator" />
-        <TextBlock Classes="label" Text="ADDED SO FAR" />
+        <Border Classes="separator" IsVisible="{Binding !!Added.Count}" />
+        <TextBlock Classes="label" Text="ADDED SO FAR" IsVisible="{Binding !!Added.Count}" />
         <ItemsControl ItemsSource="{Binding Added}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="x:String">
@@ -48,8 +53,14 @@
       <StackPanel Spacing="18" Margin="48,40" MaxWidth="640" HorizontalAlignment="Left">
         <TextBlock Classes="page-title" Text="{Binding StepTitle}" />
 
+        <!-- A one-item step already saved in this run shows what it added. -->
+        <StackPanel Spacing="8" IsVisible="{Binding IsSaved}">
+          <c:StatusBadge Tone="Healthy" Text="Added" HorizontalAlignment="Left" />
+          <TextBlock Classes="prose" Text="{Binding SavedNote}" TextWrapping="Wrap" />
+        </StackPanel>
+
         <!-- 1. Cash -->
-        <StackPanel Spacing="14" IsVisible="{Binding IsCash}">
+        <StackPanel Spacing="14" IsVisible="{Binding ShowCashForm}">
           <TextBlock Classes="prose secondary" Text="The account your paychecks land in and your bills come out of. Use today's balance from your bank, so the forecast starts from something confirmed." />
           <StackPanel Spacing="4">
             <TextBlock Classes="field-label" Text="Account name" />
@@ -68,7 +79,7 @@
         </StackPanel>
 
         <!-- 2. Paychecks -->
-        <StackPanel Spacing="14" IsVisible="{Binding IsPaychecks}">
+        <StackPanel Spacing="14" IsVisible="{Binding ShowPaycheckForm}">
           <TextBlock Classes="prose secondary" Text="Your take-home pay, after taxes and deductions, and when it arrives." />
           <Grid ColumnDefinitions="*,16,*">
             <StackPanel Spacing="4">
@@ -192,18 +203,40 @@
           </Grid>
         </StackPanel>
 
-        <!-- 6. Done -->
-        <StackPanel Spacing="14" IsVisible="{Binding IsDone}">
-          <TextBlock Classes="prose secondary" Text="Your profile is ready. The dashboard with Safe to spend and the daily forecast arrives in the next milestones; until then you can review what you entered on each page." />
-          <Button Classes="primary" Content="Go to Overview" Command="{Binding FinishCommand}" HorizontalAlignment="Left" />
+        <!-- 6. Done: the first forecast from what was just entered, or what it still needs. -->
+        <StackPanel Spacing="18" IsVisible="{Binding IsDone}">
+          <StackPanel Spacing="14" IsVisible="{Binding Missing, Converter={x:Static ObjectConverters.IsNull}}">
+            <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                       Text="Here's your first forecast, from what you entered. It updates as you add more or as days pass." />
+            <ItemsControl ItemsSource="{Binding Results}" Margin="0,0,-12,0">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="2" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </StackPanel>
+          <StackPanel Spacing="10" IsVisible="{Binding Missing, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <c:StatusBadge Tone="Warning" Text="No forecast yet" HorizontalAlignment="Left" />
+            <TextBlock Classes="prose" Text="{Binding Missing}" TextWrapping="Wrap" />
+          </StackPanel>
+
+          <StackPanel Spacing="8" IsVisible="{Binding IsFullRun}">
+            <TextBlock Classes="section" Text="From here on" />
+            <TextBlock Classes="prose secondary" TextWrapping="Wrap" Text="When a bill goes out, mark it paid on Bills." />
+            <TextBlock Classes="prose secondary" TextWrapping="Wrap" Text="Spent or received something else? Add it on Transactions." />
+            <TextBlock Classes="prose secondary" TextWrapping="Wrap" Text="Every week or two, check the balance against your bank with Reconcile balance on Transactions." />
+          </StackPanel>
+
+          <Button Classes="primary" Content="{Binding FinishText}" Command="{Binding FinishCommand}" HorizontalAlignment="Left" />
         </StackPanel>
 
         <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" IsVisible="{Binding !IsDone}">
-          <Button Classes="ghost" Content="Back" Command="{Binding BackCommand}" />
-          <Button Classes="ghost" Content="Skip" Command="{Binding SkipCommand}" />
-          <Button Classes="primary" Content="Save and continue" Command="{Binding SaveAndContinueCommand}" />
+          <Button Classes="ghost" Content="Back" Command="{Binding BackCommand}" IsVisible="{Binding CanGoBack}" />
+          <Button Classes="ghost" Content="Skip" Command="{Binding SkipCommand}" IsVisible="{Binding !IsSaved}" />
+          <Button Classes="primary" Content="{Binding PrimaryText}" Command="{Binding SaveAndContinueCommand}" />
         </StackPanel>
       </StackPanel>
     </ScrollViewer>

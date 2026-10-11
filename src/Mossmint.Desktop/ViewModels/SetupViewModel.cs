@@ -2,8 +2,10 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mossmint.Application.Forecasting;
 using Mossmint.Application.Setup;
 using Mossmint.Desktop.Services;
+using Mossmint.Domain;
 using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Planning;
 
@@ -21,25 +23,34 @@ public enum SetupStep
 
 public sealed record PatternOption(PayPattern Pattern, string Label);
 
-public sealed record SetupStepItem(SetupStep Step, string Label, bool IsCurrent);
+public sealed record SetupStepItem(SetupStep Step, string Label, bool IsCurrent, bool IsSaved, string AccessibleName);
 
 // "Start fresh": one short step at a time, each skippable (docs/design/user-journeys.md).
-// Every save goes straight into the encrypted profile through ManualEntry.
+// Every save goes straight into the encrypted profile through ManualEntry. An empty page
+// can open a single step, which then goes straight to Done.
 public sealed partial class SetupViewModel : ViewModelBase
 {
+    private readonly AppServices _services;
     private readonly ManualEntry _entry;
     private readonly Action _finished;
     private readonly CultureInfo _culture;
+    private readonly SetupStep? _only;
+    private readonly HashSet<SetupStep> _saved = [];
+
+    // What a one-item step added, so going back to it shows that instead of adding it twice.
+    private readonly Dictionary<SetupStep, string> _notes = [];
     private AccountId? _cashAccount;
 
-    public SetupViewModel(AppServices services, Action finished, CultureInfo? culture = null)
+    public SetupViewModel(AppServices services, Action finished, SetupStep? only = null, CultureInfo? culture = null)
     {
+        _services = services;
         _entry = new ManualEntry(services.Context.Current.Data, services.Clock);
-        (_finished, _culture) = (finished, culture ?? CultureInfo.CurrentCulture);
+        (_finished, _only, _culture) = (finished, only, culture ?? CultureInfo.CurrentCulture);
         _cashAccount = services.Context.Current.Data.Accounts().FirstOrDefault(a => a.Kind == AccountKind.Checking)?.Id;
         var today = services.Clock.GetLocalNow().Date;
         _cashAsOf = today;
         _nextPayday = today;
+        _step = only ?? SetupStep.Cash;
     }
 
     private static readonly (SetupStep Step, string Label)[] StepLabels =
@@ -48,7 +59,11 @@ public sealed partial class SetupViewModel : ViewModelBase
         (SetupStep.Debts, "4. Debts"), (SetupStep.Savings, "5. Savings"), (SetupStep.Done, "6. Done"),
     ];
 
-    public IReadOnlyList<SetupStepItem> Steps => [.. StepLabels.Select(s => new SetupStepItem(s.Step, s.Label, s.Step == Step))];
+    public IReadOnlyList<SetupStepItem> Steps => [.. StepLabels.Select(s => new SetupStepItem(
+        s.Step, s.Label, s.Step == Step, _saved.Contains(s.Step),
+        s.Step == SetupStep.Done
+            ? "Done"
+            : $"{s.Label[3..]}, step {(int)s.Step + 1} of 5{(s.Step == Step ? ", current step" : _saved.Contains(s.Step) ? ", added" : "")}"))];
 
     public IReadOnlyList<PatternOption> Patterns { get; } =
     [
@@ -61,9 +76,16 @@ public sealed partial class SetupViewModel : ViewModelBase
 
     public ObservableCollection<string> Added { get; } = [];
 
+    // The Done step's first look at the forecast: Safe to spend and the lowest point.
+    public ObservableCollection<MetricCard> Results { get; } = [];
+
+    [ObservableProperty]
+    private string? _missing;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCash), nameof(IsPaychecks), nameof(IsBills), nameof(IsDebts), nameof(IsSavings), nameof(IsDone), nameof(StepTitle), nameof(Steps))]
-    private SetupStep _step = SetupStep.Cash;
+    [NotifyPropertyChangedFor(nameof(SavedNote), nameof(IsSaved), nameof(ShowCashForm), nameof(ShowPaycheckForm), nameof(PrimaryText), nameof(CanGoBack))]
+    private SetupStep _step;
 
     [ObservableProperty]
     private string? _error;
@@ -162,6 +184,14 @@ public sealed partial class SetupViewModel : ViewModelBase
     public bool IsDebts => Step == SetupStep.Debts;
     public bool IsSavings => Step == SetupStep.Savings;
     public bool IsDone => Step == SetupStep.Done;
+    public string? SavedNote => _notes.GetValueOrDefault(Step);
+    public bool IsSaved => SavedNote is not null;
+    public bool ShowCashForm => IsCash && !IsSaved;
+    public bool ShowPaycheckForm => IsPaychecks && !IsSaved;
+    public string PrimaryText => IsSaved ? "Continue" : "Save and continue";
+    public bool CanGoBack => _only is null && Step != SetupStep.Cash;
+    public bool IsFullRun => _only is null;
+    public string FinishText => _only is null ? "Go to Overview" : "Done";
     public bool NeedsNextPayday => Pattern?.Pattern is PayPattern.EveryTwoWeeks or PayPattern.Weekly;
     public bool NeedsPayDay => Pattern?.Pattern == PayPattern.MonthlyOnDay;
 
@@ -172,13 +202,13 @@ public sealed partial class SetupViewModel : ViewModelBase
         SetupStep.Bills => "What you pay every month",
         SetupStep.Debts => "Loans and cards",
         SetupStep.Savings => "Savings and cushion",
-        _ => "You're set up",
+        _ => _only is null ? "You're set up" : "Saved",
     };
 
     [RelayCommand]
     private void SaveAndContinue()
     {
-        if (Try(SaveStep))
+        if (IsSaved || Try(SaveStep))
         {
             Next();
         }
@@ -195,7 +225,7 @@ public sealed partial class SetupViewModel : ViewModelBase
     private void Back()
     {
         Error = null;
-        Step = Step == SetupStep.Cash ? SetupStep.Cash : Step - 1;
+        Step = CanGoBack ? Step - 1 : Step;
     }
 
     [RelayCommand]
@@ -212,6 +242,8 @@ public sealed partial class SetupViewModel : ViewModelBase
             BillIsEstimate ? MoneyInput.Optional(BillLow, _culture, "Low") : null,
             BillIsEstimate ? MoneyInput.Optional(BillHigh, _culture, "High") : null), _cashAccount);
         Added.Add($"Bill · {bill.Name}");
+        _saved.Add(SetupStep.Bills);
+        OnPropertyChanged(nameof(Steps));
         (BillName, BillAmount, BillLow, BillHigh, BillIsEstimate, BillDueLastDay) = ("", "", "", "", false, false);
     }
 
@@ -234,6 +266,9 @@ public sealed partial class SetupViewModel : ViewModelBase
             Added.Add($"Loan · {name}");
         }
 
+        _saved.Add(SetupStep.Debts);
+        OnPropertyChanged(nameof(Steps));
+
         (DebtName, DebtBalance, DebtApr, DebtPayment) = ("", "", "", "");
     }
 
@@ -245,10 +280,13 @@ public sealed partial class SetupViewModel : ViewModelBase
         switch (Step)
         {
             case SetupStep.Cash:
-                var account = _entry.AddCashAccount(CashName, MoneyInput.Required(CashBalance, _culture, "Balance"),
-                    DateOnly.FromDateTime(CashAsOf ?? DateTime.Today));
+                var balance = MoneyInput.Required(CashBalance, _culture, "Balance");
+                var asOf = DateOnly.FromDateTime(CashAsOf ?? DateTime.Today);
+                var account = _entry.AddCashAccount(CashName, balance, asOf);
                 _cashAccount = account.Id;
                 Added.Add($"Account · {account.Name}");
+                _saved.Add(SetupStep.Cash);
+                _notes[SetupStep.Cash] = $"{account.Name}, {Describe.Money(new Money(balance, account.Currency))} as of {asOf:d MMM}. To correct it later, reconcile the balance on Transactions.";
                 break;
             case SetupStep.Paychecks:
                 var pattern = Pattern?.Pattern ?? throw new ArgumentException("Choose how often you're paid.");
@@ -256,6 +294,8 @@ public sealed partial class SetupViewModel : ViewModelBase
                     PayName, MoneyInput.Required(NetPay, _culture, "Net pay"), pattern,
                     NextPayday is { } next ? DateOnly.FromDateTime(next) : null, (int?)PayDay, PayEarly), _cashAccount);
                 Added.Add($"Paycheck · {income.Name}");
+                _saved.Add(SetupStep.Paychecks);
+                _notes[SetupStep.Paychecks] = $"{income.Name}, {Describe.Money(income.NetPay)} on {Describe.Schedule(income.PayDates)}.";
                 break;
             case SetupStep.Bills:
                 if (!string.IsNullOrWhiteSpace(BillName) || !string.IsNullOrWhiteSpace(BillAmount))
@@ -273,7 +313,11 @@ public sealed partial class SetupViewModel : ViewModelBase
                 break;
             case SetupStep.Savings:
                 _entry.SetSavings(MoneyInput.Optional(SavingsPerPaycheck, _culture, "Savings per paycheck"), MoneyInput.Optional(Cushion, _culture, "Cushion"));
-                Added.Add("Savings and cushion");
+                if (_saved.Add(SetupStep.Savings))
+                {
+                    Added.Add("Savings and cushion");
+                }
+
                 break;
         }
     }
@@ -298,5 +342,36 @@ public sealed partial class SetupViewModel : ViewModelBase
         }
     }
 
-    private void Next() => Step = Step == SetupStep.Done ? SetupStep.Done : Step + 1;
+    private void Next()
+    {
+        if (Step != SetupStep.Done)
+        {
+            Step = _only is not null ? SetupStep.Done : Step + 1;
+        }
+    }
+
+    partial void OnStepChanged(SetupStep value)
+    {
+        if (value != SetupStep.Done)
+        {
+            return;
+        }
+
+        Results.Clear();
+        var today = DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime);
+        switch (Forecasts.Build(_services.Context.Current.Data, today))
+        {
+            case ProfileForecast forecast:
+                Missing = null;
+                foreach (var card in OverviewCards.For(forecast).Take(2))
+                {
+                    Results.Add(card);
+                }
+
+                break;
+            case ForecastUnavailable unavailable:
+                Missing = string.Join(" ", unavailable.Missing);
+                break;
+        }
+    }
 }
