@@ -87,7 +87,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Release tags can't be moved or deleted** (the `release tags` ruleset). Only `v*` tags can use the `release` environment.
 - **Versions follow milestones until 1.0:** 0.3.0 is the first release, with M0–M3. It was published on 2026-10-09; the public `Mossmint-Setup.exe` matches `SHA256SUMS`. A tag with a pre-release suffix (`v0.4.0-beta.1`) packs to the `win-beta` channel and becomes a GitHub pre-release.
 - **Release files:** `Mossmint-Setup.exe`, `Mossmint-win-x64-Portable.zip`, the Velopack update files and `SHA256SUMS`.
-- **Signing** uses Azure Artifact Signing the way Prompuff does, and switches on once the `release` environment has the Azure variables and a federated credential trusts it. Until then builds are unsigned, and SmartScreen warns on first launch. Signing waits until later (owner's call).
+- **Signing** uses Azure Artifact Signing the way Prompuff does, and switches on once the `release` environment has the Azure variables and a federated credential trusts it. Until then builds are unsigned, and SmartScreen warns on first launch. Signing switches on from 0.6 (see the M6 decisions).
 - **Direct pushes to `main` are fine until 1.0.** From 1.0 on, `main` takes changes only through pull requests, protected the way Prompuff's is: no deletion or force-push, linear history, rebase merges, and CI required and up to date before merging.
 
 ## Decisions (2026-10-10, road to 1.0)
@@ -129,6 +129,10 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Applying a scenario saves a debt plan** (the owner's and the test user's pick over raising a bill, or saving it for Scenarios only). The extra and the order are saved in the profile; Cash Flow, Paychecks and safe to spend set the extra aside, and Debts and Overview follow the plan with rollover. A change summary comes first, with a warning when cash would drop below the cushion, and undo puts the previous plan back with no timer.
 - **Bills need editing before 0.5** (raised by the test user). Today a bill can only be added through *Start fresh*: a price change, a cancellation or a subscription's real billing day can't be recorded, and a cancelled bill keeps counting in the forecast. A price rise the forecast doesn't know about makes safe to spend too generous, so this lands in M5 instead of Later. A subscription whose charge date sits near a payday already moves between paychecks on its own, because each bill is paid by the last paycheck on or before its date.
 - **The debt-free range is about whether the extra keeps fitting.** Its early end pays the chosen extra every month; its late end pays only the extra that stress spending and late paychecks would still leave room for (none, when cash already falls short). When the chosen extra fits even then, there's no range. Both ends are assumptions, not probabilities.
+
+## Decisions (2026-10-11, M6)
+
+- **Code signing is set up for 0.6** (owner's call, reusing the signing account and certificate profile Prompuff uses). A dedicated app registration with no secrets trusts only the `release` environment, which only `v*` tags can deploy to, through a federated credential, and it may sign only with that one certificate profile. The account and profile names live in the environment's variables, not in the public workflow. The release job checks that both the installer and the app inside the portable package are signed; manual runs and forks still build unsigned. A newly signed installer still gets SmartScreen's "unrecognized app" warning, now showing the publisher's name, until downloads build reputation.
 
 ## M0: Skeleton and guardrails (v0.3.0)
 
