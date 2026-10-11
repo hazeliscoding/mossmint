@@ -7,6 +7,7 @@ using Mossmint.Domain.Scheduling;
 using Mossmint.Engine.Cards;
 using Mossmint.Engine.CashFlow;
 using Mossmint.Engine.Loans;
+using Mossmint.Engine.Payoff;
 
 namespace Mossmint.Application.Forecasting;
 
@@ -101,37 +102,17 @@ public static class Forecasts
     public const int DefaultDays = 45;
 
     // ROADMAP M1: US Federal Reserve holidays move paydays, as a stated assumption.
-    private static readonly CalendarSpec Calendar = CalendarSpec.UsFederalReserve;
+    internal static readonly CalendarSpec Calendar = CalendarSpec.UsFederalReserve;
 
     public static ForecastOutcome Build(IProfileData data, DateOnly today, int days = DefaultDays)
     {
-        var accounts = data.Accounts();
-        var income = data.Income();
-        if (SpendingAccount(accounts, income) is not { } account)
+        var (cash, unavailable) = CashPlan(data, today, today.AddDays(days - 1));
+        if (cash is null)
         {
-            return new ForecastUnavailable(["Add a checking account with today's balance."]);
+            return unavailable!;
         }
 
-        if (data.Balances(account.Id).FirstOrDefault() is not { } balance)
-        {
-            return new ForecastUnavailable([$"Enter the balance of {account.Name}."]);
-        }
-
-        var bills = data.Bills();
-        var settings = data.Settings();
-        var entries = data.Transactions(account.Id);
-        var opening = RunningBalance.From(balance, entries);
-        var plan = new CashFlowPlan(
-            today,
-            today.AddDays(days - 1),
-            opening,
-            [.. income.Where(i => (i.DepositAccount ?? account.Id) == account.Id)],
-            [.. bills.Where(b => (b.FundingAccount ?? account.Id) == account.Id)],
-            Calendar,
-            settings.Allowances,
-            settings.SavingsTarget,
-            settings.ReserveFloor,
-            PaidBills: [.. entries.Where(e => e.Status != TransactionStatus.Void).Select(e => e.Pays).OfType<PaidBill>()]);
+        var (account, balance, entries, bills, plan) = cash;
         var expanded = CashFlowPlanner.Expand(plan);
         var forecast = CashFlowSimulator.Run(plan, expanded);
         var paydays = expanded.Paydays.ToHashSet();
@@ -143,11 +124,12 @@ public static class Forecasts
             d.BelowReserve,
             [.. d.Events.Select(e => new ForecastEvent(e.Label, e.Amount, e.IsInflow, e.Confidence))]))];
 
+        var accounts = data.Accounts();
         return new ProfileForecast(
             account.Name,
-            opening.Amount,
+            plan.Opening.Amount,
             balance.Provenance,
-            settings.ReserveFloor?.Minimum ?? Money.Zero(balance.Balance.Currency),
+            plan.ReserveFloor?.Minimum ?? Money.Zero(balance.Balance.Currency),
             forecastDays,
             forecast.Lowest.Date,
             forecast.Lowest.Amount,
@@ -155,6 +137,40 @@ public static class Forecasts
             Paychecks(plan, PaycheckFunding.Plan(plan, expanded), forecastDays),
             [.. data.Debts().Select(d => Debt(d, data, accounts, bills))],
             entries.Count(e => RunningBalance.After(balance, e)));
+    }
+
+    internal sealed record CashSetup(Account Account, BalanceSnapshot Balance, IReadOnlyList<Transaction> Entries, IReadOnlyList<RecurringBill> Bills, CashFlowPlan Plan);
+
+    // The spending account's cash plan from today through `through`, or what's missing for one.
+    internal static (CashSetup? Setup, ForecastUnavailable? Unavailable) CashPlan(IProfileData data, DateOnly today, DateOnly through)
+    {
+        var accounts = data.Accounts();
+        var income = data.Income();
+        if (SpendingAccount(accounts, income) is not { } account)
+        {
+            return (null, new ForecastUnavailable(["Add a checking account with today's balance."]));
+        }
+
+        if (data.Balances(account.Id).FirstOrDefault() is not { } balance)
+        {
+            return (null, new ForecastUnavailable([$"Enter the balance of {account.Name}."]));
+        }
+
+        var bills = data.Bills();
+        var settings = data.Settings();
+        var entries = data.Transactions(account.Id);
+        var plan = new CashFlowPlan(
+            today,
+            through,
+            RunningBalance.From(balance, entries),
+            [.. income.Where(i => (i.DepositAccount ?? account.Id) == account.Id)],
+            [.. bills.Where(b => (b.FundingAccount ?? account.Id) == account.Id)],
+            Calendar,
+            settings.Allowances,
+            settings.SavingsTarget,
+            settings.ReserveFloor,
+            PaidBills: [.. entries.Where(e => e.Status != TransactionStatus.Void).Select(e => e.Pays).OfType<PaidBill>()]);
+        return (new CashSetup(account, balance, entries, bills, plan), null);
     }
 
     public static IReadOnlyList<GoalView> Goals(IProfileData data, DateOnly today)
@@ -239,23 +255,51 @@ public static class Forecasts
     private static SafeToSpendView Safe(CashFlowPlan plan)
     {
         var through = SafeToSpend.DayBeforeNextPayday(plan);
-        return SafeToSpend.Calculate(plan with { Through = through }) switch
+        return View(SafeToSpend.Calculate(plan with { Through = through }), through);
+    }
+
+    internal static SafeToSpendView View(SafeToSpendResult result, DateOnly through) =>
+        result switch
         {
             SafeAmount s => new(SafeToSpendState.Safe, s.Amount, s.Through, s.Confidence, s.Basis),
             Shortfall s => new(SafeToSpendState.Shortfall, s.Amount, through, null, s.Basis),
             NeedsConfirmation n => new(SafeToSpendState.NeedsConfirmation, null, through, null, n.Missing),
             var other => throw new InvalidOperationException($"Unknown safe-to-spend result {other.GetType().Name}."),
         };
-    }
 
     private static DebtView Debt(DebtAccount debt, IProfileData data, IReadOnlyList<Account> accounts, IReadOnlyList<RecurringBill> bills)
     {
-        var name = accounts.FirstOrDefault(a => a.Id == debt.Account)?.Name ?? "Debt";
+        var name = DebtName(debt, accounts);
         if (data.Balances(debt.Account).FirstOrDefault() is not { } balance)
         {
             return new DebtView(debt.Account, name, null, null, null, null, "Enter the balance owed.", Confidence.NeedsReview, debt.Terms is CreditCardTerms);
         }
 
+        var (input, problem) = DebtInput(debt, balance, name, PaymentBill(debt, bills));
+        var payoff = input is null
+            ? new DebtPayoff(debt.Account, new InsufficientData([problem!]), Confidence.NeedsReview)
+            : PayoffPlanner.Baseline([new PayoffDebt(debt.Account, input, [])]).Debts[0];
+        var asOf = balance.Provenance.AsOf;
+        return payoff.Outcome switch
+        {
+            PaysOff p => new(debt.Account, name, balance.Balance, asOf, p.PayoffDate, p.TotalInterest, null, payoff.Confidence, debt.Terms is CreditCardTerms),
+            NeverPaysOff n => new(debt.Account, name, balance.Balance, asOf, null, null, n.Reason, payoff.Confidence, debt.Terms is CreditCardTerms),
+            InsufficientData i => new(debt.Account, name, balance.Balance, asOf, null, null, string.Join(" ", i.Missing), payoff.Confidence, debt.Terms is CreditCardTerms),
+            var other => throw new InvalidOperationException($"Unknown payoff outcome {other.GetType().Name}."),
+        };
+    }
+
+    internal static string DebtName(DebtAccount debt, IReadOnlyList<Account> accounts) =>
+        accounts.FirstOrDefault(a => a.Id == debt.Account)?.Name ?? "Debt";
+
+    // The bill that pays the debt; the cash forecast pays what it says.
+    internal static RecurringBill? PaymentBill(DebtAccount debt, IReadOnlyList<RecurringBill> bills) =>
+        bills.FirstOrDefault(b => b.TargetAccount == debt.Account && b.Purpose == BillPurpose.DebtPayment);
+
+    // The engine input for a debt, or why it can't be projected. Loans pay what
+    // their terms say; a card pays what its bill says.
+    internal static (IDebtInput? Input, string? Problem) DebtInput(DebtAccount debt, BalanceSnapshot balance, string name, RecurringBill? bill)
+    {
         var asOf = balance.Provenance.AsOf;
         var zero = Money.Zero(balance.Balance.Currency);
         var accrued = balance.AccruedInterest ?? zero;
@@ -263,35 +307,17 @@ public static class Forecasts
         switch (debt.Terms)
         {
             case SimpleInterestLoanTerms terms:
-                var loan = SimpleInterestLoan.Project(new SimpleInterestLoanInput(position, terms, Calendar));
-                return FromOutcome(loan.Outcome, loan.Confidence, false);
+                return (new SimpleInterestLoanInput(position, terms, Calendar), null);
             case AmortizingLoanTerms terms:
-                var amortizing = AmortizingLoan.Project(new AmortizingLoanInput(position, terms, Calendar));
-                return FromOutcome(amortizing.Outcome, amortizing.Confidence, false);
-            case CreditCardTerms terms:
-                var payment = bills.FirstOrDefault(b => b.TargetAccount == debt.Account && b.Purpose == BillPurpose.DebtPayment)?.Amount.Expected;
-                if (payment is null)
-                {
-                    return FromOutcome(new InsufficientData([$"Enter the planned payment for {name}."]), Confidence.NeedsReview, true);
-                }
-
+                return (new AmortizingLoanInput(position, terms, Calendar), null);
+            case CreditCardTerms terms when bill?.Amount.Expected is { } payment:
                 // A balance snapshot doesn't split by APR bucket, so it all goes in the first one.
                 var card = new CardPosition(asOf, [new CardBucketBalance(terms.Buckets[0].Name, balance.Balance)], accrued, balance.Provenance);
-                var projection = CreditCard.Project(new CreditCardInput(card, terms, payment.Value));
-                return FromOutcome(projection.Outcome, projection.Confidence, true);
+                return (new CreditCardInput(card, terms, payment), null);
+            case CreditCardTerms:
+                return (null, $"Enter the planned payment for {name}.");
             default:
-                return FromOutcome(new InsufficientData([$"Mossmint can't project {name} yet."]), Confidence.NeedsReview, false);
-        }
-
-        DebtView FromOutcome(PayoffOutcome outcome, Confidence confidence, bool approximate)
-        {
-            return outcome switch
-            {
-                PaysOff p => new(debt.Account, name, balance.Balance, asOf, p.PayoffDate, p.TotalInterest, null, confidence, approximate),
-                NeverPaysOff n => new(debt.Account, name, balance.Balance, asOf, null, null, n.Reason, confidence, approximate),
-                InsufficientData i => new(debt.Account, name, balance.Balance, asOf, null, null, string.Join(" ", i.Missing), confidence, approximate),
-                _ => throw new InvalidOperationException($"Unknown payoff outcome {outcome.GetType().Name}."),
-            };
+                return (null, $"Mossmint can't project {name} yet.");
         }
     }
 }
