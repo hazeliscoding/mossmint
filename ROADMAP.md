@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M5 (v0.5): scenarios and debt planning.
+**Next up:** releasing 0.5 (M5, scenarios and debt planning, is built and waits for its hand Narrator pass), then M6 (v0.6): the Windows release.
 
 ## Releases
 
@@ -204,7 +204,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Largest feasible extra payment over the whole horizon, revalidated against daily cash.
 - [x] Stress scenarios and a debt-free date range.
 - [x] Apply to plan with a change summary; scenarios never change the real plan silently.
-- [ ] Bills can be kept up to date from the Bills page (the test user's questions, see the M5 decisions):
+- [x] Bills can be kept up to date from the Bills page (the test user's questions, see the M5 decisions):
   - Add a bill there, not only through *Start fresh*.
   - Edit a bill's name, amount (a price change) and day of the month (a subscription's real billing day).
   - End a bill from a date (a cancellation), keeping its history, or remove one that was never paid.
