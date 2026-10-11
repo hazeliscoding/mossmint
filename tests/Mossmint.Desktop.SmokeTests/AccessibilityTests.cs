@@ -4,9 +4,12 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
@@ -57,71 +60,52 @@ public partial class AccessibilityTests
     public async Task Every_focusable_control_has_a_name_narrator_can_read()
     {
         using var app = new Harness();
-        app.Open();
-        var unnamed = Unnamed(app, "Welcome").ToList();
 
-        app.ViewModel.ShowRestore();
-        unnamed.AddRange(Unnamed(app, "Restore"));
-        app.ViewModel.Welcome.StartFreshCommand.Execute(null);
-        unnamed.AddRange(Unnamed(app, "Create profile"));
-        var create = app.Screen<CreateProfileViewModel>();
-        (create.Name, create.Passphrase, create.Confirm) = ("Juniper", Harness.Passphrase, Harness.Passphrase);
-        await create.CreateCommand.ExecuteAsync(null);
-        unnamed.AddRange(Unnamed(app, "Recovery key"));
+        string.Join(Environment.NewLine, await Tour(app, where => Unnamed(app.Window!, where))).Should().BeEmpty();
+    }
 
-        app.ViewModel.StartSetup();
-        var setup = app.Screen<SetupViewModel>();
-        foreach (var step in Enum.GetValues<SetupStep>())
+    // The smallest window fits 200% on a 1080p screen (about 960x490 above the taskbar)
+    // and half of one at 125% (768 wide).
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Nothing_is_cut_off_in_a_default_or_smallest_window(bool smallest)
+    {
+        using var app = new Harness();
+
+        string.Join(Environment.NewLine, await Tour(app, where => CutOff(app.Window!, where), smallest)).Should().BeEmpty();
+    }
+
+    [AvaloniaFact]
+    public void The_cut_off_check_sees_what_cannot_be_reached()
+    {
+        using var app = new Harness();
+
+        // Positive control: a button past the edge of a panel that can't scroll, a trimmed figure and one spilling over.
+        // The same button in a ScrollViewer can be scrolled to.
+        var window = new Window
         {
-            setup.Step = step;
-            unnamed.AddRange(Unnamed(app, $"Setup {step}"));
-        }
+            Width = 300,
+            Height = 200,
+            Content = new StackPanel
+            {
+                Children =
+                {
+                    new StackPanel { Orientation = Orientation.Horizontal, Children = { new Border { Width = 280 }, new Button { Content = "Hidden" } } },
+                    new ScrollViewer
+                    {
+                        HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                        Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { new Border { Width = 280 }, new Button { Content = "Scrolls" } } },
+                    },
+                    new TextBlock { Classes = { "mono" }, Width = 30, TextTrimming = TextTrimming.CharacterEllipsis, Text = "$1,105.00" },
+                    new TextBlock { Classes = { "mono" }, Width = 30, Text = "$2,050.00" },
+                },
+            },
+        };
+        window.Show();
 
-        // Options that show more fields.
-        setup.Step = SetupStep.Paychecks;
-        foreach (var pattern in setup.Patterns)
-        {
-            setup.Pattern = pattern;
-            unnamed.AddRange(Unnamed(app, $"Setup pay {pattern.Pattern}"));
-        }
-
-        setup.Step = SetupStep.Bills;
-        setup.BillIsEstimate = true;
-        unnamed.AddRange(Unnamed(app, "Setup bill estimate"));
-        setup.Step = SetupStep.Debts;
-        setup.DebtIsCard = !setup.DebtIsCard;
-        unnamed.AddRange(Unnamed(app, "Setup other debt kind"));
-
-        Populate(app);
-        app.ViewModel.OpenApp(Destination.Overview);
-        var shell = app.Screen<ShellViewModel>();
-        foreach (var destination in Enum.GetValues<Destination>())
-        {
-            app.ViewModel.OpenApp(destination);
-            unnamed.AddRange(Unnamed(app, destination.ToString()));
-        }
-
-        // The inline forms, open.
-        shell.Navigate(Destination.Debts);
-        ((DebtsPageViewModel)shell.CurrentPage!).StartConfirmCommand.Execute(null);
-        unnamed.AddRange(Unnamed(app, "Debts, confirm balance"));
-        shell.Navigate(Destination.Savings);
-        var savings = (SavingsPageViewModel)shell.CurrentPage!;
-        savings.StartAddCommand.Execute(null);
-        unnamed.AddRange(Unnamed(app, "Savings, add goal"));
-        savings.StartUpdateCommand.Execute(savings.Goals[0]);
-        unnamed.AddRange(Unnamed(app, "Savings, update saved"));
-        shell.Navigate(Destination.Transactions);
-        var ledger = (TransactionsPageViewModel)shell.CurrentPage!;
-        ledger.StartAddCommand.Execute(null);
-        unnamed.AddRange(Unnamed(app, "Transactions, add entry"));
-        ledger.StartReconcileCommand.Execute(null);
-        unnamed.AddRange(Unnamed(app, "Transactions, reconcile"));
-
-        app.ViewModel.Lock();
-        unnamed.AddRange(Unnamed(app, "Unlock"));
-
-        string.Join(Environment.NewLine, unnamed).Should().BeEmpty();
+        CutOff(window, "Sample").Should().HaveCount(3).And.Contain(s => s.Contains("Hidden")).And.Contain(s => s.Contains("$1,105.00")).And.Contain(s => s.Contains("$2,050.00"));
+        window.Close();
     }
 
     [AvaloniaTheory]
@@ -315,6 +299,149 @@ public partial class AccessibilityTests
             .Distinct()
             .ToList();
 
+    // Every screen, setup step, option and inline form, with a row in every list.
+    private static async Task<List<string>> Tour(Harness app, Func<string, IEnumerable<string>> check, bool smallest = false)
+    {
+        var found = new List<string>();
+        void Check(string where)
+        {
+            Harness.Pump();
+            found.AddRange(check(where));
+        }
+
+        app.Open();
+        if (smallest)
+        {
+            (app.Window!.Width, app.Window.Height) = (app.Window.MinWidth, app.Window.MinHeight);
+        }
+
+        Check("Welcome");
+        app.ViewModel.ShowRestore();
+        Check("Restore");
+        app.ViewModel.Welcome.StartFreshCommand.Execute(null);
+        Check("Create profile");
+        var create = app.Screen<CreateProfileViewModel>();
+        (create.Name, create.Passphrase, create.Confirm) = ("Juniper", Harness.Passphrase, Harness.Passphrase);
+        await create.CreateCommand.ExecuteAsync(null);
+        Check("Recovery key");
+
+        app.ViewModel.StartSetup();
+        var setup = app.Screen<SetupViewModel>();
+        foreach (var step in Enum.GetValues<SetupStep>())
+        {
+            setup.Step = step;
+            Check($"Setup {step}");
+        }
+
+        // Options that show more fields.
+        setup.Step = SetupStep.Paychecks;
+        foreach (var pattern in setup.Patterns)
+        {
+            setup.Pattern = pattern;
+            Check($"Setup pay {pattern.Pattern}");
+        }
+
+        setup.Step = SetupStep.Bills;
+        setup.BillIsEstimate = true;
+        Check("Setup bill estimate");
+        setup.Step = SetupStep.Debts;
+        setup.DebtIsCard = !setup.DebtIsCard;
+        Check("Setup other debt kind");
+
+        Populate(app);
+        app.ViewModel.OpenApp(Destination.Overview);
+        var shell = app.Screen<ShellViewModel>();
+        foreach (var destination in Enum.GetValues<Destination>())
+        {
+            app.ViewModel.OpenApp(destination);
+            Check(destination.ToString());
+        }
+
+        // The inline forms, open.
+        shell.Navigate(Destination.Debts);
+        ((DebtsPageViewModel)shell.CurrentPage!).StartConfirmCommand.Execute(null);
+        Check("Debts, confirm balance");
+        shell.Navigate(Destination.Savings);
+        var savings = (SavingsPageViewModel)shell.CurrentPage!;
+        savings.StartAddCommand.Execute(null);
+        Check("Savings, add goal");
+        savings.StartUpdateCommand.Execute(savings.Goals[0]);
+        Check("Savings, update saved");
+        shell.Navigate(Destination.Transactions);
+        var ledger = (TransactionsPageViewModel)shell.CurrentPage!;
+        ledger.StartAddCommand.Execute(null);
+        Check("Transactions, add entry");
+        ledger.StartReconcileCommand.Execute(null);
+        Check("Transactions, reconcile");
+
+        app.ViewModel.Lock();
+        Check("Unlock");
+        return found;
+    }
+
+    // Each control that takes focus, each badge and each figure either fits or sits in a
+    // ScrollViewer that can bring it into view (WCAG 1.4.10 Reflow, 1.4.4 Resize Text).
+    // No text spills out of its box, and figures are never trimmed to an ellipsis.
+    private static List<string> CutOff(Visual root, string where) =>
+        [.. root.GetVisualDescendants().OfType<Control>()
+            .Where(c => c.IsEffectivelyVisible && c.Bounds.Width > 0 && c.Bounds.Height > 0
+                && (c.Focusable || c is Controls.StatusBadge or TextBlock))
+            .Where(c => c is TextBlock t
+                ? t.TextLayout.Width > t.Bounds.Width + 1 || (t.Classes.Contains("mono") && (Unreachable(root, t) || t.TextLayout.TextLines.Any(l => l.HasCollapsed)))
+                : Unreachable(root, c))
+            .Select(c => $"{where}: {c.GetType().Name} '{Label(c)}' in {string.Join(" < ", c.GetVisualAncestors().OfType<Control>().Take(3).Select(a => a.GetType().Name))}")
+            .Distinct()];
+
+    private static string? Label(Control c) => c switch
+    {
+        TextBlock t => t.Text,
+        Controls.StatusBadge b => b.Text,
+        _ => AutomationProperties.GetName(c) is { Length: > 0 } name ? name : (c as ContentControl)?.Content?.ToString(),
+    };
+
+    private static bool Unreachable(Visual root, Control control)
+    {
+        var box = new Rect(control.TranslatePoint(default, root)!.Value, control.Bounds.Size);
+        foreach (var clip in control.GetVisualAncestors().OfType<Visual>().Where(a => a.ClipToBounds || a == root))
+        {
+            var area = new Rect(clip.TranslatePoint(default, root)!.Value, clip.Bounds.Size);
+
+            // Scrolling brings the control into the viewport along each axis the viewer scrolls,
+            // as long as it lies within what the viewer can scroll to.
+            if (clip is ScrollContentPresenter { CanHorizontallyScroll: true } across)
+            {
+                if (box.Right > area.X + across.Extent.Width + 1)
+                {
+                    return true;
+                }
+
+                box = new Rect(area.X, box.Y, Math.Min(box.Width, area.Width), box.Height);
+            }
+
+            if (clip is ScrollContentPresenter { CanVerticallyScroll: true } down)
+            {
+                if (box.Bottom > area.Y + down.Extent.Height + 1)
+                {
+                    return true;
+                }
+
+                box = new Rect(box.X, area.Y, box.Width, Math.Min(box.Height, area.Height));
+            }
+
+            if (box.Right > area.Right + 1 || box.Bottom > area.Bottom + 1)
+            {
+                return true;
+            }
+
+            if (clip == root)
+            {
+                break;
+            }
+        }
+
+        return false;
+    }
+
     // A profile with a row in every list, so every row template renders.
     private static void Populate(Harness app)
     {
@@ -324,6 +451,7 @@ public partial class AccessibilityTests
         entry.AddCashAccount("Savings", 1_850m, kind: AccountKind.Savings);
         entry.AddPaycheck(new PaycheckEntry("Paycheck", 2_050m, PayPattern.TwiceMonthly), checking.Id);
         entry.AddBill(new BillEntry("Rent", 1_150m, 1), checking.Id);
+        entry.AddBill(new BillEntry("Electric", 70m, 12, IsEstimate: true, Low: 60m, High: 95m), checking.Id);
         entry.AddLoan(new LoanEntry("Car loan", 9_800m, today, 7.4m, 285m, 28), checking.Id);
         entry.AddCard(new CardEntry("Card", 2_300m, today, 24.99m, 150m, 21, 3), checking.Id);
         entry.SetSavings(150m, 300m);
