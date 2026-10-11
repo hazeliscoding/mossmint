@@ -25,7 +25,24 @@ Use theme resources (`DynamicResource`), never literals in views. Dark is the fi
 | Critical | `#F29E9B` | `#B43E39` | Shortfall below cushion, formula error, broken sync |
 | Loss (outflow emphasis) | `#D9AE6A` | `#A8722A` | negative deltas on "what changed" |
 
-Contrast: all text tokens on their surfaces ≥ 4.5:1 (text-3 is for labels ≥ 11px semibold only). Accent on bg-2 dark = 8.9:1; light accent on white = 6.4:1. Verify warning/critical text variants in high-contrast mode by mapping them to `SystemColors`.
+Contrast: all text tokens on their surfaces ≥ 4.5:1 (text-3 is for labels ≥ 11px semibold only). Accent on bg-2 dark = 8.9:1; light accent on white = 6.4:1.
+
+Two more tokens match others in dark and light and only part from them in a contrast theme: **TextSelected** (text on Selected, = Text 1) and **LinkText** (link buttons, = AccentText).
+
+### Windows contrast themes
+
+While a Windows contrast theme (Aquatic, Desert, Dusk, Night sky) is on, every token takes one of the user's system colours instead (`Services/ContrastTheme.cs`), and so do Fluent's own controls. It follows the setting live.
+
+| System colour | Tokens |
+|---|---|
+| Window | every background; the *Subtle* tints |
+| WindowText | all text, every border, every signal and its text, Loss |
+| Highlight | Accent and its states, Selected, the focus ring |
+| HighlightText | TextInverse, TextSelected |
+| HotLight | LinkText |
+| GrayText | TextDisabled |
+
+Status hues drop out, which is safe because every status already has its own shape and label. A smoke test fails if any token keeps a moss colour under a dark or a light contrast palette. `dotnet run --project tools/Mossmint.Screenshots -- --contrast <out-dir>` renders sample contrast themes.
 
 Signal rule: color is never the only carrier. Every state pairs a dot/shape with a text label (StatusBadge). Positive/negative on charts is encoded by position relative to the cushion line plus a label, not hue.
 
