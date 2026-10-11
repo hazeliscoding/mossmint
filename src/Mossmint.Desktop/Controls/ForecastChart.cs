@@ -20,6 +20,13 @@ public sealed class ForecastChart : Control
 
     static ForecastChart() => AffectsRender<ForecastChart>(ForecastProperty);
 
+    // Colours are looked up while drawing, so redraw when the theme or a contrast theme changes them.
+    public ForecastChart()
+    {
+        ActualThemeVariantChanged += (_, _) => InvalidateVisual();
+        ResourcesChanged += (_, _) => InvalidateVisual();
+    }
+
     public ProfileForecast? Forecast
     {
         get => GetValue(ForecastProperty);
