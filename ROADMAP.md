@@ -223,7 +223,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 - [x] Velopack installer, release CI on tags, checksums (moved up for the handoff; see the releases decisions).
 - [x] Opt-in update check in Settings: **Check now**. It asks GitHub Releases only, through an explicit `GithubSource`, never Velopack's hosted service. Download and restart are separate steps, never during a backup or an import. Offline use never depends on it. ADR-0003 lists what GitHub sees. (Moved up ahead of M4; see the 2026-10-10 decisions.)
-- [ ] An optional daily update check, off by default.
+- [x] An optional daily update check, off by default, with a quiet strip when a newer version is out (ADR-0003).
 - [x] JSON and CSV export, with an explicit warning. Exported CSV is escaped so a spreadsheet can't run it as formulas. (Undoing the escaping moves to M7's CSV importer, the first importer to read CSV.)
 - [x] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
 - [ ] Code signing through Azure Artifact Signing.
