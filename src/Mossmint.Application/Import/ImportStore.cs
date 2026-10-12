@@ -100,4 +100,28 @@ public interface IImportStore
     string? FileMapping(string fingerprint);
 
     void SaveFileMapping(string fingerprint, string mapping);
+
+    IReadOnlyList<Connection> Connections();
+
+    void SaveConnection(Connection connection);
+
+    // Deletes the stored credential with the connection; what it imported stays.
+    void RemoveConnection(Guid id);
+}
+
+// A connection the user added: its connector, the credential the provider
+// handed over (SimpleFIN's access URL), where the last sync left off, and the
+// Mossmint account each of the provider's accounts feeds. The credential lives
+// only in the encrypted profile: never in logs, the audit trail or exports.
+public sealed record Connection(
+    Guid Id,
+    string Connector,
+    string Secret,
+    string? Cursor,
+    IReadOnlyDictionary<string, Guid> Links,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? LastSyncAt = null)
+{
+    // Records print their members; this one must never print its credential.
+    public override string ToString() => $"Connection {{ Id = {Id}, Connector = {Connector} }}";
 }

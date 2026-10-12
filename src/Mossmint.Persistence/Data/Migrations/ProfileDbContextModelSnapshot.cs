@@ -171,6 +171,39 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.ToTable("Bills", (string)null);
                 });
 
+            modelBuilder.Entity("Mossmint.Persistence.Data.ConnectionRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Connector")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Cursor")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("LastSyncAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LinksJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Secret")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Connections", (string)null);
+                });
+
             modelBuilder.Entity("Mossmint.Persistence.Data.DebtRow", b =>
                 {
                     b.Property<Guid>("AccountId")

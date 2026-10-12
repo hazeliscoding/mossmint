@@ -171,6 +171,18 @@ internal sealed class FileMappingRow
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
+/// A connection's credential and progress. Secret is a bearer credential.
+internal sealed class ConnectionRow
+{
+    public Guid Id { get; set; }
+    public string Connector { get; set; } = "";
+    public string Secret { get; set; } = "";
+    public string? Cursor { get; set; }
+    public string LinksJson { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastSyncAt { get; set; }
+}
+
 // What changed and when. Lives inside the encrypted profile, never in logs.
 internal sealed class AuditRow
 {
@@ -198,6 +210,7 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
     public DbSet<ReviewItemRow> ReviewItems => Set<ReviewItemRow>();
     public DbSet<RawRecordRow> RawRecords => Set<RawRecordRow>();
     public DbSet<FileMappingRow> FileMappings => Set<FileMappingRow>();
+    public DbSet<ConnectionRow> Connections => Set<ConnectionRow>();
 
     public static ProfileDbContext For(SqliteConnection connection) =>
         new(new DbContextOptionsBuilder<ProfileDbContext>().UseSqlite(connection).Options);
@@ -325,6 +338,13 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
             e.ToTable("FileMappings");
             e.HasKey(m => m.Fingerprint);
             e.Property(m => m.Fingerprint).HasMaxLength(64);
+        });
+
+        model.Entity<ConnectionRow>(e =>
+        {
+            e.ToTable("Connections");
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Connector).HasMaxLength(40);
         });
 
         model.Entity<AuditRow>(e =>

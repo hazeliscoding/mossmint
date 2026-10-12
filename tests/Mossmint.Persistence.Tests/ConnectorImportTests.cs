@@ -169,6 +169,29 @@ public sealed class ConnectorImportTests : IDisposable
         plan.Findings.Should().Contain(f => f.Code == "connector-unknown-account");
     }
 
+    [Fact]
+    public void A_connection_and_its_credential_stay_inside_the_profile_and_out_of_exports()
+    {
+        const string Secret = "https://user:s3cret-token@bridge.example/simplefin";
+        var connection = new Connection(Guid.CreateVersion7(), "simplefin", Secret, null,
+            new Dictionary<string, Guid> { ["ACT-1"] = _linked[FakeBank.Checking.ExternalId].Id.Value }, Morning);
+
+        _session.Imports.SaveConnection(connection);
+        _session.Imports.SaveConnection(connection with { Cursor = "1760270400", LastSyncAt = Morning.AddHours(1) });
+
+        var stored = _session.Imports.Connections().Should().ContainSingle().Subject;
+        stored.Secret.Should().Be(Secret);
+        stored.Cursor.Should().Be("1760270400");
+        stored.Links.Should().BeEquivalentTo(connection.Links);
+        stored.LastSyncAt.Should().Be(Morning.AddHours(1));
+        Mossmint.Application.Export.ProfileExport.Files(_session.Data, "Juniper", Morning)
+            .Should().NotContain(f => f.Content.Contains("s3cret", StringComparison.Ordinal));
+
+        _session.Imports.RemoveConnection(connection.Id);
+
+        _session.Imports.Connections().Should().BeEmpty();
+    }
+
     private ImportPlan Apply(ConnectorSync sync)
     {
         var plan = _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd, _linked));

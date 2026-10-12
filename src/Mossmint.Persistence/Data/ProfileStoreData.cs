@@ -319,6 +319,37 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         db.SaveChanges();
     }
 
+    public IReadOnlyList<Connection> Connections() =>
+        [.. db.Connections.AsNoTracking().OrderBy(c => c.CreatedAt).AsEnumerable().Select(c => new Connection(
+            c.Id, c.Connector, c.Secret, c.Cursor, JsonSerializer.Deserialize<Dictionary<string, Guid>>(c.LinksJson, Json) ?? [], c.CreatedAt, c.LastSyncAt))];
+
+    public void SaveConnection(Connection connection)
+    {
+        var row = db.Connections.Find(connection.Id);
+        if (row is null)
+        {
+            row = db.Connections.Add(new ConnectionRow { Id = connection.Id, CreatedAt = connection.CreatedAt }).Entity;
+            Audit("connection.added", "Connection", connection.Id, connection.Connector);
+        }
+
+        row.Connector = connection.Connector;
+        row.Secret = connection.Secret;
+        row.Cursor = connection.Cursor;
+        row.LinksJson = JsonSerializer.Serialize(connection.Links, Json);
+        row.LastSyncAt = connection.LastSyncAt;
+        db.SaveChanges();
+    }
+
+    public void RemoveConnection(Guid id)
+    {
+        if (db.Connections.Find(id) is { } row)
+        {
+            db.Connections.Remove(row);
+            Audit("connection.removed", "Connection", id, row.Connector);
+            db.SaveChanges();
+        }
+    }
+
     private void StageAccount(Account account)
     {
         db.Accounts.Add(new AccountRow
