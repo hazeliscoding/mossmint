@@ -6,7 +6,7 @@ Mossmint is built so that your financial data never has to leave your computer. 
 
 - **Your profile:** accounts, balances, bills, income, debts, savings goals, transactions, scenarios, and where each value came from (typed in, a lender statement, an imported workbook cell). It lives in an encrypted database under `%LOCALAPPDATA%\Mossmint\Profiles\<profile-id>\`, outside the program folder, so updates never touch it.
 - **Import records:** the file name, a SHA-256 fingerprint and the sheet and cell of each imported value. Your original workbooks are opened read-only and never modified, moved or copied into Mossmint.
-- **Settings:** theme, layout and whether update checks are on.
+- **Settings:** theme, layout, and the daily update check: whether it's on, when it last ran and any version you put off, in `updates.json` beside the profiles, with no financial data.
 - **Backups:** encrypted `.mmbak` files written only where you choose, plus up to five local copies in the profile's folder when you ask for them. A backup's readable header names no person and holds no data; everything else needs your passphrase or recovery key.
 - **What shows before unlocking:** only each profile's name, so you can pick one. Everything else stays encrypted until you unlock.
 - **Your recovery key** is shown once when you create a profile and never stored by Mossmint. Keep it somewhere safe and offline.
@@ -21,12 +21,12 @@ Mossmint is built so that your financial data never has to leave your computer. 
 
 ## Network use you can opt into
 
-- **Update checks:** only when you click **Check now** in Settings. A check asks GitHub for the list of Mossmint releases and sends nothing about you or your data; GitHub sees your IP address. Details: [ADR-0003](docs/architecture/ADR-0003-update-check.md).
+- **Update checks:** when you click **Check now** in Settings, or once a day if you turn on the daily check (it's off unless you do). A check asks GitHub for the list of Mossmint releases and sends nothing about you or your data; GitHub sees your IP address. Details: [ADR-0003](docs/architecture/ADR-0003-update-check.md).
 - **Bank connections** (after the MVP, optional): each provider will document what it shares, where your credentials are kept, how to disconnect, and how to erase what was downloaded. Some providers process your bank data on their own servers; Mossmint will say so before you connect. See [the connector ADR](docs/connectors/ADR-provider-security.md).
 
 ## Exports
 
-Backups are encrypted. An unencrypted CSV/JSON export is planned as a separate feature with a clear warning, because anyone who gets the file can read it.
+Backups are encrypted. **Backups → Export…** writes an unencrypted copy (a JSON file and CSV files) to a folder you choose, only after a warning, because anyone who gets those files can read them. Nothing is exported unless you ask. Details: [backup and restore](docs/operations/backup-and-restore.md#exporting-a-readable-copy).
 
 ## Deleting your data
 
