@@ -227,7 +227,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] JSON and CSV export, with an explicit warning. Exported CSV is escaped so a spreadsheet can't run it as formulas. (Undoing the escaping moves to M7's CSV importer, the first importer to read CSV.)
 - [x] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
 - [ ] Code signing through Azure Artifact Signing.
-- [ ] Upgrade test: install, create a profile, back up, update, restore.
+- [x] Upgrade test: install, create a profile, back up, update, restore. The release workflow installs the previous release, makes a profile and backup with that release's own import tool, updates the install with Velopack's `Update.exe`, and has the installed app open the profile and restore the backup (`--verify-upgrade`). First run: 0.5.0 → 0.6.0, passed.
 - [x] A sample household: *Try a sample household* on Welcome opens a separate profile of made-up numbers, the same household the screenshots use.
 - [x] User docs: [docs/user/guide.md](docs/user/guide.md), a page-by-page tour with synthetic screenshots.
 
