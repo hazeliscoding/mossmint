@@ -86,6 +86,8 @@ flowchart TB
 | Interrupted upgrade leaves a half-migrated profile | A marker names the pre-upgrade snapshot until the upgrade finishes; the next open puts the snapshot back, or refuses the profile unchanged if it's missing | done in M6 |
 | Export leaks data or attacks a spreadsheet | Export runs only after an explicit *not encrypted* warning, into a new folder; CSV text starting with `= + - @`, tab or CR is prefixed with `'` | done in M6 |
 | Hostile workbook (zip bomb, XML entity expansion) | Built-in reader refuses DTDs, caps expanded size per part and in total, reads no external references | done in M3 |
+| Hostile bank file (odd encoding, formulas, huge rows) | Hand-written CSV reader capped at 64 MB; strict UTF-8 or a flagged Windows-1252 fallback; cells are only parsed as dates and numbers, never evaluated; an unreadable transaction blocks the import | done in M7 |
+| One transaction counted twice from two sources | One transaction source per account until 0.8 matches duplicates; typed entries on the same days are queued for review; a voided import stays void | done in M7 |
 | Import silently "fixes" a wrong figure | Mismatches become review items; imported figures stay *needs review* until confirmed | done in M3 |
 | Forecast reports a guess as fact | Provenance on every figure; *needs confirmation* and *never pays off* results | ADR-0002, M1 |
 | Malicious dependency or action | Central version pins, lock files, NuGet audit, Dependabot, actions pinned by SHA, checksummed tools | M0 |

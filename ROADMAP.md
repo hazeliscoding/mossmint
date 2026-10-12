@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M7 (v0.7): bank data in. M5's hand Narrator pass is still to do.
+**Next up:** M7 (v0.7): bank data in. CSV import is in; OFX/QFX and SimpleFIN are next. M5's hand Narrator pass is still to do.
 
 ## Releases
 
@@ -137,6 +137,15 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **The sample household lives on Welcome** (the test user's pick). A quiet *Try a sample household* link, not a card, creates a separate profile clearly named as a sample, filled with the made-up household the screenshots use. It opens on this PC and its passphrase is public (`sample household`), so it can always be unlocked, deleted or restored even without this PC; it has no recovery key. It can be deleted like any profile and never touches a real one. It lets someone try every page before typing a real number, and show Mossmint to a friend without showing their money.
 - **The daily update check tells you with a quiet strip** (the test user's pick). When the check is on and finds a newer version, a strip at the top of the app says so, with **Download** and **Not now**; *Not now* hides it until the next version. It shows only while Mossmint is open, never as a Windows notification, so the timing stays the user's. Download and restart stay separate steps, as today.
 
+## Decisions (2026-10-12, M7)
+
+- **SimpleFIN matters most to the test user.** Public sources say their bank offers only PDF statements (asked to confirm), so CSV and OFX won't reach it; SimpleFIN might, if the Bridge covers that bank (also asked). CSV comes first anyway, for everyone else. The owner has discussed the SimpleFIN Bridge subscription, which the user pays SimpleFIN directly, with the test user.
+- **A bank file goes into an account the user picks, or one the import creates.** Its records are keyed by the Mossmint account itself, so the next file finds the same account however it was created. Nothing goes into an account the user didn't choose.
+- **A CSV row's ID is its date, amount, description and how many identical rows came before it in the file.** Two identical coffees stay two transactions, and an overlapping file isn't imported twice. A bank that rewrites a description between downloads makes a new row; 0.8's duplicate matching catches those.
+- **Nothing in a bank file is guessed.** A row without a date (a totals line) is left out with a note; a dated row Mossmint can't read blocks the import. When every date could be month first or day first, the user picks, seeing how the first date reads each way.
+- **Mappings are remembered by the header row**, inside the encrypted profile, with the account each source account went to. Presets for YNAB, Monarch, Actual, Mint and Mossmint match by column names, not positions.
+- **Categories from other apps aren't imported yet.** M8 decides which categories Mossmint keeps; until then a category column is ignored rather than becoming a second category system.
+
 ## M0: Skeleton and guardrails (v0.3.0)
 
 - [x] Repo files: `README`, `ROADMAP`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `.editorconfig`, `.gitattributes`, `.gitignore`.
@@ -235,7 +244,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 ## M7: Bank data in (v0.7)
 
-- [ ] CSV with column mapping, through a hand-written parser:
+- [x] CSV with column mapping, through a hand-written parser (`docs/operations/bank-files.md`):
   - UTF-8 first, then Windows-1252 with a preview;
   - delimiters and date formats detected;
   - sign conventions and split debit/credit columns handled;
@@ -247,7 +256,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - The user claims a setup token once. The credentials live only in the encrypted profile, never in a URL.
   - Syncing is manual, with **Sync now**. Request windows overlap, and errors are shown per account.
 - [ ] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*.
-- [ ] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted.
+- [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review, and a voided import stays void.)
 - [ ] A forecast journal: each forecast is kept as it was made, for 0.9's backtests.
 
 **Done when:** every offline workflow still works with any connector unconfigured, stale or offline.

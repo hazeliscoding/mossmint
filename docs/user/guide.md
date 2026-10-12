@@ -36,6 +36,14 @@ A profile is one encrypted database on this PC. You choose its passphrase, and M
 
 When a balance is too old or unconfirmed, Mossmint says *needs confirmation* with the reason instead of guessing. Confirm a fresh balance and the answer comes back.
 
+## Bringing in your bank's transactions
+
+**Imports → Choose a CSV file…** reads a file your bank lets you download, or an export from YNAB, Monarch, Actual, Mint or Mossmint itself. Mossmint guesses which column holds the date, the description and the amount, showing an example from the file for each, and you choose the account the rows go to. If every date could be month first or day first (01/02/2026), it asks. **Preview the import** shows the dry run; nothing is saved until you choose **Import**. The next file from the same place opens already matched. Details: [bank files](../operations/bank-files.md).
+
+Until 0.8 can spot duplicates, each account takes transactions from one source. If you've also typed entries for the same days, Mossmint asks you to void any the file repeats.
+
+![Imports: matching a bank file's columns, each with an example, and choosing the account](../screenshots/import-bank-file-dark.png)
+
 ## Debts and scenarios
 
 **Debts** shows each loan and card with its balance, rate, payment and payoff date. **Confirm balance** keeps a debt current. If a payment can't cover the interest, it says *never pays off* rather than inventing a date.
