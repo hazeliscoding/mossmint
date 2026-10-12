@@ -4,7 +4,7 @@
 
 Mossmint is a local-first desktop app for paycheck forecasting and debt payoff planning. It tells you what is safe to spend before the next paycheck, which bills each paycheck has to cover, and what an extra debt payment really does to your cash. It works with the network off, it has no account to create, and nothing leaves your computer.
 
-> **Status:** early development; [v0.4.0 is out](https://github.com/hazeliscoding/mossmint/releases/latest) for Windows x64. It has the dashboard and daily flows (Overview, Cash Flow, Paychecks, Bills, Debts, Savings, Transactions, and setup for anyone without spreadsheets), on top of 0.3's financial engine, encrypted profiles with verified backups, and read-only workbook import. Scenarios and debt planning come next, in 0.5. See [ROADMAP.md](ROADMAP.md).
+> **Status:** early development; [v0.5.0 is out](https://github.com/hazeliscoding/mossmint/releases/latest) for Windows x64. It compares debt payoff orders and saves a payoff plan (Scenarios), on top of the dashboard and daily flows, encrypted profiles with verified backups, and read-only workbook import. The Windows release (code signing, export, an optional daily update check) comes next, in 0.6. See [ROADMAP.md](ROADMAP.md), and the [user guide](docs/user/guide.md) for a tour of the app.
 
 ![Overview: safe to spend until the next paycheck, the lowest point before payday, the next paycheck and a debt-free forecast, above 45 days of checking balance](docs/screenshots/overview-dark.png)
 

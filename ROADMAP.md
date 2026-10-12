@@ -229,7 +229,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [ ] Code signing through Azure Artifact Signing.
 - [ ] Upgrade test: install, create a profile, back up, update, restore.
 - [x] A sample household: *Try a sample household* on Welcome opens a separate profile of made-up numbers, the same household the screenshots use.
-- [ ] User docs.
+- [x] User docs: [docs/user/guide.md](docs/user/guide.md), a page-by-page tour with synthetic screenshots.
 
 **Done when:** clean install → new or imported profile → backup → update → restore passes, and the public repo holds no private financial content.
 
