@@ -15,6 +15,9 @@ public sealed record AppServices(
     public ImportService Imports { get; init; } = new(new Import.Excel.WorkbookImporter(), Clock);
 
     public IAppUpdates Updates { get; init; } = new VelopackUpdates();
+
+    // Where app-wide preferences are saved; null keeps them in memory only.
+    public string? PreferencesFolder { get; init; }
 }
 
 // The window-level moves a page can ask for.

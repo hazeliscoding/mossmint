@@ -351,6 +351,7 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadUpdateCommand))]
+    [NotifyPropertyChangedFor(nameof(ShowsUpdateStrip))]
     private string? _availableVersion;
 
     [ObservableProperty]
@@ -358,7 +359,10 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadUpdateCommand), nameof(RestartToUpdateCommand))]
+    [NotifyPropertyChangedFor(nameof(ShowsUpdateStrip))]
     private bool _isDownloaded;
+
+    private UpdatePreferences _preferences = services.PreferencesFolder is { } folder ? UpdatePreferences.Load(folder) : new();
 
     [ObservableProperty]
     private string? _updateStatus;
@@ -373,6 +377,22 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
     public string Version => services.Updates.Version;
 
     public bool IsInstalled => services.Updates.IsInstalled;
+
+    public bool CheckDaily
+    {
+        get => _preferences.CheckDaily;
+        set
+        {
+            if (value != CheckDaily)
+            {
+                Save(_preferences with { CheckDaily = value });
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    // The strip at the top of the app: a newer version, not put off and not yet downloaded.
+    public bool ShowsUpdateStrip => AvailableVersion is { } version && version != _preferences.NotNow && !IsDownloaded;
 
     public override void OnNavigatedTo()
     {
@@ -449,14 +469,51 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
     private void Report(string message, StatusTone tone) => (Status, StatusTone) = (message, tone);
 
     [RelayCommand(CanExecute = nameof(CanCheck))]
-    private Task CheckForUpdates() => Updating("Couldn't check for updates", async () =>
+    private Task CheckForUpdates() => Updating("Couldn't check for updates", Check);
+
+    // Runs at start-up and hourly. A successful check waits a day; a failed one
+    // (offline, rate-limited) is tried again an hour later. A downloaded update isn't re-checked.
+    public Task CheckDailyAsync() =>
+        !CheckDaily || !CanCheck() || IsDownloaded || (_preferences.LastChecked is { } last && services.Clock.GetUtcNow() - last < TimeSpan.FromDays(1))
+            ? Task.CompletedTask
+            : Updating("Couldn't check for updates", async () =>
+            {
+                await Check();
+                Save(_preferences with { LastChecked = services.Clock.GetUtcNow() });
+            });
+
+    private async Task Check()
     {
         (AvailableVersion, IsDownloaded, DownloadProgress) = (null, false, 0);
         AvailableVersion = await services.Updates.CheckAsync();
         (UpdateStatus, UpdateTone) = AvailableVersion is { } version
             ? ($"Mossmint {version} is available.", StatusTone.Info)
             : ("Mossmint is up to date.", StatusTone.Healthy);
-    });
+    }
+
+    [RelayCommand]
+    private void NotNow()
+    {
+        Save(_preferences with { NotNow = AvailableVersion });
+        OnPropertyChanged(nameof(ShowsUpdateStrip));
+    }
+
+    // Settings shows the progress and then offers the restart.
+    [RelayCommand]
+    private Task DownloadFromStrip()
+    {
+        navigator.OpenApp(Destination.Settings);
+        return DownloadUpdateCommand.ExecuteAsync(null);
+    }
+
+    private void Save(UpdatePreferences preferences)
+    {
+        _preferences = preferences;
+        if (services.PreferencesFolder is { } folder)
+        {
+            preferences.Save(folder);
+        }
+    }
 
     private bool CanCheck() => IsInstalled && !IsUpdating;
 

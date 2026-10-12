@@ -107,6 +107,19 @@
         </Grid>
       </Border>
 
+      <!-- The update strip (ADR-0003): quiet, never a Windows notification, and it never takes focus when it appears. -->
+      <Border DockPanel.Dock="Top" c:FormFocus.IsForm="True" IsVisible="{Binding Settings.ShowsUpdateStrip}"
+              Background="{DynamicResource BgElevated}" BorderBrush="{DynamicResource BorderHairline}" BorderThickness="0,0,0,1" Padding="24,8,16,8">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0" AutomationProperties.LiveSetting="Polite"
+                     Text="{Binding Settings.AvailableVersion, StringFormat='Mossmint {0} is ready. Download it now, or keep working and update later.'}" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button Classes="primary" Content="Download" Command="{Binding Settings.DownloadFromStripCommand}" AutomationProperties.Name="Download the update" />
+            <Button Classes="ghost" Content="Not now" Command="{Binding Settings.NotNowCommand}" AutomationProperties.Name="Not now, hide until a newer version" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
       <ScrollViewer>
         <ContentControl x:Name="Page" Content="{Binding CurrentPage}" Margin="24,20,24,24" AutomationProperties.LandmarkType="Main" AutomationProperties.Name="Page"
                         AutomationProperties.ControlTypeOverride="Group" AutomationProperties.IsControlElementOverride="True" />

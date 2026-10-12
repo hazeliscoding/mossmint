@@ -99,6 +99,11 @@ var screens = new (string Name, Func<Window> Create)[]
     ("import-preview", () => scenes.Imports(commit: false)),
     ("import-review", () => scenes.Imports(commit: true)),
     ("settings", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Settings))),
+    ("update-strip", () => scenes.Unlocked(vm =>
+    {
+        vm.OpenApp(Destination.Overview);
+        vm.Shell.Settings.AvailableVersion = "0.7.0";
+    })),
     ("connections", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Connections))),
     ("sidebar-collapsed", () => scenes.Unlocked(vm =>
     {

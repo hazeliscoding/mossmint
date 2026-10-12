@@ -14,7 +14,13 @@ internal sealed class FakeUpdates : IAppUpdates
 
     public bool IsInstalled { get; set; } = true;
 
-    public Task<string?> CheckAsync() => Failure is null ? Task.FromResult(Latest) : Task.FromException<string?>(Failure);
+    public int Checks { get; private set; }
+
+    public Task<string?> CheckAsync()
+    {
+        Checks++;
+        return Failure is null ? Task.FromResult(Latest) : Task.FromException<string?>(Failure);
+    }
 
     public Task DownloadAsync(Action<int> progress)
     {
@@ -86,6 +92,66 @@ public class UpdateFlowTests
         await running;
 
         app.Services.Context.ActiveWork.Should().Be(0);
+    }
+
+    // ADR-0003: off until the user turns it on, then GitHub is asked at most once a day.
+    [AvaloniaFact]
+    public async Task The_daily_check_is_off_by_default_and_asks_at_most_once_a_day()
+    {
+        var updates = new FakeUpdates { Latest = "0.4.0", Failure = new HttpRequestException("offline") };
+        using var app = new Harness(updates);
+        var settings = await OpenSettings(app);
+
+        settings.CheckDaily.Should().BeFalse();
+        await settings.CheckDailyAsync();
+        updates.Checks.Should().Be(0, "nothing is asked while the daily check is off");
+
+        settings.CheckDaily = true;
+        await settings.CheckDailyAsync();
+        updates.Failure = null;
+        await settings.CheckDailyAsync();
+        await settings.CheckDailyAsync();
+
+        updates.Checks.Should().Be(2, "a failed check is tried again, a successful one waits a day");
+        app.ViewModel.Shell.Settings.ShowsUpdateStrip.Should().BeTrue();
+        new SettingsPageViewModel(app.Services, app.ViewModel).CheckDaily.Should().BeTrue("the choice outlives a restart");
+    }
+
+    [AvaloniaFact]
+    public async Task Not_now_hides_the_strip_until_a_newer_version()
+    {
+        var updates = new FakeUpdates { Latest = "0.4.0" };
+        using var app = new Harness(updates);
+        var settings = await OpenSettings(app);
+        settings.CheckDaily = true;
+        await settings.CheckDailyAsync();
+
+        settings.NotNowCommand.Execute(null);
+        settings.ShowsUpdateStrip.Should().BeFalse();
+        var afterRestart = new SettingsPageViewModel(app.Services, app.ViewModel);
+        await afterRestart.CheckForUpdatesCommand.ExecuteAsync(null);
+        afterRestart.ShowsUpdateStrip.Should().BeFalse("0.4.0 was put off");
+
+        updates.Latest = "0.5.0";
+        await settings.CheckForUpdatesCommand.ExecuteAsync(null);
+        settings.ShowsUpdateStrip.Should().BeTrue();
+    }
+
+    [AvaloniaFact]
+    public async Task Download_on_the_strip_opens_settings_and_downloads()
+    {
+        var updates = new FakeUpdates { Latest = "0.4.0" };
+        using var app = new Harness(updates);
+        var settings = await OpenSettings(app);
+        settings.CheckDaily = true;
+        await settings.CheckDailyAsync();
+        app.ViewModel.Shell.Navigate(Destination.Overview);
+
+        await settings.DownloadFromStripCommand.ExecuteAsync(null);
+
+        app.ViewModel.Shell.CurrentPage.Should().BeSameAs(settings);
+        settings.IsDownloaded.Should().BeTrue();
+        settings.ShowsUpdateStrip.Should().BeFalse("Settings now offers the restart");
     }
 
     private static async Task<SettingsPageViewModel> OpenSettings(Harness app)

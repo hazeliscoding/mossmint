@@ -62,7 +62,10 @@ internal sealed class Harness : IDisposable
             new BackupService(locations, TimeProvider.System),
             Dialogs,
             new ProfileContext(),
-            TimeProvider.System);
+            TimeProvider.System)
+        {
+            PreferencesFolder = Root,
+        };
         if (updates is not null)
         {
             Services = Services with { Updates = updates };

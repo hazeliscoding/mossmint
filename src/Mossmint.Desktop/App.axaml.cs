@@ -1,5 +1,6 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Mossmint.Application.Backups;
 using Mossmint.Application.Profiles;
@@ -34,6 +35,11 @@ public partial class App : Avalonia.Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = CreateMainWindow();
+
+            // The daily update check, if the user turned it on: once now, then hourly; it asks GitHub at most once a day.
+            var settings = ((MainWindowViewModel)desktop.MainWindow.DataContext!).Shell.Settings;
+            _ = settings.CheckDailyAsync();
+            new DispatcherTimer(TimeSpan.FromHours(1), DispatcherPriority.Background, (_, _) => _ = settings.CheckDailyAsync()).Start();
 
             // Closing the app locks the profile: the database closes and the key is zeroed.
             desktop.Exit += (_, _) => Services.GetRequiredService<ProfileContext>().Dispose();
@@ -71,7 +77,10 @@ public partial class App : Avalonia.Application
             sp.GetRequiredService<IBackupService>(),
             sp.GetRequiredService<IDesktopDialogs>(),
             sp.GetRequiredService<ProfileContext>(),
-            sp.GetRequiredService<TimeProvider>()));
+            sp.GetRequiredService<TimeProvider>())
+        {
+            PreferencesFolder = sp.GetRequiredService<ProfileLocations>().Root,
+        });
         services.AddTransient<MainWindowViewModel>();
         ConfigureOverrides?.Invoke(services);
         return services;

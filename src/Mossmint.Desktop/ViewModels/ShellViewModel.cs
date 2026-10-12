@@ -30,13 +30,16 @@ public sealed partial class ShellViewModel : ViewModelBase
                 "Optional bank connections. Mossmint works fully without them.",
                 "No connections, by design",
                 "Mossmint never asks for bank logins and makes no network calls in normal use. File imports (CSV, OFX) and optional read-only feeds may come after the MVP, each with its own privacy notes and a way to disconnect and erase."), "IconPlug", null),
-            Nav(new SettingsPageViewModel(services, navigator), "IconSettings2", "Ctrl+,"),
+            Nav(Settings = new SettingsPageViewModel(services, navigator), "IconSettings2", "Ctrl+,"),
             Nav(new BackupsPageViewModel(services, navigator), "IconArchive", null),
         ];
         _selectedItem = NavItems[0];
     }
 
     public ProfileContext Context { get; }
+
+    // Also drives the update strip at the top of the app.
+    public SettingsPageViewModel Settings { get; }
 
     public ObservableCollection<NavItemViewModel> NavItems { get; }
 
