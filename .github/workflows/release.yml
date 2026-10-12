@@ -152,6 +152,48 @@ jobs:
           if (-not $check.WaitForExit(120000)) { throw "The installed app's self-check didn't finish" }
           Get-Content "$env:RUNNER_TEMP\installed-check.json"
           if ($check.ExitCode -ne 0) { throw "The installed app failed its encryption self-check" }
+      - name: Upgrade from the previous release
+        # A profile and backup made by the previous release's own import tool must survive Velopack updating that
+        # release's install to this build: the installed app then opens the profile and restores the backup.
+        # Runs whenever this build is newer than the latest published release, manual runs included.
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $previous = gh release list --repo $env:GITHUB_REPOSITORY --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName'
+          if (-not $previous -or [version]($env:VERSION -replace '-.*$') -le [version]($previous.TrimStart('v'))) {
+            "Nothing to upgrade from: $previous isn't older than $env:VERSION."
+            exit 0
+          }
+
+          $work = "$env:RUNNER_TEMP\up"
+          $env:MOSSMINT_DATA_ROOT = "$work\app-data"
+          git fetch --depth 1 origin "refs/tags/${previous}:refs/tags/${previous}"
+          git worktree add "$work\prev" $previous
+          dotnet run --project tools/Mossmint.ImportTool -c Release -- --write-samples "$work\workbooks"
+          if ($LASTEXITCODE -ne 0) { throw "Couldn't write the synthetic workbooks" }
+          dotnet run --project "$work\prev\tools\Mossmint.ImportTool" -c Release -- --data-root "$work\data" --profile Upgrade `
+            --secrets "$work\secrets.txt" --report "$work\report.txt" --backup "$work\upgrade.mmbak" (Get-ChildItem "$work\workbooks\*.xlsx").FullName
+          if ($LASTEXITCODE -ne 0) { throw "$previous's import tool didn't make the profile" }
+
+          gh release download $previous --repo $env:GITHUB_REPOSITORY --pattern Mossmint-Setup.exe --dir $work
+          $setup = Start-Process "$work\Mossmint-Setup.exe" -ArgumentList "--silent", "--installto", "$work\app" -PassThru
+          if (-not $setup.WaitForExit(300000) -or $setup.ExitCode -ne 0) { throw "$previous's Setup.exe failed" }
+          Start-Sleep -Seconds 10
+          Get-Process Mossmint.Desktop -ErrorAction SilentlyContinue | Stop-Process -Force
+
+          # What UpdateManager.ApplyUpdatesAndRestart does once a download finishes, without the restart.
+          $package = Get-ChildItem "releases\$env:PACK_ID-$env:VERSION-*full.nupkg" | Select-Object -First 1
+          $apply = Start-Process "$work\app\Update.exe" -ArgumentList "apply", "--silent", "--norestart", "--package", $package.FullName -PassThru -NoNewWindow
+          if (-not $apply.WaitForExit(300000) -or $apply.ExitCode -ne 0) { throw "Update.exe couldn't apply $env:VERSION" }
+          $exe = "$work\app\current\Mossmint.Desktop.exe"
+          $installed = (Get-Item $exe).VersionInfo.ProductVersion
+          if ($installed -notlike "$env:VERSION*") { throw "The install is still on $installed after the update" }
+
+          $check = Start-Process $exe -ArgumentList "--verify-upgrade", "$work\data", "$work\secrets.txt", "$work\upgrade.mmbak", "$work\upgrade-check.json" -PassThru -NoNewWindow
+          if (-not $check.WaitForExit(300000)) { throw "The upgrade check didn't finish" }
+          Get-Content "$work\upgrade-check.json"
+          if ($check.ExitCode -ne 0) { throw "The profile or backup from $previous didn't survive the update" }
       - name: Collect this version's files
         shell: bash
         run: |
