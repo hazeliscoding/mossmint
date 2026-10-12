@@ -14,7 +14,7 @@ public sealed record ConnectionRow(Connection Connection, string Title, string D
 // Optional bank connections, SimpleFIN for now. Nothing here touches the
 // network until the user connects or presses Sync now. The first sync is
 // previewed; later ones come straight in with a summary, and anything odd
-// goes to the review queue (the test user's pick, 2026-10-12).
+// goes to the review queue (ROADMAP.md, M7 decisions).
 public sealed partial class ConnectionsPageViewModel(AppServices services)
     : PageViewModel(Destination.Connections, "Connections", "Optional bank connections. Mossmint works fully without them.")
 {
