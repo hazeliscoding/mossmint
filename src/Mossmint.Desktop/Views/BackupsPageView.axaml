@@ -28,6 +28,28 @@
     </Border>
 
     <Border Classes="card" Padding="24,20">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="Export a readable copy" />
+        <TextBlock Classes="prose secondary"
+                   Text="A complete file of everything in this profile (profile.json), to keep or to move to another app, plus your transactions, bills and debts as CSV files that open in Excel. To move to another PC, back up instead." />
+        <Button Content="Export…" Command="{Binding StartExportCommand}" HorizontalAlignment="Left" IsVisible="{Binding !IsConfirmingExport}" />
+        <Border c:FormFocus.IsForm="True" Classes="separator-top" Padding="0,12,0,0" IsVisible="{Binding IsConfirmingExport}">
+          <StackPanel Spacing="10">
+            <c:StatusBadge Tone="Warning" Text="Not encrypted" HorizontalAlignment="Left" />
+            <TextBlock Classes="prose" TextWrapping="Wrap"
+                       Text="Anyone who opens these files can read your balances, transactions and debts, with no passphrase. Save them somewhere private, don't send them by email, and delete them when you're done." />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Classes="primary" Content="Choose a folder and export" Command="{Binding ExportCommand}" />
+              <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelExportCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <c:StatusBadge Tone="{Binding ExportTone}" Text="{Binding ExportStatus}" HorizontalAlignment="Left" AutomationProperties.LiveSetting="Polite"
+                       IsVisible="{Binding ExportStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" Padding="24,20">
       <StackPanel Spacing="10">
         <TextBlock Classes="section" Text="Restore" />
         <TextBlock Classes="prose secondary" Text="A restored backup becomes its own profile, so nothing here is overwritten." />

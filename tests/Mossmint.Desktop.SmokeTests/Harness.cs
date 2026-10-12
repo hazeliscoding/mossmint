@@ -23,6 +23,10 @@ internal sealed class FakeDialogs : IDesktopDialogs
 
     public Task<string?> PickBackupSaveLocationAsync(string suggestedName) => Task.FromResult(NextSave);
 
+    public string? NextFolder { get; set; }
+
+    public Task<string?> PickFolderAsync(string title) => Task.FromResult(NextFolder);
+
     public List<string> NextWorkbooks { get; } = [];
 
     public Task<IReadOnlyList<string>> PickWorkbooksAsync() => Task.FromResult<IReadOnlyList<string>>([.. NextWorkbooks]);

@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mossmint.Application.Data;
+using Mossmint.Application.Export;
 using Mossmint.Application.Forecasting;
 using Mossmint.Application.Profiles;
 using Mossmint.Desktop.Controls;
@@ -198,7 +199,7 @@ public static class OverviewCards
 }
 
 public sealed partial class BackupsPageViewModel(AppServices services, IAppNavigator navigator)
-    : PageViewModel(Destination.Backups, "Backups", "Encrypted backups you can restore on any PC.")
+    : PageViewModel(Destination.Backups, "Backups", "Encrypted backups you can restore on any PC, and readable exports.")
 {
     [ObservableProperty]
     private string? _status;
@@ -207,8 +208,18 @@ public sealed partial class BackupsPageViewModel(AppServices services, IAppNavig
     private StatusTone _statusTone = StatusTone.Neutral;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(BackUpNowCommand), nameof(KeepLocalCopyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackUpNowCommand), nameof(KeepLocalCopyCommand), nameof(ExportCommand))]
     private bool _isBusy;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ExportCommand))]
+    private bool _isConfirmingExport;
+
+    [ObservableProperty]
+    private string? _exportStatus;
+
+    [ObservableProperty]
+    private StatusTone _exportTone = StatusTone.Neutral;
 
     partial void OnIsBusyChanged(bool value) => services.Context.ActiveWork += value ? 1 : -1;
 
@@ -230,7 +241,61 @@ public sealed partial class BackupsPageViewModel(AppServices services, IAppNavig
     [RelayCommand]
     private void Restore() => navigator.ShowRestore();
 
+    [RelayCommand]
+    private void StartExport() => (IsConfirmingExport, ExportStatus) = (true, null);
+
+    [RelayCommand]
+    private void CancelExport() => IsConfirmingExport = false;
+
+    // Each export gets a new folder, so an earlier one is never overwritten.
+    [RelayCommand(CanExecute = nameof(CanExport))]
+    private async Task Export()
+    {
+        if (await services.Dialogs.PickFolderAsync("Choose where to save the export") is not { } parent)
+        {
+            return;
+        }
+
+        var now = services.Clock.GetLocalNow();
+        var files = ProfileExport.Files(services.Context.Current.Data, services.Context.ProfileName, now);
+        var name = string.Concat($"Mossmint export {services.Context.ProfileName} {now:yyyy-MM-dd}".Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '-' : c));
+        IsBusy = true;
+        try
+        {
+            var folder = await Task.Run(() =>
+            {
+                var folder = Path.Combine(parent, name);
+                for (var n = 2; Directory.Exists(folder) || File.Exists(folder); n++)
+                {
+                    folder = Path.Combine(parent, $"{name} ({n})");
+                }
+
+                Directory.CreateDirectory(folder);
+                foreach (var file in files)
+                {
+                    File.WriteAllText(Path.Combine(folder, file.Name), file.Content);
+                }
+
+                return folder;
+            });
+            ExportStatus = $"Exported to \"{Path.GetFileName(folder)}\". These files aren't encrypted: keep them private and delete them when you're done.";
+            ExportTone = StatusTone.Healthy;
+            IsConfirmingExport = false;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            ExportStatus = $"The export didn't complete: {e.Message}";
+            ExportTone = StatusTone.Critical;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private bool CanBackUp() => !IsBusy;
+
+    private bool CanExport() => IsConfirmingExport && !IsBusy;
 
     private async Task Run(Func<Application.Backups.BackupReport> backup)
     {

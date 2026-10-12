@@ -12,6 +12,8 @@ public interface IDesktopDialogs
 
     Task<string?> PickBackupSaveLocationAsync(string suggestedName);
 
+    Task<string?> PickFolderAsync(string title);
+
     Task<bool> SaveTextAsync(string suggestedName, string text, string title);
 
     // Paths of the workbooks the user picked; empty when they cancel.
@@ -48,6 +50,12 @@ internal sealed class AvaloniaDesktopDialogs : IDesktopDialogs
             FileTypeChoices = [Backup],
         });
         return file?.TryGetLocalPath();
+    }
+
+    public async Task<string?> PickFolderAsync(string title)
+    {
+        var folders = await Storage.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = title, AllowMultiple = false });
+        return folders.Count == 1 ? folders[0].TryGetLocalPath() : null;
     }
 
     public async Task<IReadOnlyList<string>> PickWorkbooksAsync()

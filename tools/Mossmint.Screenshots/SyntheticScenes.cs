@@ -201,6 +201,8 @@ internal sealed class SyntheticScenes : IDisposable
 
         public Task<string?> PickBackupSaveLocationAsync(string suggestedName) => Task.FromResult<string?>(null);
 
+        public Task<string?> PickFolderAsync(string title) => Task.FromResult<string?>(null);
+
         public Task<bool> SaveTextAsync(string suggestedName, string text, string title) => Task.FromResult(false);
 
         public Task<IReadOnlyList<string>> PickWorkbooksAsync() => Task.FromResult(workbooks);

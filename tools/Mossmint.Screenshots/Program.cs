@@ -91,6 +91,11 @@ var screens = new (string Name, Func<Window> Create)[]
     ("savings", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Savings))),
     ("transactions", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Transactions))),
     ("backups", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Backups))),
+    ("backups-export", () => scenes.Unlocked(vm =>
+    {
+        vm.OpenApp(Destination.Backups);
+        ((BackupsPageViewModel)vm.Shell.CurrentPage!).StartExportCommand.Execute(null);
+    })),
     ("import-preview", () => scenes.Imports(commit: false)),
     ("import-review", () => scenes.Imports(commit: true)),
     ("settings", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Settings))),

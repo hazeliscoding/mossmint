@@ -204,6 +204,37 @@ public class ProfileFlowTests
         unlockAgain.Profiles.Should().HaveCount(2);
     }
 
+    // Export writes readable files, so it only runs after its warning, and never over an earlier export.
+    [AvaloniaFact]
+    public async Task Export_runs_only_after_its_warning_and_writes_a_new_folder_each_time()
+    {
+        using var app = new Harness();
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        app.ViewModel.Shell.Navigate(Destination.Backups);
+        var backups = (BackupsPageViewModel)app.ViewModel.Shell.CurrentPage!;
+        app.Dialogs.NextFolder = Directory.CreateDirectory(Path.Combine(app.Root, "exports")).FullName;
+
+        backups.ExportCommand.CanExecute(null).Should().BeFalse("the warning comes first");
+        for (var i = 0; i < 2; i++)
+        {
+            backups.StartExportCommand.Execute(null);
+            backups.IsConfirmingExport.Should().BeTrue();
+            await backups.ExportCommand.ExecuteAsync(null);
+            backups.IsConfirmingExport.Should().BeFalse();
+        }
+
+        backups.ExportStatus.Should().StartWith("Exported to");
+        var folders = Directory.GetDirectories(app.Dialogs.NextFolder).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal).ToList();
+        folders.Should().HaveCount(2).And.AllSatisfy(f => f.Should().StartWith("Mossmint export Juniper "));
+        folders[1].Should().EndWith(" (2)");
+        Directory.GetFiles(Path.Combine(app.Dialogs.NextFolder, folders[0])).Select(Path.GetFileName)
+            .Should().BeEquivalentTo("profile.json", "transactions.csv", "bills.csv", "debts.csv");
+    }
+
     [AvaloniaFact]
     public async Task Settings_change_the_passphrase_and_delete_only_after_typing_the_name()
     {
