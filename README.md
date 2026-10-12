@@ -33,7 +33,7 @@ Details: [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md). How the number
 
 ## Install
 
-Download `Mossmint-Setup.exe` from the [latest release](https://github.com/hazeliscoding/mossmint/releases/latest). It installs for your Windows account only and needs no administrator rights. `SHA256SUMS` lists every file's checksum. Builds aren't code-signed yet, so Windows SmartScreen may warn on first launch: choose **More info**, then **Run anyway**.
+Download `Mossmint-Setup.exe` from the [latest release](https://github.com/hazeliscoding/mossmint/releases/latest). It installs for your Windows account only and needs no administrator rights. `SHA256SUMS` lists every file's checksum. From 0.6.0 the installer and app are code-signed, with Hazel Granados as publisher. Windows SmartScreen may still call a new release unrecognized until downloads build reputation: choose **More info**, check the publisher, then **Run anyway**.
 
 Uninstalling removes the app but never your profiles, which live in `%LOCALAPPDATA%\Mossmint`.
 
