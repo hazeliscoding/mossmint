@@ -83,6 +83,8 @@ flowchart TB
 | Real data committed to the public repo | `.gitignore`, CI private-file guard with positive control, secret scan of full history | M0 |
 | Import modifies or corrupts the original workbook | Read-only open, then work on an in-memory copy; SHA-256 before and after; no writes to source paths | done in M3 |
 | Failed import leaves a half-written profile | Encrypted snapshot, then one transaction; a preview overtaken by another import is refused | done in M3 |
+| Interrupted upgrade leaves a half-migrated profile | A marker names the pre-upgrade snapshot until the upgrade finishes; the next open puts the snapshot back, or refuses the profile unchanged if it's missing | done in M6 |
+| Export leaks data or attacks a spreadsheet | Export runs only after an explicit *not encrypted* warning, into a new folder; CSV text starting with `= + - @`, tab or CR is prefixed with `'` | done in M6 |
 | Hostile workbook (zip bomb, XML entity expansion) | Built-in reader refuses DTDs, caps expanded size per part and in total, reads no external references | done in M3 |
 | Import silently "fixes" a wrong figure | Mismatches become review items; imported figures stay *needs review* until confirmed | done in M3 |
 | Forecast reports a guess as fact | Provenance on every figure; *needs confirmation* and *never pays off* results | ADR-0002, M1 |

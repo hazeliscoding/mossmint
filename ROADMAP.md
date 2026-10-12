@@ -133,7 +133,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 ## Decisions (2026-10-11, M6)
 
 - **Code signing is set up for 0.6** (owner's call, reusing the signing account and certificate profile Prompuff uses). A dedicated app registration with no secrets trusts only the `release` environment, which only `v*` tags can deploy to, through a federated credential, and it may sign only with that one certificate profile. The account and profile names live in the environment's variables, not in the public workflow. The release job checks that both the installer and the app inside the portable package are signed; manual runs and forks still build unsigned. A newly signed installer still gets SmartScreen's "unrecognized app" warning, now showing the publisher's name, until downloads build reputation.
-- **Export gives both a complete file and spreadsheets** (the test user's pick). **Export** writes one JSON file holding the whole profile, as a copy to keep or a way to move to another app, plus CSV files of transactions, bills and debts that open in Excel. A warning comes first, because neither is encrypted.
+- **Export gives both a complete file and spreadsheets** (the test user's pick). **Export** writes one JSON file holding every record in the profile (all but the audit trail and import history), as a copy to keep or a way to move to another app, plus CSV files of transactions, bills and debts that open in Excel. A warning comes first, because neither is encrypted.
 - **The sample household lives on Welcome** (the test user's pick). A quiet *Try a sample household* link, not a card, creates a separate profile clearly named as a sample, filled with the made-up household the screenshots use. It can be deleted like any profile and never touches a real one. It lets someone try every page before typing a real number, and show Mossmint to a friend without showing their money.
 - **The daily update check tells you with a quiet strip** (the test user's pick). When the check is on and finds a newer version, a strip at the top of the app says so, with **Download** and **Not now**; *Not now* hides it until the next version. It shows only while Mossmint is open, never as a Windows notification, so the timing stays the user's. Download and restart stay separate steps, as today.
 
@@ -224,7 +224,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Velopack installer, release CI on tags, checksums (moved up for the handoff; see the releases decisions).
 - [x] Opt-in update check in Settings: **Check now**. It asks GitHub Releases only, through an explicit `GithubSource`, never Velopack's hosted service. Download and restart are separate steps, never during a backup or an import. Offline use never depends on it. ADR-0003 lists what GitHub sees. (Moved up ahead of M4; see the 2026-10-10 decisions.)
 - [ ] An optional daily update check, off by default.
-- [ ] JSON and CSV export, with an explicit warning. Exported CSV is escaped so a spreadsheet can't run it as formulas, and the importer undoes the escaping.
+- [x] JSON and CSV export, with an explicit warning. Exported CSV is escaped so a spreadsheet can't run it as formulas. (Undoing the escaping moves to M7's CSV importer, the first importer to read CSV.)
 - [x] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
 - [ ] Code signing through Azure Artifact Signing.
 - [ ] Upgrade test: install, create a profile, back up, update, restore.
@@ -239,7 +239,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - delimiters and date formats detected;
   - sign conventions and split debit/credit columns handled;
   - mappings saved by the header row's fingerprint;
-  - presets for exports from YNAB, Monarch, Actual and Mint, so history comes along.
+  - presets for exports from YNAB, Monarch, Actual and Mint, so history comes along;
+  - Mossmint's own `transactions.csv` read back, dropping the export's formula escaping (docs/operations/backup-and-restore.md).
 - [ ] OFX/QFX statement files through a hand-written, hardened parser (SGML 1.x and XML 2.x). Duplicates are caught by the bank's transaction ID.
 - [ ] SimpleFIN adapter:
   - The user claims a setup token once. The credentials live only in the encrypted profile, never in a URL.

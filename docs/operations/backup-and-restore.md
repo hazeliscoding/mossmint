@@ -89,3 +89,18 @@ A wrong secret, a truncated or altered file, a file that isn't a backup, or a ba
 ## Moving to a new PC
 
 Install Mossmint, choose *Restore an encrypted backup* on the welcome screen, pick the file and enter the passphrase or recovery key. No account, no network.
+
+## Exporting a readable copy
+
+*Backups → Export…* writes the profile out **unencrypted**, after a warning, into a new folder named `Mossmint export <profile> <date>` (an earlier export is never overwritten):
+
+| File | What it holds |
+| --- | --- |
+| `profile.json` | Every account with its balances and transactions, bills, paychecks, debts with their terms, savings goals and plan settings, as Mossmint keeps them. Enum values are names, not numbers. The audit trail and import review history stay in the profile and its backups. |
+| `transactions.csv` | One row per entry, oldest first. Void entries stay, marked `Void`. |
+| `bills.csv` | One row per bill, with its amount or estimate range and how it repeats. |
+| `debts.csv` | Each debt's latest balance, today's rate (a card's purchase rate) and payment. |
+
+The CSV files follow RFC 4180, start with a UTF-8 byte order mark so Excel reads accents, and write numbers (`-42.10`) and dates (`2026-10-08`) culture-free. A text cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading `'`, so a spreadsheet shows it as text instead of running it as a formula (OWASP's CSV injection advice). Amounts are numbers, not text, and keep their minus sign. An importer reading these files back drops that one leading `'`.
+
+An export can't be restored; only a backup can.
