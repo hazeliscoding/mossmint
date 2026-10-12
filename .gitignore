@@ -36,6 +36,10 @@ Thumbs.db
 *.db-shm
 *.sqlite
 *.sqlite3
+# Except the compatibility fixtures: synthetic profiles and backups made by each
+# release's own code (AGENTS.md).
+!/tests/Compatibility/*/*.mmbak
+!/tests/Compatibility/*/data/**/*.db
 /private/
 
 # Agent guidelines are committed; this overrides the global gitignore

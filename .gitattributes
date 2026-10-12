@@ -6,3 +6,6 @@
 *.ttf binary
 *.otf binary
 *.woff2 binary
+
+# Compatibility fixtures are pinned by checksum, byte for byte.
+tests/Compatibility/** -text

@@ -1,6 +1,8 @@
 # Fails if any given path looks like private financial data: spreadsheets,
 # bank exports, profile databases or backups. CI passes every tracked file.
-# Synthetic fixtures are generated at test time, so none of these belong in git.
+# Synthetic test data is generated at test time, so none of these belong in git, with
+# one exception: the compatibility fixtures' databases and backups, which each release's
+# own code makes (build/capture-fixture.ps1).
 #
 # Usage: ./build/check-private-files.ps1 -Paths (git ls-files) [-ExpectFailure]
 param(
@@ -15,10 +17,11 @@ $patterns = @(
     '\.(mossmint|mmbak)$',
     '(^|/)private/'
 )
+$fixture = '^tests/Compatibility/\d+\.\d+\.\d+/(backup\.mmbak|data/Profiles/[0-9a-f]{32}/(profile|snapshots/[^/]+)\.db)$'
 
 $hits = @($Paths | Where-Object {
     $path = $_ -replace '\\', '/'
-    $patterns | Where-Object { $path -match $_ } | Select-Object -First 1
+    $path -notmatch $fixture -and ($patterns | Where-Object { $path -match $_ } | Select-Object -First 1)
 })
 
 if ($ExpectFailure) {
