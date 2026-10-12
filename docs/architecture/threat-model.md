@@ -95,7 +95,9 @@ flowchart TB
 | Malicious dependency or action | Central version pins, lock files, NuGet audit, Dependabot, actions pinned by SHA, checksummed tools | M0 |
 | Tampered installer | SHA-256 checksums now; code signing and signed update feed before public release | M6 |
 | Tampered update | Only this repo's published GitHub Releases, over TLS; Velopack checks each package's SHA-256 against the release feed; code signing to follow | ADR-0003, M6 |
-| Connector credential leak | Stored only in the encrypted profile, redacted everywhere, revocable | Connector ADR, M7 |
+| Connector credential leak | SimpleFIN's access URL is stored only in the encrypted profile, sent as Basic auth over HTTPS with no redirects, kept out of logs, the audit trail, exports and error messages; disconnecting deletes it | done in M7 |
+| Hostile or spoofed SimpleFIN server | The token's host is shown (punycode) before claiming, with a warning for anything but the Bridge; HTTPS only; answers capped at 16 MB; provider text stripped of control and format characters | done in M7 |
+| A connection runs without the user | No request at startup, on unlock or on a timer; only *Connect* and *Sync now*; the architecture tests allow network code only in the SimpleFIN project | done in M7 |
 
 ## Open items
 

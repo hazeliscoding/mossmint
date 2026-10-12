@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M7 (v0.7): bank data in. CSV and OFX/QFX import are in; SimpleFIN and the forecast journal are next. M5's hand Narrator pass is still to do.
+**Next up:** M7 (v0.7): bank data in. CSV, OFX/QFX and SimpleFIN are in; erasing on disconnect and the forecast journal are next. M5's hand Narrator pass is still to do.
 
 ## Releases
 
@@ -146,6 +146,10 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **Mappings are remembered by the header row**, inside the encrypted profile, with the account each source account went to. Presets for YNAB, Monarch, Actual, Mint and Mossmint match by column names, not positions.
 - **A statement's account is remembered by a hash of its bank and account numbers.** The number itself is never stored; screens show its type and last four digits.
 - **A balance the bank reported is confirmed**, from a statement file or a connection, so a fresh one clears *needs confirmation*. A card statement showing a credit goes to review, since a few banks sign card balances the other way.
+- **A connection feeds the accounts the user links it to,** with the same keys as bank files, so one source per account covers connections too. A bank account left out is remembered and not asked about again.
+- **The first SimpleFIN sync is previewed and reaches 90 days back; later syncs come straight in with a summary**, and anything odd goes to the review queue. Both are the recommendation put to the test user, built as the default while they decide; either is a small change.
+- **Pending transactions wait for 0.8,** which links a pending charge to what posts; until then SimpleFIN syncs only posted ones.
+- **Only `Mossmint.Connectors.SimpleFin` may use the network,** enforced by the architecture tests, which also check it really does. Nothing connects at startup, on unlock or on a timer.
 - **Categories from other apps aren't imported yet.** M8 decides which categories Mossmint keeps; until then a category column is ignored rather than becoming a second category system.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -254,9 +258,10 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - presets for exports from YNAB, Monarch, Actual and Mint, so history comes along;
   - Mossmint's own `transactions.csv` read back, dropping the export's formula escaping (docs/operations/backup-and-restore.md).
 - [x] OFX/QFX statement files through a hand-written, hardened parser (SGML 1.x and XML 2.x). Duplicates are caught by the bank's transaction ID.
-- [ ] SimpleFIN adapter:
-  - The user claims a setup token once. The credentials live only in the encrypted profile, never in a URL.
-  - Syncing is manual, with **Sync now**. Request windows overlap, and errors are shown per account.
+- [x] SimpleFIN adapter ([ADR](docs/connectors/ADR-simplefin.md)):
+  - The user claims a setup token once. The credentials live only in the encrypted profile and travel as Basic auth, never in a request URL.
+  - Syncing is manual, with **Sync now**. Request windows overlap by five days, and errors are shown per account.
+  - [ ] Disconnecting can also erase what the connection brought in (the provider ADR's promise).
 - [x] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*. (Statement files now; SimpleFIN goes through the same path.)
 - [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review, and a voided import stays void.)
 - [ ] A forecast journal: each forecast is kept as it was made, for 0.9's backtests.

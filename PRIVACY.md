@@ -5,7 +5,8 @@ Mossmint is built so that your financial data never has to leave your computer. 
 ## What Mossmint stores
 
 - **Your profile:** accounts, balances, bills, income, debts, savings goals, transactions, scenarios, and where each value came from (typed in, a lender statement, an imported workbook cell). It lives in an encrypted database under `%LOCALAPPDATA%\Mossmint\Profiles\<profile-id>\`, outside the program folder, so updates never touch it.
-- **Import records:** the file name, a SHA-256 fingerprint and the sheet and cell of each imported value. Your original workbooks are opened read-only and never modified, moved or copied into Mossmint.
+- **Import records:** the file name, a SHA-256 fingerprint and where in the file each imported value came from (a sheet and cell, a CSV line, a statement's transaction ID). Your original files are opened read-only and never modified, moved or copied into Mossmint. A bank statement's account number isn't kept: Mossmint remembers the account by a one-way hash of it and shows only its last four digits. How a CSV's columns were matched is kept so the next file opens matched.
+- **Connections:** if you connect SimpleFIN, the access key it hands over, where the last sync stopped, and which of your accounts each bank account feeds. They live only in the encrypted profile, never in logs, exports or messages.
 - **Settings:** theme, layout, and the daily update check: whether it's on, when it last ran and any version you put off, in `updates.json` beside the profiles, with no financial data.
 - **Backups:** encrypted `.mmbak` files written only where you choose, plus up to five local copies in the profile's folder when you ask for them. A backup's readable header names no person and holds no data; everything else needs your passphrase or recovery key.
 - **What shows before unlocking:** only each profile's name, so you can pick one. Everything else stays encrypted until you unlock.
@@ -14,7 +15,7 @@ Mossmint is built so that your financial data never has to leave your computer. 
 ## What Mossmint never does
 
 - It never sends your data anywhere. There is no Mossmint account, server, cloud sync or analytics.
-- It makes no network calls in normal use. The app works fully with the network off.
+- It makes no network calls in normal use. The app works fully with the network off, and nothing connects on its own: no request runs at startup, on unlock or on a timer.
 - It never asks for bank usernames or passwords, never logs into a bank website, and never moves money.
 - It never sends your data to an AI service, and no financial decision is made by a language model.
 - It never puts balances, transaction descriptions, account numbers, file paths or keys in its logs.
@@ -22,7 +23,7 @@ Mossmint is built so that your financial data never has to leave your computer. 
 ## Network use you can opt into
 
 - **Update checks:** when you click **Check now** in Settings, or once a day if you turn on the daily check (it's off unless you do). A check asks GitHub for the list of Mossmint releases and sends nothing about you or your data; GitHub sees your IP address. Details: [ADR-0003](docs/architecture/ADR-0003-update-check.md).
-- **Bank connections** (after the MVP, optional): each provider will document what it shares, where your credentials are kept, how to disconnect, and how to erase what was downloaded. Some providers process your bank data on their own servers; Mossmint will say so before you connect. See [the connector ADR](docs/connectors/ADR-provider-security.md).
+- **SimpleFIN** (optional, from 0.7): a separate paid service. You sign in to your bank at SimpleFIN, not in Mossmint, and SimpleFIN and the company it uses to reach your bank see your accounts, balances and transactions. Mossmint contacts the SimpleFIN server named in your setup token only when you connect and when you press **Sync now**, over HTTPS, and receives account names, balances and up to 90 days of transactions per sync. Disconnecting deletes the key Mossmint kept; remove Mossmint's access in SimpleFIN too. What a sync brought in stays, like any import. Details: [the SimpleFIN ADR](docs/connectors/ADR-simplefin.md) and [the connector ADR](docs/connectors/ADR-provider-security.md).
 
 ## Exports
 
