@@ -40,6 +40,9 @@ public enum ImportOrigin
 {
     Workbook,
     Connector,
+
+    // A CSV or statement file downloaded from a bank or exported by another app.
+    BankFile,
 }
 
 public enum FindingSeverity
