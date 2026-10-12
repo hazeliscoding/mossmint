@@ -38,11 +38,11 @@ When the import is saved, the mapping and the accounts you picked are stored in 
 | Positive amounts and a debit/credit column | `4.50`, `debit` |
 | As Mossmint exported them | Mossmint's own `transactions.csv` |
 
-Currency symbols, thousands separators, `(4.50)` and `4.50-` are understood; decimal commas are detected. How the amounts are signed in Mossmint is in [financial models](../financial-models/README.md#imported-transactions).
+Currency symbols, thousands separators, `(4.50)` and `4.50-` are understood; decimal commas are detected. An amount with two signs (`(-4.50)`), more digits than any amount has, or a negative value in a column that already says which way the money went (money out, money in, or next to *debit*/*credit*) isn't read: it could be a reversal, so the row blocks with `csv-amount` rather than being guessed. How the amounts are signed in Mossmint is in [financial models](../financial-models/README.md#imported-transactions).
 
 ### Dates
 
-Mossmint lists every format that reads all the dates in the column. When `01/02/2026` could be January or February, the screen flags it and shows how the first date reads each way, so the choice is yours. A time after the date is ignored.
+Mossmint lists every format that reads all the dates in the column; a cell with no digits, like *Total*, doesn't count against a format. When `01/02/2026` could be January or February, the screen flags it and shows how the first date reads each way, so the choice is yours. A time after the date is ignored.
 
 ## What's left out, what blocks
 
@@ -50,7 +50,7 @@ Mossmint lists every format that reads all the dates in the column. When `01/02/
 |---|---|---|
 | `csv-row-skipped` | Note | A row has no date, like a totals line |
 | `csv-date-format` | Blocking | Most rows don't have a date in the chosen format |
-| `csv-amount` | Blocking | A dated row's amount can't be read |
+| `csv-amount` | Blocking | A dated row's amount can't be read, or its sign is ambiguous |
 | `csv-fractional-amount` | Blocking | An amount has fractions of a cent |
 | `csv-void-skipped` | Note | A Mossmint export's void entries |
 | `csv-account-skipped` | Note | Rows for a source account you left out |

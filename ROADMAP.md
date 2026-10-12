@@ -264,7 +264,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - Syncing is manual, with **Sync now**. Request windows overlap by five days, and errors are shown per account.
   - [x] Disconnecting can also erase the transactions and balances the connection brought in (the provider ADR's promise); accounts and import history stay.
 - [x] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*. (Statement files now; SimpleFIN goes through the same path.)
-- [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review, and a voided import stays void.)
+- [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review; an imported entry can be voided from the ledger, and stays void on later imports.)
 - [x] A forecast journal: each forecast is kept as it was made, for 0.9's backtests. (The forecast the app shows, once a day; the rules are in `docs/financial-models/README.md`.)
 
 **Done when:** every offline workflow still works with any connector unconfigured, stale or offline. (Checked by `OfflineTests`: every screen, entries, the forecast and a backup with no connection and with a stale real SimpleFIN connection, with no network activity; and by `ConnectionsFlowTests`: a refused or unreachable sync changes nothing.)

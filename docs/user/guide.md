@@ -40,7 +40,7 @@ When a balance is too old or unconfirmed, Mossmint says *needs confirmation* wit
 
 **Imports → Choose a file…** reads a CSV or OFX/QFX statement your bank lets you download, or an export from YNAB, Monarch, Actual, Mint or Mossmint itself. A statement names its accounts, so you only choose where each one goes, and the balance it reports counts as confirmed. For a CSV, Mossmint guesses which column holds the date, the description and the amount, showing an example from the file for each, and you choose the account the rows go to. If every date could be month first or day first (01/02/2026), it asks. **Preview the import** shows the dry run; nothing is saved until you choose **Import**. The next file from the same place opens already matched. Details: [bank files](../operations/bank-files.md).
 
-Until 0.8 can spot duplicates, each account takes transactions from one source. If you've also typed entries for the same days, Mossmint asks you to void any the file repeats.
+Until 0.8 can spot duplicates, each account takes transactions from one source. If you've also typed entries for the same days, Mossmint asks you to void any the file repeats. An imported entry can be voided on **Transactions** too, and importing the file again won't bring it back.
 
 ![Imports: matching a bank file's columns, each with an example, and choosing the account](../screenshots/import-bank-file-dark.png)
 

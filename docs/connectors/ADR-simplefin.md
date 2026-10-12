@@ -25,10 +25,10 @@ This is the first code in Mossmint that makes a network call other than the opt-
 ### Syncing
 
 - `GET {access URL}/accounts?version=2&start-date=…`, with the URL's credentials sent as HTTP Basic auth, never in the request line. Redirects are not followed, cookies are off, and TLS certificates are verified by the platform.
-- The first sync asks for 90 days, the Bridge's limit per request. Later syncs start 5 days before the previous one, as the Bridge advises, so late-posting transactions aren't missed; transaction IDs make the overlap harmless. A gap of more than 85 days is clamped to 90 and reported.
+- The first sync asks for 90 days, the Bridge's limit per request. Later syncs start 5 days before the previous one, as the Bridge advises, so late-posting transactions aren't missed; transaction IDs make the overlap harmless. A gap of more than 85 days is clamped to 90 and reported. When the bank reported a problem for a linked account, the window isn't moved on, so the next sync asks for those days again; an account linked after the first sync starts the window over, so it gets its own 90 days.
 - Pending transactions are left out until 0.8 can link a pending charge to what posts.
 - Amounts and balances arrive from the account holder's side and are turned around for cards and loans. A balance carries its own `balance-date` and counts as confirmed.
-- The provider's `errlist` messages are shown per account and queued for review. Its text is stripped of control characters and capped before display.
+- The provider's `errlist` messages are shown per account and queued for review; a problem with a whole bank connection counts for each of its accounts. Its text is stripped of control characters and capped before display.
 - Each SimpleFIN account feeds a Mossmint account the user links it to, or is left out. One transaction source per account still applies.
 
 ### Failures
