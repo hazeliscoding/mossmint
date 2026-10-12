@@ -18,6 +18,7 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - Importer tests use the synthetic workbooks in `samples/Mossmint.Samples/Workbooks`. When the importer learns a new workbook quirk, add it there as a `WorkbookQuirks` switch.
 - Public files (code, docs, commits, issues, PRs) don't name the private user, their lenders or their workbook file names. Sheet names and column labels may appear in importer code; recognize workbooks by structure, never by file name.
 - Never use `git add -f`. `.gitignore` blocks spreadsheets and databases on purpose.
+- **The one exception is `tests/Compatibility/<version>/`:** each release's synthetic profile and backup, made by that release's own import tool from the synthetic workbooks with `pwsh build/capture-fixture.ps1 -Tag vX.Y.Z`, and pinned by `SHA256SUMS`. Only that script writes there. A fixture is never edited or captured again; a failing `CompatibilityTests` is fixed in the code. The private-file guard lets nothing else through.
 
 ## Privacy contract
 
@@ -61,6 +62,7 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - `dotnet format --verify-no-changes` is the format check CI runs.
 - `dotnet run --project tools/Mossmint.Screenshots -- <out-dir>` renders synthetic screenshots.
 - `pwsh build/pack.ps1 [-Version x.y.z]` publishes win-x64 and packs a Velopack installer into `artifacts/releases`.
+- `pwsh build/capture-fixture.ps1 -Tag vX.Y.Z` captures a released tag's compatibility fixture into `tests/Compatibility/`.
 - `Mossmint.Desktop.exe --verify-encryption [report.json]` proves a build encrypts profiles (exit code 0 = pass). Run it against packaged builds.
 - `dotnet ef migrations add <Name> --project src/Mossmint.Persistence --startup-project src/Mossmint.Persistence --output-dir Data/Migrations --namespace Mossmint.Persistence.Data.Migrations` adds a schema migration.
 - Set `MOSSMINT_DATA_ROOT` to a temporary folder whenever you run the app for testing; never point tools at `%LOCALAPPDATA%\Mossmint`.
@@ -72,7 +74,7 @@ These are the working rules for agents in this repo. Mossmint is a local-first W
 - **No AI attribution** in commits or PRs: no `Co-Authored-By` trailers, no "Generated with" lines, no session links.
 - **Checks:** automate acceptance checks. Every check for an absence gets a positive control.
 - **Branches:** commit and push straight to `main` until 1.0. From 1.0 on, `main` is protected and every change lands through a pull request.
-- **Releases:** the version bump in `Directory.Build.props` is its own commit, `chore(release): x.y.z`. Once CI passes, tag that commit on `main` and push the tag; the workflow opens a draft release, and the owner publishes it. `v*` tags can't be moved or deleted. Release notes and Discord posts never mention private data.
+- **Releases:** the version bump in `Directory.Build.props` is its own commit, `chore(release): x.y.z`. Once CI passes, tag that commit on `main` and push the tag; the workflow opens a draft release, and the owner publishes it. Then capture the release's compatibility fixture and commit it as `test(compat): add the x.y.z fixture`. `v*` tags can't be moved or deleted. Release notes and Discord posts never mention private data.
 - **Docs:** short. Prefer editing `ROADMAP.md` over new planning documents.
 - **Diagrams** are Mermaid (flowcharts, sequence, state, ER) in fenced `mermaid` blocks, never ASCII art.
 - **Comments** explain why, not what: a constraint, a financial rule and its source, a workaround and its cause. No boilerplate XML docs, no commented-out code.

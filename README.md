@@ -56,6 +56,7 @@ Contributor setup and checks: [CONTRIBUTING.md](CONTRIBUTING.md).
 2. Tag that commit and push the tag: `git tag v0.3.0 && git push origin v0.3.0`. Release tags can't be moved or deleted. A tag with a pre-release suffix, such as `v0.4.0-beta.1`, makes a beta on the `win-beta` channel.
 3. The [Release workflow](.github/workflows/release.yml) tests and packs Mossmint, launches the portable build, installs with `Setup.exe`, runs the encryption self-check on both, updates an install of the previous release to the new build and checks that a profile and backup made by that release still open, and opens a **draft** GitHub Release with the installer, the portable zip, the Velopack update files and `SHA256SUMS`.
 4. Read the draft, write its notes, and publish it.
+5. Capture the release's compatibility fixture with `pwsh build/capture-fixture.ps1 -Tag vX.Y.Z` and commit it. Every later build must open it (`CompatibilityTests`).
 
 Running the workflow by hand from the Actions tab builds the same files without publishing anything. `pwsh build/pack.ps1` packs locally.
 
