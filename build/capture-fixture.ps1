@@ -22,6 +22,10 @@ try {
     dotnet run --project "$work/release/tools/Mossmint.ImportTool" -c Release -- --data-root "$out/data" --profile Fixture `
         --secrets "$out/secrets.txt" --report "$work/report.txt" --backup "$out/backup.mmbak" (Get-ChildItem "$work/workbooks/*.xlsx").FullName
 
+    # The tests need only the passphrase, and a secret scanner rightly flags a recovery key.
+    $secrets = Get-Content "$out/secrets.txt" | Where-Object { $_ -notlike 'Recovery key: *' }
+    [IO.File]::WriteAllText("$out/secrets.txt", ($secrets -join "`n") + "`n")
+
     # Opening a profile upgrades it, so today's code counts the records in a copy.
     Copy-Item "$out/data" "$work/check" -Recurse
     dotnet run --project "$repo/src/Mossmint.Desktop" -c Release -- --verify-upgrade "$work/check" "$out/secrets.txt" "$out/backup.mmbak" "$out/upgrade-check.json"
