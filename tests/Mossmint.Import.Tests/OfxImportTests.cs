@@ -86,8 +86,11 @@ public sealed class OfxImportTests
     [Fact]
     public void Two_statements_sent_to_one_account_keep_their_transactions_apart()
     {
-        var twice = OfxReaderTests.Sgml.Replace("</BANKMSGSRSV1>", OfxReaderTests.Sgml[OfxReaderTests.Sgml.IndexOf("<STMTTRNRS>", StringComparison.Ordinal)..
-            (OfxReaderTests.Sgml.IndexOf("</STMTTRNRS>", StringComparison.Ordinal) + "</STMTTRNRS>".Length)].Replace("000123456789", "000999888777", StringComparison.Ordinal) + "</BANKMSGSRSV1>", StringComparison.Ordinal);
+        var sgml = OfxReaderTests.Sgml;
+        var start = sgml.IndexOf("<STMTTRNRS>", StringComparison.Ordinal);
+        var end = sgml.IndexOf("</STMTTRNRS>", StringComparison.Ordinal) + "</STMTTRNRS>".Length;
+        var second = sgml[start..end].Replace("000123456789", "000999888777", StringComparison.Ordinal);
+        var twice = sgml.Replace("</BANKMSGSRSV1>", second + "</BANKMSGSRSV1>", StringComparison.Ordinal);
         var (file, ofx) = Read(twice);
         var targets = ofx.Statements.ToDictionary(OfxImport.AccountKey, _ => Checking);
 
