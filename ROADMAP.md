@@ -228,7 +228,8 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
 - [ ] Code signing through Azure Artifact Signing.
 - [ ] Upgrade test: install, create a profile, back up, update, restore.
-- [ ] User docs and a sample-data generator.
+- [x] A sample household: *Try a sample household* on Welcome opens a separate profile of made-up numbers, the same household the screenshots use.
+- [ ] User docs.
 
 **Done when:** clean install → new or imported profile → backup → update → restore passes, and the public repo holds no private financial content.
 

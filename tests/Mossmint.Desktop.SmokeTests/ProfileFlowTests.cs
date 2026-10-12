@@ -204,6 +204,22 @@ public class ProfileFlowTests
         unlockAgain.Profiles.Should().HaveCount(2);
     }
 
+    // A sample to explore before typing a real number: its own profile, named as a sample, opened on this PC.
+    [AvaloniaFact]
+    public async Task Try_a_sample_household_opens_a_separate_sample_profile()
+    {
+        using var app = new Harness();
+        app.Open();
+
+        await app.ViewModel.Welcome.TrySampleCommand.ExecuteAsync(null);
+
+        app.ViewModel.CurrentScreen.Should().BeSameAs(app.ViewModel.Shell);
+        app.ViewModel.Shell.CurrentPage!.Destination.Should().Be(Destination.Overview);
+        var profile = app.Services.Profiles.List().Should().ContainSingle().Subject;
+        (profile.Name, profile.UnlocksOnThisDevice).Should().Be(("Sample household", true));
+        app.Services.Context.Current.Data.Bills().Should().NotBeEmpty();
+    }
+
     // Export writes readable files, so it only runs after its warning, and never over an earlier export.
     [AvaloniaFact]
     public async Task Export_runs_only_after_its_warning_and_writes_a_new_folder_each_time()
