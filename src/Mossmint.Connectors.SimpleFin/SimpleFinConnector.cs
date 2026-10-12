@@ -69,14 +69,12 @@ internal sealed class SimpleFinConnector(SimpleFinProvider provider, string cred
     {
         using var document = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 32 });
         var root = document.RootElement;
-        foreach (var error in Items(root, "errlist"))
+        var reported = Items(root, "errlist")
+            .Select(e => (Account: Text(e, "account_id"), Connection: Text(e, "conn_id"), Message: Clean(Text(e, "msg") ?? Text(e, "code") ?? "Unknown problem")))
+            .ToList();
+        if (reported.Count == 0)
         {
-            errors.Add(new ConnectorError(Text(error, "account_id"), Clean(Text(error, "msg") ?? Text(error, "code") ?? "Unknown problem")));
-        }
-
-        if (errors.Count == 0)
-        {
-            errors.AddRange(Items(root, "errors").Where(e => e.ValueKind == JsonValueKind.String).Select(e => new ConnectorError(null, Clean(e.GetString()!))));
+            reported.AddRange(Items(root, "errors").Where(e => e.ValueKind == JsonValueKind.String).Select(e => ((string?)null, (string?)null, Clean(e.GetString()!))));
         }
 
         var connections = Items(root, "connections").ToDictionary(c => Text(c, "conn_id") ?? "", c => Clean(Text(c, "name") ?? ""));
@@ -109,6 +107,14 @@ internal sealed class SimpleFinConnector(SimpleFinProvider provider, string cred
                 transactions.Add(new ConnectorTransaction(id, Text(t, "id") ?? throw new FormatException("A transaction has no id."), Day(posted, zone),
                     new Money(Amount(Text(t, "amount")), currency), false, Clean(Text(t, "description") ?? Text(t, "payee") ?? "")));
             }
+        }
+
+        // A problem with a whole bank connection is a problem for each of its accounts.
+        var connectionOf = Items(root, "accounts").Where(a => Text(a, "id") is not null).ToDictionary(a => Text(a, "id")!, a => Text(a, "conn_id"));
+        foreach (var (account, connection, message) in reported)
+        {
+            var affected = account is not null || connection is null ? [account] : connectionOf.Where(a => a.Value == connection).Select(a => (string?)a.Key).ToList();
+            errors.AddRange((affected.Count == 0 ? [null] : affected).Select(id => new ConnectorError(id, message)));
         }
 
         return new ConnectorSync(SimpleFinProvider.ProviderId, now, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), accounts, balances, transactions, [])

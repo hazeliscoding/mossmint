@@ -17,8 +17,10 @@ public sealed partial class ProfileContext : ObservableObject, IDisposable
 
     public string ProfileInitial => ProfileName[..1].ToUpperInvariant();
 
-    // Backups and imports count themselves in while they run, so an update restart can't cut one short.
-    public int ActiveWork { get; set; }
+    // Backups, imports and syncs count themselves in while they run, so neither
+    // an update restart nor a lock can cut one short.
+    [ObservableProperty]
+    private int _activeWork;
 
     public IProfileSession Current => Session ?? throw new InvalidOperationException("No profile is unlocked.");
 

@@ -65,7 +65,7 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     private string? _linkError;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ConnectCommand), nameof(SyncCommand), nameof(ContinueCommand), nameof(ImportCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConnectCommand), nameof(SyncCommand), nameof(ContinueCommand), nameof(ImportCommand), nameof(StartDisconnectCommand))]
     private bool _isBusy;
 
     public bool HasConnections => Connections.Count > 0;
@@ -233,7 +233,7 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     [RelayCommand]
     private void CancelPreview() => (Preview, _pending) = (null, null);
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsIdle))]
     private void StartDisconnect(ConnectionRow row) => (ConfirmingDisconnect, EraseOnDisconnect) = (row, false);
 
     [RelayCommand]
@@ -256,7 +256,9 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
             kept = $"removed {Count(transactions, "transaction")} and {Count(balances, "balance")} it brought in";
         }
 
-        ConfirmingDisconnect = null;
+        // A sync still waiting on links or a preview belongs to the connection just removed.
+        (ConfirmingDisconnect, Preview, _pending, IsLinking, LinkError) = (null, null, null, false, null);
+        Linking.Clear();
         Refresh();
         Show($"Disconnected. Mossmint deleted the key it kept and {kept}. Remove Mossmint's access in {ProviderName} too.", StatusTone.Neutral);
     }
@@ -336,11 +338,19 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     private async Task Commit(Pending pending, ImportPlan plan)
     {
         var session = pending.Session;
-        if (!services.Context.IsCurrent(session))
+        if (!services.Context.IsCurrent(session) || !session.Imports.Connections().Any(c => c.Id == pending.Connection.Id))
         {
             Reset();
             return;
         }
+
+        // A problem the bank reported for a linked account keeps the window
+        // open, so the next sync asks for those days again; an account linked
+        // after the first sync starts it over, so it gets its own 90 days.
+        var problem = pending.Sync.Errors.Any(e => e.AccountExternalId is { } id && pending.Links.GetValueOrDefault(id) != Guid.Empty);
+        var newlyLinked = pending.Connection.LastSyncAt is not null
+            && pending.Links.Any(l => l.Value != Guid.Empty && !pending.Connection.Links.ContainsKey(l.Key));
+        var cursor = newlyLinked ? null : problem ? pending.Connection.Cursor : pending.Sync.Cursor;
 
         try
         {
@@ -349,7 +359,7 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
                 ImportService.Commit(session, plan);
                 session.Imports.SaveConnection(pending.Connection with
                 {
-                    Cursor = pending.Sync.Cursor,
+                    Cursor = cursor,
                     Links = pending.Links,
                     LastSyncAt = services.Clock.GetUtcNow(),
                 });

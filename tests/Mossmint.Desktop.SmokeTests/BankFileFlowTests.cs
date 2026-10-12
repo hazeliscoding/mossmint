@@ -54,6 +54,34 @@ public class BankFileFlowTests
     }
 
     [AvaloniaFact]
+    public async Task An_imported_entry_can_be_voided_and_stays_void_on_the_next_import()
+    {
+        using var app = new Harness();
+        var imports = await OpenImports(app);
+        var checking = new Account(new AccountId(Guid.CreateVersion7()), "Everyday Checking", AccountKind.Checking, Currency.Usd);
+        app.Services.Context.Current.Data.AddAccount(checking);
+        app.Dialogs.NextBankFile = Write(app, "october.csv", "Date,Description,Amount\n10/01/2026,Paycheck,1200.00\n10/15/2026,Corner Cafe,-4.50\n");
+        await imports.ChooseBankFileCommand.ExecuteAsync(null);
+        var row = imports.BankFile!.Destinations.Single();
+        row.Selected = row.Choices.Single(c => c.Account?.Id == checking.Id);
+        await imports.PreviewBankFileCommand.ExecuteAsync(null);
+        await imports.ImportCommand.ExecuteAsync(null);
+
+        app.Screen<ShellViewModel>().Navigate(Destination.Transactions);
+        var ledger = (TransactionsPageViewModel)app.Screen<ShellViewModel>().CurrentPage!;
+        var cafe = ledger.Rows.Single(r => r.Description == "Corner Cafe");
+        cafe.CanVoid.Should().BeTrue("an imported entry can be removed too");
+        ledger.VoidCommand.Execute(cafe);
+
+        app.Screen<ShellViewModel>().Navigate(Destination.Imports);
+        await imports.ChooseBankFileCommand.ExecuteAsync(null);
+        await imports.PreviewBankFileCommand.ExecuteAsync(null);
+        await imports.ImportCommand.ExecuteAsync(null);
+
+        app.Services.Context.Current.Data.Transactions(checking.Id).Single(t => t.Description == "Corner Cafe").Status.Should().Be(TransactionStatus.Void);
+    }
+
+    [AvaloniaFact]
     public async Task An_ambiguous_date_is_flagged_and_a_new_account_needs_a_name()
     {
         using var app = new Harness();

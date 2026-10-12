@@ -31,6 +31,13 @@ public sealed partial class ShellViewModel : ViewModelBase
             Nav(new BackupsPageViewModel(services, navigator), "IconArchive", null),
         ];
         _selectedItem = NavItems[0];
+        Context.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ProfileContext.ActiveWork))
+            {
+                LockCommand.NotifyCanExecuteChanged();
+            }
+        };
     }
 
     public ProfileContext Context { get; }
@@ -56,8 +63,11 @@ public sealed partial class ShellViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleSidebar() => IsSidebarCollapsed = !IsSidebarCollapsed;
 
-    [RelayCommand]
+    // Waits for running work: a sync locked out mid-claim would lose its one-time token.
+    [RelayCommand(CanExecute = nameof(CanLock))]
     private void Lock() => _navigator.Lock();
+
+    private bool CanLock() => Context.ActiveWork == 0;
 
     // The top bar's "Forecast as of": the date of the balance the forecast starts from.
     [ObservableProperty]

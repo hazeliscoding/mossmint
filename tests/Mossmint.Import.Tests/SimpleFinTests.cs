@@ -190,6 +190,17 @@ public sealed class SimpleFinTests
     }
 
     [Fact]
+    public async Task A_problem_with_a_whole_bank_connection_is_reported_for_each_of_its_accounts()
+    {
+        var json = AccountSet.Replace(", \"account_id\": \"ACT-2\"", "", StringComparison.Ordinal);
+        var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, json))).Open(Access);
+
+        var sync = await connector.SyncAsync(null, CancellationToken.None);
+
+        sync.Errors.Where(e => e.Message == "Sign in again at your bank.").Select(e => e.AccountExternalId).Should().BeEquivalentTo(["ACT-1", "ACT-2", "ACT-3"]);
+    }
+
+    [Fact]
     public async Task A_garbled_answer_is_invalid()
     {
         var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, "<html>maintenance</html>"))).Open(Access);

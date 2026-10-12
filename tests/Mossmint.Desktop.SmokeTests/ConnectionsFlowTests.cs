@@ -96,6 +96,49 @@ public class ConnectionsFlowTests
     }
 
     [AvaloniaFact]
+    public async Task Disconnecting_with_a_sync_preview_open_drops_that_sync()
+    {
+        using var app = new Harness();
+        var page = await OpenConnections(app);
+        page.StartConnectCommand.Execute(null);
+        page.SetupToken = FakeConnectorProvider.Token;
+        await page.ConnectCommand.ExecuteAsync(null);
+        foreach (var row in page.Linking)
+        {
+            row.Selected = row.Choices.Single(c => c.IsNew);
+        }
+
+        await page.ContinueCommand.ExecuteAsync(null);
+        page.Preview.Should().NotBeNull();
+
+        page.StartDisconnectCommand.Execute(page.Connections.Single());
+        page.EraseOnDisconnect = true;
+        page.ConfirmDisconnectCommand.Execute(null);
+        await page.ImportCommand.ExecuteAsync(null);
+
+        page.Preview.Should().BeNull();
+        app.Services.Context.Current.Imports.Connections().Should().BeEmpty("the key stays deleted");
+        app.Services.Context.Current.Data.Accounts().Should().BeEmpty("nothing from the dropped sync was imported");
+    }
+
+    [AvaloniaFact]
+    public async Task A_sync_with_errors_or_newly_linked_accounts_keeps_the_window_open()
+    {
+        using var app = new Harness();
+        app.SimpleFin.Script[0] = app.SimpleFin.Script[0] with { Errors = [new ConnectorError("chk-001", "Sign in again at your bank.")] };
+        var page = await OpenConnections(app);
+        page.StartConnectCommand.Execute(null);
+        page.SetupToken = FakeConnectorProvider.Token;
+        await page.ConnectCommand.ExecuteAsync(null);
+        page.Linking[0].Selected = page.Linking[0].Choices.Single(c => c.IsNew);
+        page.Linking[1].Selected = page.Linking[1].Choices.Single(c => c.Account is null && !c.IsNew);
+        await page.ContinueCommand.ExecuteAsync(null);
+        await page.ImportCommand.ExecuteAsync(null);
+
+        app.Services.Context.Current.Imports.Connections().Single().Cursor.Should().BeNull("the bank reported a problem, so the next sync asks for the same days again");
+    }
+
+    [AvaloniaFact]
     public async Task A_refused_sync_says_why_and_changes_nothing()
     {
         using var app = new Harness();
@@ -127,6 +170,20 @@ public class ConnectionsFlowTests
         page.StatusTone.Should().Be(StatusTone.Warning);
         app.Services.Context.Current.Data.Counts().Should().Be(before);
         app.Services.Context.Current.Imports.Connections().Single().Cursor.Should().NotBeNull("the last good sync is still where the next one starts");
+    }
+
+    [AvaloniaFact]
+    public async Task The_profile_cant_be_locked_while_work_is_running()
+    {
+        using var app = new Harness();
+        await OpenConnections(app);
+        var shell = app.Screen<ShellViewModel>();
+
+        app.Services.Context.ActiveWork++;
+        shell.LockCommand.CanExecute(null).Should().BeFalse("a sync or import finishes first");
+        app.Services.Context.ActiveWork--;
+
+        shell.LockCommand.CanExecute(null).Should().BeTrue();
     }
 
     private static async Task<ConnectionsPageViewModel> OpenConnections(Harness app)

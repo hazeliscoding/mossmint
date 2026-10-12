@@ -17,7 +17,8 @@ public sealed record LedgerRow(string Date, string Description, string Detail, s
 {
     public bool HasDetail => Detail.Length > 0;
 
-    public bool CanVoid => Entry is { Status: not TransactionStatus.Void, Provenance.Source: SourceKind.UserConfirmed };
+    // Imported entries too: a later import keeps a voided one void.
+    public bool CanVoid => Entry is { Status: not TransactionStatus.Void };
 
     public string VoidName => $"Void {Description} on {Date}";
 }
