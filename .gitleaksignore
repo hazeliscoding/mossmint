@@ -1,0 +1,3 @@
+# False positives only, one finding per line, each checked by hand.
+# A snapshot label ("pre-<migration>") passed right after session.Key reads as a generic API key.
+a7d81a41a95108df88c23fb542d1313488d79953:tests/Mossmint.Persistence.Tests/MigrationRecoveryTests.cs:generic-api-key:31
