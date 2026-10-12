@@ -1,3 +1,9 @@
 # False positives only, one finding per line, each checked by hand.
 # A snapshot label ("pre-<migration>") passed right after session.Key reads as a generic API key.
 a7d81a41a95108df88c23fb542d1313488d79953:tests/Mossmint.Persistence.Tests/MigrationRecoveryTests.cs:generic-api-key:31
+# The compatibility fixtures' recovery keys: synthetic, written by each release's import tool, and only
+# able to open that fixture's synthetic profile. build/capture-fixture.ps1 now leaves them out.
+19128ff8431467b112750446edcf352eaba491da:tests/Compatibility/0.3.0/secrets.txt:generic-api-key:5
+19128ff8431467b112750446edcf352eaba491da:tests/Compatibility/0.4.0/secrets.txt:generic-api-key:5
+19128ff8431467b112750446edcf352eaba491da:tests/Compatibility/0.5.0/secrets.txt:generic-api-key:5
+19128ff8431467b112750446edcf352eaba491da:tests/Compatibility/0.6.0/secrets.txt:generic-api-key:5
