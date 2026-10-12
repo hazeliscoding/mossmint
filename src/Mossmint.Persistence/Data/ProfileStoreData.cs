@@ -309,6 +309,16 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         db.SaveChanges();
     }
 
+    public string? FileMapping(string fingerprint) => db.FileMappings.AsNoTracking().FirstOrDefault(m => m.Fingerprint == fingerprint)?.Mapping;
+
+    public void SaveFileMapping(string fingerprint, string mapping)
+    {
+        var row = db.FileMappings.Find(fingerprint) ?? db.FileMappings.Add(new FileMappingRow { Fingerprint = fingerprint }).Entity;
+        row.Mapping = mapping;
+        row.UpdatedAt = clock.GetUtcNow();
+        db.SaveChanges();
+    }
+
     private void StageAccount(Account account)
     {
         db.Accounts.Add(new AccountRow

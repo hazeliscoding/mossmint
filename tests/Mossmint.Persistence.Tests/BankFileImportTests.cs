@@ -101,6 +101,18 @@ public sealed class BankFileImportTests : IDisposable
         _session.Imports.ReviewItems().Should().ContainSingle(r => r.Code == "typed-overlap").Which.Detail.Should().StartWith("1 entry you added");
     }
 
+    [Fact]
+    public void A_files_mapping_is_remembered_inside_the_profile()
+    {
+        _session.Imports.FileMapping("3f2a").Should().BeNull();
+
+        _session.Imports.SaveFileMapping("3f2a", "{\"first\":true}");
+        _session.Imports.SaveFileMapping("3f2a", "{\"second\":true}");
+
+        _session.Imports.FileMapping("3f2a").Should().Be("{\"second\":true}");
+        _session.Imports.FileMapping("other").Should().BeNull();
+    }
+
     private ImportPlan Plan(string text, Account target)
     {
         var file = new SourceFile("bank.csv", Encoding.UTF8.GetBytes(text));

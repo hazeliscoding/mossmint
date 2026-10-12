@@ -94,4 +94,10 @@ public interface IImportStore
     void CloseReviewItem(Guid id, ReviewStatus status, string? resolution);
 
     void ReopenReviewItem(Guid id);
+
+    // A bank file's confirmed column mapping, opaque here, keyed by the
+    // fingerprint of the file's header row.
+    string? FileMapping(string fingerprint);
+
+    void SaveFileMapping(string fingerprint, string mapping);
 }

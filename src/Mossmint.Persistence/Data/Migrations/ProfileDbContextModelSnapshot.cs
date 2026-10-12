@@ -194,6 +194,24 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.ToTable("Debts", (string)null);
                 });
 
+            modelBuilder.Entity("Mossmint.Persistence.Data.FileMappingRow", b =>
+                {
+                    b.Property<string>("Fingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Mapping")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Fingerprint");
+
+                    b.ToTable("FileMappings", (string)null);
+                });
+
             modelBuilder.Entity("Mossmint.Persistence.Data.GoalRow", b =>
                 {
                     b.Property<Guid>("Id")

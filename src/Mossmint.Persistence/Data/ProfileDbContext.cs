@@ -163,6 +163,14 @@ internal sealed class RawRecordRow
     public string FieldsJson { get; set; } = "";
 }
 
+/// A bank file's confirmed column mapping, keyed by its header fingerprint.
+internal sealed class FileMappingRow
+{
+    public string Fingerprint { get; set; } = "";
+    public string Mapping { get; set; } = "";
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
 // What changed and when. Lives inside the encrypted profile, never in logs.
 internal sealed class AuditRow
 {
@@ -189,6 +197,7 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
     public DbSet<ImportLinkRow> ImportLinks => Set<ImportLinkRow>();
     public DbSet<ReviewItemRow> ReviewItems => Set<ReviewItemRow>();
     public DbSet<RawRecordRow> RawRecords => Set<RawRecordRow>();
+    public DbSet<FileMappingRow> FileMappings => Set<FileMappingRow>();
 
     public static ProfileDbContext For(SqliteConnection connection) =>
         new(new DbContextOptionsBuilder<ProfileDbContext>().UseSqlite(connection).Options);
@@ -309,6 +318,13 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
             e.HasIndex(r => r.RunId);
             e.Property(r => r.Kind).HasMaxLength(80);
             e.HasOne<ImportRunRow>().WithMany().HasForeignKey(r => r.RunId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        model.Entity<FileMappingRow>(e =>
+        {
+            e.ToTable("FileMappings");
+            e.HasKey(m => m.Fingerprint);
+            e.Property(m => m.Fingerprint).HasMaxLength(64);
         });
 
         model.Entity<AuditRow>(e =>
