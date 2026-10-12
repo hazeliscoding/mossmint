@@ -1,0 +1,28 @@
+{
+  "Passed": true,
+  "Failure": null,
+  "Upgraded": {
+    "Accounts": 5,
+    "BalanceSnapshots": 9,
+    "Bills": 9,
+    "Income": 2,
+    "Debts": 4,
+    "AuditEvents": 31,
+    "Transactions": 0,
+    "ReviewItems": 9,
+    "ImportRuns": 1,
+    "Goals": 0
+  },
+  "Restored": {
+    "Accounts": 5,
+    "BalanceSnapshots": 9,
+    "Bills": 9,
+    "Income": 2,
+    "Debts": 4,
+    "AuditEvents": 31,
+    "Transactions": 0,
+    "ReviewItems": 9,
+    "ImportRuns": 1,
+    "Goals": 0
+  }
+}

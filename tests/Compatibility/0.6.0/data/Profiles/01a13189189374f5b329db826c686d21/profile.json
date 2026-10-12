@@ -1,0 +1,29 @@
+{
+  "Format": "mossmint-profile",
+  "FormatVersion": 1,
+  "Id": "01a13189-1893-74f5-b329-db826c686d21",
+  "Name": "Fixture",
+  "CreatedAt": "2026-10-12T19:13:50.7429767+00:00",
+  "Envelopes": [
+    {
+      "Kind": 0,
+      "Version": 1,
+      "Salt": "ikqizYNjDgmCoX6fV\u002BPKGA==",
+      "Nonce": "YH1GVu7JpNysX2tQ",
+      "Ciphertext": "AtXyDNQks1sqM7KL0E8\u002B5DZh2cHyTO0hAslH5edwHWqDuBGSpNywTdwOF3jHFXxz",
+      "Argon2": {
+        "MemoryKiB": 65536,
+        "Passes": 3,
+        "Parallelism": 1
+      }
+    },
+    {
+      "Kind": 1,
+      "Version": 1,
+      "Salt": "\u002BnGg15UMrXTgfeuvMvofcA==",
+      "Nonce": "1/iKl8OkpC7Uaa9s",
+      "Ciphertext": "u7a3Ejf1W2zHDFJ\u002BFQvi6AJGkYlj2Xqru\u002BElLyaz2rEYx/O8F\u002BWqUUjutAU80ps4",
+      "Argon2": null
+    }
+  ]
+}
