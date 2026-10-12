@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mossmint.Application.Import;
+using Mossmint.Application.Profiles;
 using Mossmint.Connectors.Abstractions;
 using Mossmint.Desktop.Controls;
 using Mossmint.Domain.Accounts;
@@ -22,6 +23,9 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     private static readonly string[] KnownHosts = ["bridge.simplefin.org", "beta-bridge.simplefin.org"];
 
     private Pending? _pending;
+
+    // The session this page's state belongs to; see ProfileContext.IsCurrent.
+    private IProfileSession? _shownFor;
 
     public ObservableCollection<ConnectionRow> Connections { get; } = [];
 
@@ -77,7 +81,17 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
         ? $"This token points to {host}, not the SimpleFIN Bridge. Connect only if you trust that server with your bank data."
         : null;
 
-    public override void OnNavigatedTo() => Refresh();
+    public override void OnNavigatedTo()
+    {
+        // Another profile is open now: nothing begun for the last one carries over.
+        if (!services.Context.IsCurrent(_shownFor))
+        {
+            Reset();
+            _shownFor = services.Context.IsUnlocked ? services.Context.Current : null;
+        }
+
+        Refresh();
+    }
 
     partial void OnIsBusyChanged(bool value) => services.Context.ActiveWork += value ? 1 : -1;
 
@@ -96,13 +110,18 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
         IsBusy = true;
         try
         {
-            var provider = services.SimpleFin;
+            var (provider, session) = (services.SimpleFin, services.Context.Current);
             var credential = await provider.ClaimAsync(SetupToken.Trim(), CancellationToken.None);
+            if (!services.Context.IsCurrent(session))
+            {
+                return;
+            }
+
             var connection = new Connection(Guid.CreateVersion7(services.Clock.GetUtcNow()), provider.Id.Value, credential, null,
                 new Dictionary<string, Guid>(), services.Clock.GetUtcNow());
 
             // Saved at once: the token works only once, so the credential must not be lost.
-            services.Context.Current.Imports.SaveConnection(connection);
+            session.Imports.SaveConnection(connection);
             (IsConnecting, SetupToken) = (false, "");
             Refresh();
             await Fetch(connection);
@@ -134,8 +153,9 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task Continue()
     {
-        if (_pending is not { } pending)
+        if (_pending is not { } pending || !services.Context.IsCurrent(pending.Session))
         {
+            Reset();
             return;
         }
 
@@ -150,7 +170,7 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
         string? error = null;
         var targets = chosen.Count == 0
             ? new Dictionary<string, Account>()
-            : DestinationRow.Resolve(chosen, services.Context.Current.Data.Settings().Currency, () => Guid.CreateVersion7(services.Clock.GetUtcNow()), out error);
+            : DestinationRow.Resolve(chosen, pending.Session.Data.Settings().Currency, () => Guid.CreateVersion7(services.Clock.GetUtcNow()), out error);
         if (targets is null)
         {
             LinkError = error;
@@ -235,10 +255,16 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     private async Task Fetch(Connection connection)
     {
         Status = null;
+        var session = services.Context.Current;
         try
         {
             var sync = await services.SimpleFin.Open(connection.Secret).SyncAsync(connection.Cursor, CancellationToken.None);
-            var pending = new Pending(connection, sync, new Dictionary<string, Guid>(connection.Links), []);
+            if (!services.Context.IsCurrent(session))
+            {
+                return;
+            }
+
+            var pending = new Pending(session, connection, sync, new Dictionary<string, Guid>(connection.Links), []);
             _pending = pending;
             var unseen = sync.Accounts.Where(a => !connection.Links.ContainsKey(a.ExternalId)).ToList();
             if (unseen.Count == 0)
@@ -247,7 +273,7 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
                 return;
             }
 
-            var accounts = services.Context.Current.Data.Accounts();
+            var accounts = session.Data.Accounts();
             Linking.Clear();
             foreach (var account in unseen)
             {
@@ -268,7 +294,7 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
 
     private async Task Plan(Pending pending)
     {
-        var session = services.Context.Current;
+        var session = pending.Session;
         var existing = session.Data.Accounts().ToDictionary(a => a.Id.Value);
         var destinations = new Dictionary<string, Account>();
         foreach (var (externalId, id) in pending.Links.Where(l => l.Value != Guid.Empty))
@@ -282,6 +308,11 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
         var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);
         var plan = await Task.Run(() => services.Imports.Plan(session,
             ConnectorBatches.From(pending.Sync, ProviderName, today, session.Data.Settings().Currency, destinations)));
+        if (!services.Context.IsCurrent(session))
+        {
+            return;
+        }
+
         if (pending.Connection.LastSyncAt is null || !plan.CanCommit)
         {
             Preview = new ImportPreviewViewModel(plan, []);
@@ -293,7 +324,13 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
 
     private async Task Commit(Pending pending, ImportPlan plan)
     {
-        var session = services.Context.Current;
+        var session = pending.Session;
+        if (!services.Context.IsCurrent(session))
+        {
+            Reset();
+            return;
+        }
+
         try
         {
             await Task.Run(() =>
@@ -346,6 +383,12 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
         OnPropertyChanged(nameof(CanStartConnect));
     }
 
+    private void Reset()
+    {
+        (IsConnecting, SetupToken, IsLinking, LinkError, Preview, _pending, ConfirmingDisconnect, Status) = (false, "", false, null, null, null, null, null);
+        Linking.Clear();
+    }
+
     private bool TryHost(out string? host, out string? error)
     {
         try
@@ -373,5 +416,5 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     private bool CanImport() => !IsBusy && Preview is { CanCommit: true };
 
     // A fetched sync waiting on links, a preview or a commit.
-    private sealed record Pending(Connection Connection, ConnectorSync Sync, Dictionary<string, Guid> Links, Dictionary<Guid, Account> NewAccounts);
+    private sealed record Pending(IProfileSession Session, Connection Connection, ConnectorSync Sync, Dictionary<string, Guid> Links, Dictionary<Guid, Account> NewAccounts);
 }

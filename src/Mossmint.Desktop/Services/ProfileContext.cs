@@ -22,6 +22,10 @@ public sealed partial class ProfileContext : ObservableObject, IDisposable
 
     public IProfileSession Current => Session ?? throw new InvalidOperationException("No profile is unlocked.");
 
+    // The shell outlives a lock: work started for one session checks this after
+    // every wait, so it can never show or save into the next profile unlocked.
+    public bool IsCurrent(IProfileSession? session) => session is not null && ReferenceEquals(Session, session);
+
     public void Open(IProfileSession session)
     {
         Session?.Dispose();

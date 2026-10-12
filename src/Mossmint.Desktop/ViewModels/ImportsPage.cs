@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mossmint.Application.Import;
+using Mossmint.Application.Profiles;
 using Mossmint.Desktop.Controls;
 using Mossmint.Import.Excel;
 using Mossmint.Import.Transactions;
@@ -91,6 +92,9 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     // What a bank file import remembers once it is committed: fingerprint, value.
     private IReadOnlyList<(string Fingerprint, string Value)> _pendingMappings = [];
 
+    // The session this page's previews belong to; see ProfileContext.IsCurrent.
+    private IProfileSession? _shownFor;
+
     public ObservableCollection<ReviewItemRow> Review { get; } = [];
 
     public ObservableCollection<HistoryRow> History { get; } = [];
@@ -136,7 +140,15 @@ public sealed partial class ImportsPageViewModel(AppServices services)
 
     public bool HasHistory => History.Count > 0;
 
-    public override void OnNavigatedTo() => Refresh();
+    public override void OnNavigatedTo()
+    {
+        if (services.Context.IsUnlocked)
+        {
+            Owner();
+        }
+
+        Refresh();
+    }
 
     partial void OnShowClosedChanged(bool value) => Refresh();
 
@@ -155,9 +167,12 @@ public sealed partial class ImportsPageViewModel(AppServices services)
         Status = null;
         try
         {
-            var session = services.Context.Current;
+            var session = Owner();
             var plan = await Task.Run(() => services.Imports.Preview(session, [.. paths.Select(SourceFiles.Read)]));
-            Preview = new ImportPreviewViewModel(plan, paths);
+            if (services.Context.IsCurrent(session))
+            {
+                Preview = new ImportPreviewViewModel(plan, paths);
+            }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -182,7 +197,7 @@ public sealed partial class ImportsPageViewModel(AppServices services)
         Status = null;
         try
         {
-            var session = services.Context.Current;
+            var session = Owner();
             var (accounts, currency) = (session.Data.Accounts(), session.Data.Settings().Currency);
             var opened = await Task.Run<object>(() =>
             {
@@ -197,7 +212,10 @@ public sealed partial class ImportsPageViewModel(AppServices services)
                 var saved = session.Imports.FileMapping(CsvMappings.Fingerprint(table)) is { } json ? SavedCsvMapping.FromJson(json) : null;
                 return new BankFileViewModel(file, path, table, CsvMappings.Guess(table), saved, accounts, currency);
             });
-            (BankFile, StatementFile) = (opened as BankFileViewModel, opened as StatementFileViewModel);
+            if (services.Context.IsCurrent(session))
+            {
+                (BankFile, StatementFile) = (opened as BankFileViewModel, opened as StatementFileViewModel);
+            }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or CsvFormatException or OfxFormatException)
         {
@@ -212,6 +230,12 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task PreviewBankFile()
     {
+        if (!services.Context.IsCurrent(_shownFor))
+        {
+            Owner();
+            return;
+        }
+
         if (BankFile is not { } file || file.Targets(() => Guid.CreateVersion7(services.Clock.GetUtcNow())) is not { } targets)
         {
             return;
@@ -225,6 +249,11 @@ public sealed partial class ImportsPageViewModel(AppServices services)
             var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);
             var plan = await Task.Run(() => services.Imports.Plan(session,
                 CsvImport.Map(file.File, CsvReader.Read(file.File.Content), mapping, targets, today, session.Data.Settings().Currency)));
+            if (!services.Context.IsCurrent(session))
+            {
+                return;
+            }
+
             _pendingMappings = [(file.Fingerprint, BankFileViewModel.Remember(mapping, targets).ToJson())];
             Preview = new ImportPreviewViewModel(plan, [file.Path]);
         }
@@ -237,6 +266,12 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task PreviewStatementFile()
     {
+        if (!services.Context.IsCurrent(_shownFor))
+        {
+            Owner();
+            return;
+        }
+
         if (StatementFile is not { } file || file.Targets(() => Guid.CreateVersion7(services.Clock.GetUtcNow())) is not { } targets)
         {
             return;
@@ -248,6 +283,11 @@ public sealed partial class ImportsPageViewModel(AppServices services)
             var session = services.Context.Current;
             var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);
             var plan = await Task.Run(() => services.Imports.Plan(session, OfxImport.Map(file.File, file.Ofx, targets, today, session.Data.Settings().Currency)));
+            if (!services.Context.IsCurrent(session))
+            {
+                return;
+            }
+
             _pendingMappings = [.. targets.Select(t => (StatementKey(t.Key), t.Value.Id.Value.ToString()))];
             Preview = new ImportPreviewViewModel(plan, [file.Path]);
         }
@@ -263,7 +303,12 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     [RelayCommand(CanExecute = nameof(CanImport))]
     private async Task Import()
     {
-        var preview = Preview!;
+        if (Preview is not { } preview || !services.Context.IsCurrent(_shownFor))
+        {
+            Owner();
+            return;
+        }
+
         IsBusy = true;
         try
         {
@@ -372,6 +417,19 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     }
 
     private void Show(string message, StatusTone tone) => (Status, StatusTone) = (message, tone);
+
+    // The shell outlives a lock: anything begun for another profile is dropped,
+    // never shown or imported into this one. Returns the current session.
+    private IProfileSession Owner()
+    {
+        var session = services.Context.Current;
+        if (!ReferenceEquals(_shownFor, session))
+        {
+            (Preview, BankFile, StatementFile, _pendingMappings, Status, _shownFor) = (null, null, null, [], null, session);
+        }
+
+        return session;
+    }
 
     private bool IsIdle() => !IsBusy;
 
