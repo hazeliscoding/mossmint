@@ -98,6 +98,7 @@ var screens = new (string Name, Func<Window> Create)[]
     })),
     ("import-preview", () => scenes.Imports(commit: false)),
     ("import-review", () => scenes.Imports(commit: true)),
+    ("import-bank-file", scenes.BankFile),
     ("settings", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Settings))),
     ("update-strip", () => scenes.Unlocked(vm =>
     {

@@ -31,6 +31,10 @@ internal sealed class FakeDialogs : IDesktopDialogs
 
     public Task<IReadOnlyList<string>> PickWorkbooksAsync() => Task.FromResult<IReadOnlyList<string>>([.. NextWorkbooks]);
 
+    public string? NextBankFile { get; set; }
+
+    public Task<string?> PickBankFileAsync() => Task.FromResult(NextBankFile);
+
     public Task<bool> SaveTextAsync(string suggestedName, string text, string title)
     {
         SavedTexts.Add(text);

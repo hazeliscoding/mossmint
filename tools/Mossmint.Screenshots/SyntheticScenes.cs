@@ -112,6 +112,33 @@ internal sealed class SyntheticScenes : IDisposable
         return window;
     }
 
+    // A made-up bank CSV, matched to the sample household's checking account.
+    public MainWindow BankFile()
+    {
+        var root = NewRoot();
+        var path = Path.Combine(root, "checking-october.csv");
+        File.WriteAllText(path, """
+            Account Name : Everyday Checking
+            Date Range : 10/01/2026 - 10/31/2026
+
+            Posting Date,Description,Amount,Balance
+            10/01/2026,PAYROLL DEPOSIT,1840.00,2512.40
+            10/02/2026,CORNER CAFE #12,-4.75,2507.65
+            10/03/2026,CITY POWER AUTOPAY,-96.20,2411.45
+            10/14/2026,GREEN GROCER,-63.18,2348.27
+            """);
+        var services = Services(root, bankFile: path);
+        services.Context.Open(Seed(services));
+        var window = Window(services);
+        var vm = (MainWindowViewModel)window.DataContext!;
+        vm.OpenApp(Destination.Imports);
+        var page = (ImportsPageViewModel)vm.Shell.CurrentPage!;
+        Wait(page.ChooseBankFileCommand.ExecuteAsync(null));
+        var destination = page.BankFile!.Destinations[0];
+        destination.Selected = destination.Choices.First(c => c.Account?.Kind == AccountKind.Checking);
+        return window;
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
@@ -149,13 +176,13 @@ internal sealed class SyntheticScenes : IDisposable
         task.GetAwaiter().GetResult();
     }
 
-    private static AppServices Services(string root, IReadOnlyList<string>? workbooks = null)
+    private static AppServices Services(string root, IReadOnlyList<string>? workbooks = null, string? bankFile = null)
     {
         var locations = new ProfileLocations(root);
         return new AppServices(
             new ProfileStore(locations, TimeProvider.System, Fast),
             new BackupService(locations, TimeProvider.System),
-            new NoDialogs(workbooks ?? []),
+            new NoDialogs(workbooks ?? [], bankFile),
             new ProfileContext(),
             new SyntheticClock());
     }
@@ -178,7 +205,7 @@ internal sealed class SyntheticScenes : IDisposable
 
     private static MainWindow Window(AppServices services) => new() { DataContext = new MainWindowViewModel(services) };
 
-    private sealed class NoDialogs(IReadOnlyList<string> workbooks) : IDesktopDialogs
+    private sealed class NoDialogs(IReadOnlyList<string> workbooks, string? bankFile) : IDesktopDialogs
     {
         public Task<string?> PickBackupToOpenAsync() => Task.FromResult<string?>(null);
 
@@ -189,6 +216,8 @@ internal sealed class SyntheticScenes : IDisposable
         public Task<bool> SaveTextAsync(string suggestedName, string text, string title) => Task.FromResult(false);
 
         public Task<IReadOnlyList<string>> PickWorkbooksAsync() => Task.FromResult(workbooks);
+
+        public Task<string?> PickBankFileAsync() => Task.FromResult(bankFile);
 
         public Task CopyAsync(string text) => Task.CompletedTask;
     }
