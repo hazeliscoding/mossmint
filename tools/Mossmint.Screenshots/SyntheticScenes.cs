@@ -168,28 +168,11 @@ internal sealed class SyntheticScenes : IDisposable
         public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     }
 
-    // The same synthetic numbers as the engine preview (samples/Mossmint.Samples).
+    // The same made-up household as "Try a sample household", on the synthetic clock.
     private static IProfileSession Seed(AppServices services)
     {
         var session = services.Profiles.Create(SyntheticProfile.Name, Passphrase, false).Session;
-        var entry = new ManualEntry(session.Data, services.Clock);
-        var asOf = SyntheticProfile.Today;
-        var checking = entry.AddCashAccount("Checking", 1_240m, asOf.AddDays(-1));
-        entry.AddPaycheck(new PaycheckEntry("Paycheck", 2_050m, PayPattern.TwiceMonthly), checking.Id);
-        entry.AddBill(new BillEntry("Rent", 1_150m, 1), checking.Id);
-        entry.AddBill(new BillEntry("Electric", 70m, 12, IsEstimate: true, Low: 60m, High: 95m), checking.Id);
-        entry.AddBill(new BillEntry("Phone", 45m, 20), checking.Id);
-        entry.AddBill(new BillEntry("Internet", 60m, 17), checking.Id);
-        entry.AddBill(new BillEntry("Insurance", 132m, 25), checking.Id);
-        entry.AddBill(new BillEntry("Streaming", 18m, 22), checking.Id);
-        entry.AddLoan(new LoanEntry("Car loan", 9_800m, asOf.AddDays(-9), 7.4m, 285m, 28), checking.Id);
-        entry.AddCard(new CardEntry("Card", 2_300m, asOf.AddDays(-18), 24.99m, 150m, 21, 3), checking.Id);
-        entry.SetSavings(150m, 300m);
-        entry.AddCashAccount("Savings", 1_850m, asOf.AddDays(-8), AccountKind.Savings);
-        entry.AddGoal("Car fund", 3_000m, 1_250m, new DateOnly(2027, 5, 1));
-        entry.AddGoal("Holiday trip", 900m, 120m, new DateOnly(2026, 12, 18));
-        entry.AddGoal("New laptop", 1_400m, 1_400m);
-        entry.RecordEntry(checking.Id, "Groceries", -64.20m, asOf, "groceries");
+        SampleHousehold.Fill(session.Data, services.Clock);
         return session;
     }
 
