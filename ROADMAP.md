@@ -133,6 +133,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 ## Decisions (2026-10-11, M6)
 
 - **Code signing is set up for 0.6** (owner's call, reusing the signing account and certificate profile Prompuff uses). A dedicated app registration with no secrets trusts only the `release` environment, which only `v*` tags can deploy to, through a federated credential, and it may sign only with that one certificate profile. The account and profile names live in the environment's variables, not in the public workflow. The release job checks that both the installer and the app inside the portable package are signed; manual runs and forks still build unsigned. A newly signed installer still gets SmartScreen's "unrecognized app" warning, now showing the publisher's name, until downloads build reputation.
+- **Export gives both a complete file and spreadsheets** (the test user's pick). **Export** writes one JSON file holding the whole profile, as a copy to keep or a way to move to another app, plus CSV files of transactions, bills and debts that open in Excel. A warning comes first, because neither is encrypted.
 
 ## M0: Skeleton and guardrails (v0.3.0)
 
