@@ -87,6 +87,8 @@ flowchart TB
 | Export leaks data or attacks a spreadsheet | Export runs only after an explicit *not encrypted* warning, into a new folder; CSV text starting with `= + - @`, tab or CR is prefixed with `'` | done in M6 |
 | Hostile workbook (zip bomb, XML entity expansion) | Built-in reader refuses DTDs, caps expanded size per part and in total, reads no external references | done in M3 |
 | Hostile bank file (odd encoding, formulas, huge rows) | Hand-written CSV reader capped at 64 MB; strict UTF-8 or a flagged Windows-1252 fallback; cells are only parsed as dates and numbers, never evaluated; an unreadable transaction blocks the import | done in M7 |
+| Hostile statement file (XML entity expansion, external entities, deep nesting) | Hand-written OFX reader, not an XML parser: refuses document types and entity declarations, resolves only the standard entities, caps nesting at 32 | done in M7 |
+| Account numbers leak from a statement | Statement accounts are remembered by a hash of the bank and account numbers; screens and sources show only the last four digits | done in M7 |
 | One transaction counted twice from two sources | One transaction source per account until 0.8 matches duplicates; typed entries on the same days are queued for review; a voided import stays void | done in M7 |
 | Import silently "fixes" a wrong figure | Mismatches become review items; imported figures stay *needs review* until confirmed | done in M3 |
 | Forecast reports a guess as fact | Provenance on every figure; *needs confirmation* and *never pays off* results | ADR-0002, M1 |

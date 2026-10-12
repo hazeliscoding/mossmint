@@ -46,7 +46,8 @@ Every figure carries a source, an as-of date and a confidence (`Confirmed`, `Sch
 - A bank file says how it shows money leaving the account (see [bank files](../operations/bank-files.md#amounts)). Mossmint turns that into money in or out, then signs it the way the account reports it: on checking, savings and cash, spending is negative; on a card or loan, a charge is positive and a payment negative. Mossmint's own export is already signed this way and is taken as is.
 - An amount with fractions of a cent is refused, never rounded.
 - A CSV row has no ID of its own, so Mossmint makes one from its date, amount, description (with runs of spaces collapsed) and how many identical rows came before it in the file. Two identical coffees on one day stay two transactions, and a later file that overlaps the same days gives them the same IDs, so they aren't imported twice. An edited description or amount makes a new row.
-- Imported transactions are *needs review* (`Imported`), like every imported figure.
+- An OFX statement is signed from the account holder's side; Mossmint flips it for cards and loans, transactions and balance alike. Its transactions are keyed by the bank's FITID instead.
+- Imported transactions are *needs review* (`Imported`), like every imported figure. A balance the bank reported, in a statement file or through a connection, is `Connector` and *confirmed*.
 
 ### Replay
 

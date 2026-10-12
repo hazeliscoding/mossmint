@@ -1,6 +1,6 @@
 # Bank files
 
-Mossmint imports transactions from a CSV a bank lets you download, or from another app's export. A bank file goes through the same dry run, review queue and one-step commit as a [workbook](workbook-import.md). The original is only read.
+Mossmint imports transactions from a CSV or OFX/QFX statement a bank lets you download, or from another app's export. A bank file goes through the same dry run, review queue and one-step commit as a [workbook](workbook-import.md). The original is only read.
 
 ```mermaid
 flowchart LR
@@ -58,6 +58,17 @@ Mossmint lists every format that reads all the dates in the column. When `01/02/
 | `typed-overlap` | For review | Entries you typed fall on days the file covers |
 
 Until 0.8 can spot the same transaction arriving from two places, each account takes transactions from one source, and entries you typed by hand on the same days are queued so you can void any the file repeats. An imported entry you voided stays void when the file is imported again.
+
+## Statement files (OFX and QFX)
+
+A file whose first lines carry an OFX header or an `<OFX>` element is read as a statement, whatever its extension. QFX is OFX with Quicken's extra elements, which are ignored.
+
+- **Reading.** A hand-written reader handles OFX 1.x SGML (leaf elements never close) and 2.x XML. It is not an XML parser: a document type or entity declaration refuses the file, only the five standard entities and character references are resolved, and nesting deeper than 32 levels is refused. A 1.x header naming code page 1252 is honored; otherwise the text is UTF-8, falling back to Windows-1252.
+- **Accounts.** Each statement in the file (bank or card, several per file) names its account, so the only question is which Mossmint account it goes to. The screen shows the account's type and last four digits. The choice is remembered by a hash of the bank and account numbers; the account number itself is never stored or shown.
+- **Transactions** are keyed by the bank's FITID, so a statement that overlaps an earlier one adds only what's new. If a bank repeats an ID within one file, both transactions are kept, with a note. A transaction missing its ID, date or amount blocks the import (`ofx-unreadable`).
+- **Balances.** The statement's ledger balance becomes a balance snapshot on its date. It counts as bank-reported and confirmed, like a connection's, so a fresh one clears *needs confirmation*.
+- **Signs.** OFX signs amounts from the account holder's side, cards included. On a card, Mossmint turns a negative balance into what's owed. A card statement showing a credit is queued for review (`ofx-card-credit`), because a few banks sign card balances the other way.
+- A statement in another currency blocks the import (`ofx-currency`); one left without an account is left out with a note (`ofx-account-skipped`).
 
 ## Reading back Mossmint's export
 

@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M7 (v0.7): bank data in. CSV import is in; OFX/QFX and SimpleFIN are next. M5's hand Narrator pass is still to do.
+**Next up:** M7 (v0.7): bank data in. CSV and OFX/QFX import are in; SimpleFIN and the forecast journal are next. M5's hand Narrator pass is still to do.
 
 ## Releases
 
@@ -139,11 +139,13 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 ## Decisions (2026-10-12, M7)
 
-- **SimpleFIN matters most to the test user.** Public sources say their bank offers only PDF statements (asked to confirm), so CSV and OFX won't reach it; SimpleFIN might, if the Bridge covers that bank (also asked). CSV comes first anyway, for everyone else. The owner has discussed the SimpleFIN Bridge subscription, which the user pays SimpleFIN directly, with the test user.
+- **SimpleFIN matters most to the test user.** Their bank offers only PDF statements, so CSV and OFX won't reach it; SimpleFIN might, if the Bridge covers that bank, which they'll check before connecting. CSV and OFX came first anyway, for everyone else. The owner has discussed the SimpleFIN Bridge subscription, which the user pays SimpleFIN directly, with the test user; nobody has signed up yet.
 - **A bank file goes into an account the user picks, or one the import creates.** Its records are keyed by the Mossmint account itself, so the next file finds the same account however it was created. Nothing goes into an account the user didn't choose.
 - **A CSV row's ID is its date, amount, description and how many identical rows came before it in the file.** Two identical coffees stay two transactions, and an overlapping file isn't imported twice. A bank that rewrites a description between downloads makes a new row; 0.8's duplicate matching catches those.
 - **Nothing in a bank file is guessed.** A row without a date (a totals line) is left out with a note; a dated row Mossmint can't read blocks the import. When every date could be month first or day first, the user picks, seeing how the first date reads each way.
 - **Mappings are remembered by the header row**, inside the encrypted profile, with the account each source account went to. Presets for YNAB, Monarch, Actual, Mint and Mossmint match by column names, not positions.
+- **A statement's account is remembered by a hash of its bank and account numbers.** The number itself is never stored; screens show its type and last four digits.
+- **A balance the bank reported is confirmed**, from a statement file or a connection, so a fresh one clears *needs confirmation*. A card statement showing a credit goes to review, since a few banks sign card balances the other way.
 - **Categories from other apps aren't imported yet.** M8 decides which categories Mossmint keeps; until then a category column is ignored rather than becoming a second category system.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -251,11 +253,11 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - mappings saved by the header row's fingerprint;
   - presets for exports from YNAB, Monarch, Actual and Mint, so history comes along;
   - Mossmint's own `transactions.csv` read back, dropping the export's formula escaping (docs/operations/backup-and-restore.md).
-- [ ] OFX/QFX statement files through a hand-written, hardened parser (SGML 1.x and XML 2.x). Duplicates are caught by the bank's transaction ID.
+- [x] OFX/QFX statement files through a hand-written, hardened parser (SGML 1.x and XML 2.x). Duplicates are caught by the bank's transaction ID.
 - [ ] SimpleFIN adapter:
   - The user claims a setup token once. The credentials live only in the encrypted profile, never in a URL.
   - Syncing is manual, with **Sync now**. Request windows overlap, and errors are shown per account.
-- [ ] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*.
+- [x] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*. (Statement files now; SimpleFIN goes through the same path.)
 - [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review, and a voided import stays void.)
 - [ ] A forecast journal: each forecast is kept as it was made, for 0.9's backtests.
 
