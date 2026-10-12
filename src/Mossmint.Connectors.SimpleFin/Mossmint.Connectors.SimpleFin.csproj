@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Mossmint.Connectors.Abstractions/Mossmint.Connectors.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

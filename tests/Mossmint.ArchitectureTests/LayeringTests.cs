@@ -53,6 +53,17 @@ public class LayeringTests
     }
 
     [Fact]
+    public void Only_the_listed_connectors_reach_the_network_and_they_really_do()
+    {
+        LayeringRules.SourceProjects().Select(p => p.Name).Except(AllMossmintAssemblies).Should().BeEquivalentTo(LayeringRules.NetworkExceptions,
+            "every project is either checked for network code or a listed exception");
+        foreach (var name in LayeringRules.NetworkExceptions)
+        {
+            LayeringRules.AssemblyViolations(Assembly.Load(name), LayeringRules.NetworkAssemblies).Should().NotBeEmpty($"{name} is listed because it uses the network");
+        }
+    }
+
+    [Fact]
     public void Desktop_reaches_the_engine_only_through_application()
     {
         LayeringRules.AssemblyViolations(Assembly.Load("Mossmint.Desktop"), ["Mossmint.Engine"])

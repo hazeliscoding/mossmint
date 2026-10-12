@@ -17,10 +17,12 @@ public static class LayeringRules
             ["Mossmint.Persistence"] = ["Mossmint.Application", "Mossmint.Domain"],
             ["Mossmint.Import.Excel"] = ["Mossmint.Application", "Mossmint.Domain"],
             ["Mossmint.Import.Transactions"] = ["Mossmint.Application", "Mossmint.Domain"],
+            ["Mossmint.Connectors.SimpleFin"] = ["Mossmint.Connectors.Abstractions", "Mossmint.Domain"],
             // Desktop is the composition root, so it may wire infrastructure in.
             ["Mossmint.Desktop"] =
             [
                 "Mossmint.Application", "Mossmint.Persistence", "Mossmint.Import.Excel", "Mossmint.Import.Transactions",
+                "Mossmint.Connectors.SimpleFin",
             ],
         };
 
@@ -35,8 +37,14 @@ public static class LayeringRules
         "DocumentFormat.OpenXml", "Velopack", "CommunityToolkit.Mvvm",
     ];
 
-    // Normal use makes no network calls. Only a future connector or update
-    // project may be granted an exception, with its own ADR.
+    // Normal use makes no network calls. Only a connector or update project may
+    // be granted an exception, with its own ADR.
+    public static readonly string[] NetworkExceptions =
+    [
+        // docs/connectors/ADR-simplefin.md: runs only when the user connects or presses Sync now.
+        "Mossmint.Connectors.SimpleFin",
+    ];
+
     public static readonly string[] NetworkAssemblies =
     [
         "System.Net.Http", "System.Net.Sockets", "System.Net.WebSockets", "System.Net.Requests",

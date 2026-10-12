@@ -5,6 +5,7 @@
   <Folder Name="/src/">
     <Project Path="src/Mossmint.Application/Mossmint.Application.csproj" />
     <Project Path="src/Mossmint.Connectors.Abstractions/Mossmint.Connectors.Abstractions.csproj" />
+    <Project Path="src/Mossmint.Connectors.SimpleFin/Mossmint.Connectors.SimpleFin.csproj" />
     <Project Path="src/Mossmint.Desktop/Mossmint.Desktop.csproj" />
     <Project Path="src/Mossmint.Domain/Mossmint.Domain.csproj" />
     <Project Path="src/Mossmint.Engine/Mossmint.Engine.csproj" />

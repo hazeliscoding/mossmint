@@ -61,6 +61,45 @@ public sealed record ConnectorSync(
     public IReadOnlyList<ConnectorError> Errors { get; init; } = [];
 }
 
+public enum ConnectorFailure
+{
+    // The provider refused the credential or token: revoked, used or wrong.
+    Refused,
+
+    // The provider wants something from the user first, such as payment.
+    NeedsAttention,
+
+    // The provider couldn't be reached or answered with an error; try later.
+    Unavailable,
+
+    // The provider answered with something Mossmint can't use.
+    Invalid,
+}
+
+// A failure whose message is safe to show the user: it never holds a credential.
+public sealed class ConnectorException(ConnectorFailure failure, string message, Exception? inner = null) : Exception(message, inner)
+{
+    public ConnectorFailure Failure { get; } = failure;
+}
+
+// A provider the user connects by handing over a one-time setup token. Claiming
+// it is the only way a credential is made; Mossmint never sees a bank login.
+public interface IConnectorProvider
+{
+    ConnectorId Id { get; }
+
+    string DisplayName { get; }
+
+    // The host a token would send requests to, shown before claiming so the user
+    // knows which company sees their data. Throws FormatException otherwise.
+    string HostOf(string setupToken);
+
+    // Returns the credential the provider hands over, for the encrypted profile.
+    Task<string> ClaimAsync(string setupToken, CancellationToken cancellationToken);
+
+    IConnector Open(string credential);
+}
+
 // A source of account data the user chose to connect. Nothing in the pure
 // layers implements this; real connectors are separate projects with their
 // own network exception and ADR (docs/connectors/ADR-provider-security.md).
