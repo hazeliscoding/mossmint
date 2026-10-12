@@ -341,6 +341,28 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         db.SaveChanges();
     }
 
+    public IReadOnlyList<JournalEntry> ForecastJournal() =>
+        [.. db.ForecastJournal.AsNoTracking().OrderBy(j => j.MadeOn).AsEnumerable().Select(j => JsonSerializer.Deserialize<JournalEntry>(j.EntryJson, Json)!)];
+
+    public void RecordForecast(JournalEntry entry)
+    {
+        if (db.ForecastJournal.Any(j => j.MadeOn > entry.MadeOn))
+        {
+            return;
+        }
+
+        var json = JsonSerializer.Serialize(entry, Json);
+        var row = db.ForecastJournal.Find(entry.MadeOn);
+        if (row?.EntryJson == json)
+        {
+            return;
+        }
+
+        row ??= db.ForecastJournal.Add(new ForecastJournalRow { MadeOn = entry.MadeOn }).Entity;
+        row.EntryJson = json;
+        db.SaveChanges();
+    }
+
     public (int Transactions, int Balances) EraseConnection(ConnectorId connector)
     {
         var marker = $"|{connector}:";

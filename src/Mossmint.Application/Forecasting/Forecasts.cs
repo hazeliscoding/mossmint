@@ -110,7 +110,8 @@ public sealed record ProfileForecast(
     SafeToSpendView SafeToSpend,
     IReadOnlyList<PaycheckView> Paychecks,
     IReadOnlyList<DebtView> Debts,
-    int EntriesSince = 0) : ForecastOutcome
+    int EntriesSince = 0,
+    AccountId Account = default) : ForecastOutcome
 {
     // Only when every debt has a payoff date; one that never pays off means no date at all.
     public DateOnly? DebtFree => Debts.Count > 0 && Debts.All(d => d.PayoffDate is not null) ? Debts.Max(d => d.PayoffDate) : null;
@@ -169,7 +170,8 @@ public static class Forecasts
             Safe(plan),
             Paychecks(plan, PaycheckFunding.Plan(plan, expanded), forecastDays),
             [.. data.Debts().Select(d => Debt(d, data, accounts, bills, followed?.GetValueOrDefault(d.Account)))],
-            entries.Count(e => RunningBalance.After(balance, e)));
+            entries.Count(e => RunningBalance.After(balance, e)),
+            account.Id);
     }
 
     internal sealed record CashSetup(Account Account, BalanceSnapshot Balance, IReadOnlyList<Transaction> Entries, IReadOnlyList<RecurringBill> Bills, CashFlowPlan Plan);

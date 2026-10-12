@@ -183,6 +183,13 @@ internal sealed class ConnectionRow
     public DateTimeOffset? LastSyncAt { get; set; }
 }
 
+/// One day's forecast as it was made, for later backtests.
+internal sealed class ForecastJournalRow
+{
+    public DateOnly MadeOn { get; set; }
+    public string EntryJson { get; set; } = "";
+}
+
 // What changed and when. Lives inside the encrypted profile, never in logs.
 internal sealed class AuditRow
 {
@@ -211,6 +218,7 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
     public DbSet<RawRecordRow> RawRecords => Set<RawRecordRow>();
     public DbSet<FileMappingRow> FileMappings => Set<FileMappingRow>();
     public DbSet<ConnectionRow> Connections => Set<ConnectionRow>();
+    public DbSet<ForecastJournalRow> ForecastJournal => Set<ForecastJournalRow>();
 
     public static ProfileDbContext For(SqliteConnection connection) =>
         new(new DbContextOptionsBuilder<ProfileDbContext>().UseSqlite(connection).Options);
@@ -345,6 +353,12 @@ internal sealed class ProfileDbContext(DbContextOptions<ProfileDbContext> option
             e.ToTable("Connections");
             e.HasKey(c => c.Id);
             e.Property(c => c.Connector).HasMaxLength(40);
+        });
+
+        model.Entity<ForecastJournalRow>(e =>
+        {
+            e.ToTable("ForecastJournal");
+            e.HasKey(j => j.MadeOn);
         });
 
         model.Entity<AuditRow>(e =>

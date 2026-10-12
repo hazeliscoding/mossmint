@@ -30,6 +30,7 @@ public class ProfileExportTests
         _entry.RecordEntry(_checking.Id, "Groceries", -42.1m, new DateOnly(2026, 10, 8), "Food");
         _entry.AddGoal("Rainy day", 1_000m, 250m);
         _data.SaveSettings(_data.Settings() with { DebtPlan = new DebtPlan(Money.Usd(150m), PayoffOrder.Avalanche, []) });
+        ForecastJournal.Record(_data, Forecasts.Build(_data, Today), Today);
     }
 
     private string File(string name) => ProfileExport.Files(_data, "Juniper", Now).Single(f => f.Name == name).Content;
@@ -73,6 +74,7 @@ public class ProfileExportTests
             .Should().BeEquivalentTo("simple-interest-loan", "credit-card");
         root.GetProperty("income").EnumerateArray().Single().GetProperty("name").GetString().Should().Be("Paycheck");
         root.GetProperty("goals").EnumerateArray().Single().GetProperty("name").GetString().Should().Be("Rainy day");
+        root.GetProperty("forecastJournal").EnumerateArray().Single().GetProperty("madeOn").GetString().Should().Be("2026-10-09");
         var plan = root.GetProperty("settings").GetProperty("debtPlan");
         (plan.GetProperty("monthlyExtra").GetProperty("amount").GetDecimal(), plan.GetProperty("order").GetString()).Should().Be((150m, "Avalanche"));
     }

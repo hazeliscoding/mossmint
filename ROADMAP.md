@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M7 (v0.7): bank data in. CSV, OFX/QFX and SimpleFIN are in; the forecast journal is next. M5's hand Narrator pass is still to do.
+**Next up:** M7 (v0.7): bank data in is built; checking that every offline workflow holds with a connector unset, stale or offline, then the 0.7 release. M5's hand Narrator pass is still to do.
 
 ## Releases
 
@@ -150,6 +150,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **The first SimpleFIN sync is previewed and reaches 90 days back; later syncs come straight in with a summary**, and anything odd goes to the review queue. Both are the recommendation put to the test user, built as the default while they decide; either is a small change.
 - **Pending transactions wait for 0.8,** which links a pending charge to what posts; until then SimpleFIN syncs only posted ones.
 - **Only `Mossmint.Connectors.SimpleFin` may use the network,** enforced by the architecture tests, which also check it really does. Nothing connects at startup, on unlock or on a timer.
+- **The forecast journal keeps one entry a day,** the forecast the app shows (expected spending, the saved debt plan), replaced during the day and never rewritten after. It travels in backups and the readable export.
 - **Categories from other apps aren't imported yet.** M8 decides which categories Mossmint keeps; until then a category column is ignored rather than becoming a second category system.
 
 ## M0: Skeleton and guardrails (v0.3.0)
@@ -264,7 +265,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
   - [x] Disconnecting can also erase the transactions and balances the connection brought in (the provider ADR's promise); accounts and import history stay.
 - [x] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*. (Statement files now; SimpleFIN goes through the same path.)
 - [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review, and a voided import stays void.)
-- [ ] A forecast journal: each forecast is kept as it was made, for 0.9's backtests.
+- [x] A forecast journal: each forecast is kept as it was made, for 0.9's backtests. (The forecast the app shows, once a day; the rules are in `docs/financial-models/README.md`.)
 
 **Done when:** every offline workflow still works with any connector unconfigured, stale or offline.
 

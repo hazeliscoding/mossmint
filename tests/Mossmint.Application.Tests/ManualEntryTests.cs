@@ -1,4 +1,5 @@
 using Mossmint.Application.Data;
+using Mossmint.Application.Forecasting;
 using Mossmint.Application.Setup;
 using Mossmint.Domain;
 using Mossmint.Domain.Accounts;
@@ -175,4 +176,16 @@ internal sealed class InMemoryProfileData : IProfileData
     public void SaveSettings(PlanSettings settings) => _settings = settings;
 
     public ProfileCounts Counts() => new(_accounts.Count, _balances.Count, _bills.Count, _income.Count, _debts.Count, 0);
+
+    private readonly SortedDictionary<DateOnly, JournalEntry> _journal = [];
+
+    public IReadOnlyList<JournalEntry> ForecastJournal() => [.. _journal.Values];
+
+    public void RecordForecast(JournalEntry entry)
+    {
+        if (_journal.Count == 0 || entry.MadeOn >= _journal.Keys.Max())
+        {
+            _journal[entry.MadeOn] = entry;
+        }
+    }
 }

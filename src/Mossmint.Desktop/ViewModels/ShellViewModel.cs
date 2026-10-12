@@ -76,9 +76,13 @@ public sealed partial class ShellViewModel : ViewModelBase
     {
         SelectedItem?.Page.OnNavigatedTo();
         DataMode = Context.IsUnlocked && Context.Current.Imports.Connections().Count > 0 ? "SimpleFIN · Manual sync" : "Offline · Manual";
-        var outcome = Context.IsUnlocked
-            ? Forecasts.Build(Context.Current.Data, DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime))
-            : new ForecastUnavailable(["Unlock a profile."]);
+        var today = DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime);
+        var outcome = Context.IsUnlocked ? Forecasts.Build(Context.Current.Data, today) : new ForecastUnavailable(["Unlock a profile."]);
+        if (Context.IsUnlocked)
+        {
+            // The forecast the top bar shows is the one the journal keeps for later backtests.
+            ForecastJournal.Record(Context.Current.Data, outcome, today);
+        }
         (ForecastAsOf, ForecastAsOfTip) = outcome switch
         {
             ProfileForecast f => (f.OpeningProvenance.AsOf.ToString("d MMM yyyy", CultureInfo.CurrentCulture),

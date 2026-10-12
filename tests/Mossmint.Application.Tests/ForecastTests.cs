@@ -27,6 +27,33 @@ public class ForecastTests
     }
 
     [Fact]
+    public void The_journal_keeps_todays_forecast_as_it_was_made()
+    {
+        var forecast = Build();
+
+        ForecastJournal.Record(_data, forecast, Today);
+
+        var entry = _data.ForecastJournal().Should().ContainSingle().Subject;
+        entry.MadeOn.Should().Be(Today);
+        entry.Account.Should().Be(_checking.Id);
+        entry.Opening.Should().Be(forecast.Opening);
+        entry.OpeningAsOf.Should().Be(Today.AddDays(-1));
+        entry.Days.Select(d => (d.Date, d.Low, d.Closing)).Should().Equal(forecast.Days.Select(d => (d.Date, d.Low, d.Closing)));
+        (entry.LowestDate, entry.Lowest).Should().Be((forecast.LowestDate, forecast.Lowest));
+        (entry.SafeState, entry.SafeAmount, entry.SafeThrough).Should().Be((forecast.SafeToSpend.State, forecast.SafeToSpend.Amount, forecast.SafeToSpend.Through));
+    }
+
+    [Fact]
+    public void No_forecast_means_nothing_for_the_journal()
+    {
+        var empty = new InMemoryProfileData();
+
+        ForecastJournal.Record(empty, Forecasts.Build(empty, Today), Today);
+
+        empty.ForecastJournal().Should().BeEmpty();
+    }
+
+    [Fact]
     public void No_cash_account_means_no_forecast_and_says_what_to_add()
     {
         var outcome = Forecasts.Build(new InMemoryProfileData(), Today);

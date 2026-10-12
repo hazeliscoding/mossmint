@@ -80,5 +80,11 @@ public interface IProfileData
 
     void SaveSettings(PlanSettings settings);
 
+    // Oldest first. Not audited: each entry is derived from the records above.
+    IReadOnlyList<JournalEntry> ForecastJournal();
+
+    // Replaces the entry for the same day; an entry older than the newest kept is ignored.
+    void RecordForecast(JournalEntry entry);
+
     ProfileCounts Counts();
 }

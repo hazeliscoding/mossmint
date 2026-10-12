@@ -245,6 +245,20 @@ namespace Mossmint.Persistence.Data.Migrations
                     b.ToTable("FileMappings", (string)null);
                 });
 
+            modelBuilder.Entity("Mossmint.Persistence.Data.ForecastJournalRow", b =>
+                {
+                    b.Property<DateOnly>("MadeOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EntryJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("MadeOn");
+
+                    b.ToTable("ForecastJournal", (string)null);
+                });
+
             modelBuilder.Entity("Mossmint.Persistence.Data.GoalRow", b =>
                 {
                     b.Property<Guid>("Id")

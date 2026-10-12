@@ -96,7 +96,7 @@ Install Mossmint, choose *Restore an encrypted backup* on the welcome screen, pi
 
 | File | What it holds |
 | --- | --- |
-| `profile.json` | Every account with its balances and transactions, bills, paychecks, debts with their terms, savings goals and plan settings, as Mossmint keeps them. Enum values are names, not numbers. The audit trail and import review history stay in the profile and its backups. |
+| `profile.json` | Every account with its balances and transactions, bills, paychecks, debts with their terms, savings goals, plan settings and the forecast journal, as Mossmint keeps them. Enum values are names, not numbers. The audit trail and import review history stay in the profile and its backups. |
 | `transactions.csv` | One row per entry, oldest first. Void entries stay, marked `Void`. |
 | `bills.csv` | One row per bill, with its amount or estimate range and how it repeats. |
 | `debts.csv` | Each debt's latest balance, today's rate (a card's purchase rate) and payment. |

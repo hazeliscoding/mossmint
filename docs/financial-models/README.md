@@ -49,6 +49,12 @@ Every figure carries a source, an as-of date and a confidence (`Confirmed`, `Sch
 - An OFX statement is signed from the account holder's side; Mossmint flips it for cards and loans, transactions and balance alike. Its transactions are keyed by the bank's FITID instead.
 - Imported transactions are *needs review* (`Imported`), like every imported figure. A balance the bank reported, in a statement file or through a connection, is `Connector` and *confirmed*.
 
+### Forecast journal
+
+- The forecast the app shows (expected spending, the saved debt plan, 45 days) is kept once a day: its account, opening balance with its date and confidence, each day's low and closing balance, the lowest point and the safe-to-spend answer.
+- A later forecast the same day replaces the day's entry, so it holds what was known at the end of that day. An entry for a day older than the newest one kept is ignored: a past forecast is never rewritten.
+- No forecast (no checking balance yet, for instance) means no entry. 0.9 compares entries with what happened for its backtests.
+
 ### Replay
 
 Engine inputs and outputs are plain records that serialize to JSON. Replaying a serialized input gives a byte-identical serialized output (`ReplayTests`).

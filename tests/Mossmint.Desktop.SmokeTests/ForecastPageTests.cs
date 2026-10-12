@@ -22,6 +22,22 @@ public class ForecastPageTests
     }
 
     [AvaloniaFact]
+    public async Task The_forecast_shown_is_kept_in_the_journal_once_a_day()
+    {
+        using var app = await Unlocked();
+        var entry = new ManualEntry(app.Services.Context.Current.Data, TimeProvider.System);
+        var checking = entry.AddCashAccount("Checking", 1_000m);
+        entry.AddPaycheck(new PaycheckEntry("Paycheck", 2_000m, PayPattern.TwiceMonthly), checking.Id);
+
+        app.ViewModel.Shell.Navigate(Destination.CashFlow);
+        app.ViewModel.Shell.Navigate(Destination.Overview);
+
+        var journal = app.Services.Context.Current.Data.ForecastJournal();
+        journal.Should().ContainSingle().Which.MadeOn.Should().Be(DateOnly.FromDateTime(DateTime.Now));
+        journal[0].Account.Should().Be(checking.Id);
+    }
+
+    [AvaloniaFact]
     public async Task Cash_flow_reruns_under_stress_spending_and_late_paychecks()
     {
         using var app = await Unlocked();

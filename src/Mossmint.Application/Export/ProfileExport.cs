@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Mossmint.Application.Data;
+using Mossmint.Application.Forecasting;
 using Mossmint.Domain;
 using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Debts;
@@ -37,7 +38,7 @@ public static class ProfileExport
 
         var document = new ExportDocument("mossmint-export", FormatVersion, exportedAt, profileName, data.Settings(),
             [.. accounts.Select(a => new ExportedAccount(a, data.Balances(a.Id), data.Transactions(a.Id)))],
-            bills, data.Income(), data.Debts(), data.Goals());
+            bills, data.Income(), data.Debts(), data.Goals(), data.ForecastJournal());
 
         var transactions = accounts.SelectMany(a => data.Transactions(a.Id))
             .OrderBy(t => t.EffectiveDate).ThenBy(t => Name(t.Account), StringComparer.Ordinal).ThenBy(t => t.Description, StringComparer.Ordinal)
@@ -141,7 +142,8 @@ public static class ProfileExport
         IReadOnlyList<RecurringBill> Bills,
         IReadOnlyList<IncomeSchedule> Income,
         IReadOnlyList<DebtAccount> Debts,
-        IReadOnlyList<SavingsGoal> Goals);
+        IReadOnlyList<SavingsGoal> Goals,
+        IReadOnlyList<JournalEntry> ForecastJournal);
 
     private sealed record ExportedAccount(Account Account, IReadOnlyList<BalanceSnapshot> Balances, IReadOnlyList<Transaction> Transactions);
 }
