@@ -257,39 +257,55 @@ public sealed partial class BackupsPageViewModel(AppServices services, IAppNavig
         }
 
         var now = services.Clock.GetLocalNow();
-        var files = ProfileExport.Files(services.Context.Current.Data, services.Context.ProfileName, now);
         var name = string.Concat($"Mossmint export {services.Context.ProfileName} {now:yyyy-MM-dd}".Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '-' : c));
+        string? folder = null;
         IsBusy = true;
         try
         {
-            var folder = await Task.Run(() =>
+            // Read on the UI thread, like every page; only the writing moves off it.
+            var files = ProfileExport.Files(services.Context.Current.Data, services.Context.ProfileName, now);
+            folder = Path.Combine(parent, name);
+            for (var n = 2; Directory.Exists(folder) || File.Exists(folder); n++)
             {
-                var folder = Path.Combine(parent, name);
-                for (var n = 2; Directory.Exists(folder) || File.Exists(folder); n++)
-                {
-                    folder = Path.Combine(parent, $"{name} ({n})");
-                }
+                folder = Path.Combine(parent, $"{name} ({n})");
+            }
 
-                Directory.CreateDirectory(folder);
+            var target = folder;
+            await Task.Run(() =>
+            {
+                Directory.CreateDirectory(target);
                 foreach (var file in files)
                 {
-                    File.WriteAllText(Path.Combine(folder, file.Name), file.Content);
+                    File.WriteAllText(Path.Combine(target, file.Name), file.Content);
                 }
-
-                return folder;
             });
             ExportStatus = $"Exported to \"{Path.GetFileName(folder)}\". These files aren't encrypted: keep them private and delete them when you're done.";
             ExportTone = StatusTone.Healthy;
             IsConfirmingExport = false;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception e)
         {
-            ExportStatus = $"The export didn't complete: {e.Message}";
+            var leftover = folder is not null && Directory.Exists(folder) && !TryDelete(folder);
+            ExportStatus = $"The export didn't complete: {e.Message}" +
+                (leftover ? $" Some unencrypted files may be left in \"{Path.GetFileName(folder)}\"; delete that folder." : "");
             ExportTone = StatusTone.Critical;
         }
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private static bool TryDelete(string folder)
+    {
+        try
+        {
+            Directory.Delete(folder, recursive: true);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 
@@ -347,6 +363,7 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
     // The update check keeps its own status, so it survives moving between pages.
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(CheckForUpdatesCommand), nameof(DownloadUpdateCommand))]
+    [NotifyPropertyChangedFor(nameof(ShowsUpdateStrip))]
     private bool _isUpdating;
 
     [ObservableProperty]
@@ -391,8 +408,8 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
         }
     }
 
-    // The strip at the top of the app: a newer version, not put off and not yet downloaded.
-    public bool ShowsUpdateStrip => AvailableVersion is { } version && version != _preferences.NotNow && !IsDownloaded;
+    // The strip at the top of the app: a newer version, not put off, not downloading or downloaded.
+    public bool ShowsUpdateStrip => AvailableVersion is { } version && version != _preferences.NotNow && !IsDownloaded && !IsUpdating;
 
     public override void OnNavigatedTo()
     {
@@ -503,7 +520,7 @@ public sealed partial class SettingsPageViewModel(AppServices services, IAppNavi
     private Task DownloadFromStrip()
     {
         navigator.OpenApp(Destination.Settings);
-        return DownloadUpdateCommand.ExecuteAsync(null);
+        return DownloadUpdateCommand.CanExecute(null) ? DownloadUpdateCommand.ExecuteAsync(null) : Task.CompletedTask;
     }
 
     private void Save(UpdatePreferences preferences)

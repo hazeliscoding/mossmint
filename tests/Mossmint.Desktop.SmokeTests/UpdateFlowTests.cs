@@ -22,10 +22,16 @@ internal sealed class FakeUpdates : IAppUpdates
         return Failure is null ? Task.FromResult(Latest) : Task.FromException<string?>(Failure);
     }
 
+    // Set to hold a download open until the test completes it.
+    public TaskCompletionSource? Downloading { get; set; }
+
+    public int Downloads { get; private set; }
+
     public Task DownloadAsync(Action<int> progress)
     {
+        Downloads++;
         progress(100);
-        return Task.CompletedTask;
+        return Downloading?.Task ?? Task.CompletedTask;
     }
 
     public void ApplyAndRestart() => Applied = true;
@@ -152,6 +158,24 @@ public class UpdateFlowTests
         app.ViewModel.Shell.CurrentPage.Should().BeSameAs(settings);
         settings.IsDownloaded.Should().BeTrue();
         settings.ShowsUpdateStrip.Should().BeFalse("Settings now offers the restart");
+    }
+
+    [AvaloniaFact]
+    public async Task The_strip_hides_while_a_download_runs_and_never_starts_a_second()
+    {
+        var updates = new FakeUpdates { Latest = "0.4.0", Downloading = new TaskCompletionSource() };
+        using var app = new Harness(updates);
+        var settings = await OpenSettings(app);
+        await settings.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        var download = settings.DownloadUpdateCommand.ExecuteAsync(null);
+        settings.ShowsUpdateStrip.Should().BeFalse("Settings shows the progress");
+        await settings.DownloadFromStripCommand.ExecuteAsync(null);
+        updates.Downloading.SetResult();
+        await download;
+
+        updates.Downloads.Should().Be(1);
+        settings.IsDownloaded.Should().BeTrue();
     }
 
     private static async Task<SettingsPageViewModel> OpenSettings(Harness app)
