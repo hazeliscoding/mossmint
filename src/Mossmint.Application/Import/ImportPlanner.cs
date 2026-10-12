@@ -155,6 +155,11 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
                 Block("fractional-amount", "An amount has fractions of a cent", $"{balance.Label}: {balance.Balance} can't be stored exactly.", [balance.Source]);
             }
 
+            foreach (var transaction in batch.Transactions.Where(t => !t.Amount.IsWholeMinorUnits))
+            {
+                Block("fractional-amount", "An amount has fractions of a cent", $"{transaction.Description}: {transaction.Amount} can't be stored exactly.", [transaction.Source]);
+            }
+
             foreach (var money in AllAmounts().Where(m => m.Currency != Currency))
             {
                 Block("currency", "Mixed currencies", $"{money} isn't in {Currency.Code}.");

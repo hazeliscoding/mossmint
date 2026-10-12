@@ -170,6 +170,17 @@ public sealed class ConnectorImportTests : IDisposable
     }
 
     [Fact]
+    public void A_transaction_with_fractions_of_a_cent_blocks_the_sync()
+    {
+        var sync = FakeBank.First(Morning) with { Transactions = [new(FakeBank.Checking.ExternalId, "t-9", Today, Money.Usd(-4.505m), false, "Odd amount")] };
+
+        var plan = _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd, _linked));
+
+        plan.CanCommit.Should().BeFalse();
+        plan.Findings.Should().Contain(f => f.Code == "fractional-amount");
+    }
+
+    [Fact]
     public void A_connection_and_its_credential_stay_inside_the_profile_and_out_of_exports()
     {
         const string Secret = "https://user:s3cret-token@bridge.example/simplefin";
