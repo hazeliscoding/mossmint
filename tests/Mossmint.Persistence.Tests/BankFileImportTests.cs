@@ -1,0 +1,117 @@
+using System.Text;
+using Mossmint.Application.Import;
+using Mossmint.Application.Profiles;
+using Mossmint.Domain;
+using Mossmint.Domain.Accounts;
+using Mossmint.Import.Excel;
+using Mossmint.Import.Transactions;
+using Mossmint.Samples.Connectors;
+
+namespace Mossmint.Persistence.Tests;
+
+// A bank file goes into an account the user picks, through the same dry run,
+// review queue and commit as every other import.
+public sealed class BankFileImportTests : IDisposable
+{
+    private static readonly DateOnly Today = new(2026, 10, 12);
+    private const string File = "Date,Description,Amount\n2026-10-01,Paycheck,1200.00\n2026-10-02,Corner Cafe,-4.50\n2026-10-03,Grocer,-61.20\n";
+    private static readonly CsvMapping Signed = new(0, "yyyy-MM-dd", 1, AmountStyle.SpendingNegative, Amount: 2);
+    private readonly TempRoot _root = new();
+    private readonly FixedClock _clock = new(new DateTimeOffset(2026, 10, 12, 14, 0, 0, TimeSpan.Zero));
+    private readonly ImportService _imports;
+    private readonly IProfileSession _session;
+    private readonly Account _checking = new(new AccountId(Guid.CreateVersion7()), "Household Checking", AccountKind.Checking, Currency.Usd);
+
+    public BankFileImportTests()
+    {
+        _imports = new ImportService(new WorkbookImporter(), _clock);
+        _session = _root.Store(_clock).Create("Juniper", "moss under the old oak", unlockOnThisDevice: false).Session;
+        _session.Data.AddAccount(_checking);
+    }
+
+    public void Dispose()
+    {
+        _session.Dispose();
+        _root.Dispose();
+    }
+
+    [Fact]
+    public void A_file_lands_in_the_chosen_account_and_importing_it_again_changes_nothing()
+    {
+        var plan = Apply(File, _checking);
+
+        plan.Changes.Should().Contain(c => c.Entity == "Account" && c.Kind == ChangeKind.Unchanged);
+        plan.Count(ChangeKind.Add).Should().Be(3);
+        _session.Data.Accounts().Should().ContainSingle();
+        _session.Data.Transactions(_checking.Id).Select(t => t.Amount).Should().BeEquivalentTo([Money.Usd(1200m), Money.Usd(-4.50m), Money.Usd(-61.20m)]);
+        _session.Data.Transactions(_checking.Id).Should().OnlyContain(t => t.Provenance.Source == SourceKind.Imported);
+
+        Apply(File, _checking).Changes.Should().OnlyContain(c => c.Kind == ChangeKind.Unchanged);
+        _session.Data.Transactions(_checking.Id).Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void A_file_can_create_the_account_it_fills_and_find_it_again_next_time()
+    {
+        var joint = new Account(new AccountId(Guid.CreateVersion7()), "Joint Checking", AccountKind.Checking, Currency.Usd);
+
+        Apply(File, joint).Changes.Should().ContainSingle(c => c.Entity == "Account" && c.Kind == ChangeKind.Add);
+
+        _session.Data.Accounts().Should().ContainSingle(a => a.Id == joint.Id && a.Name == "Joint Checking");
+        Apply(File, joint).Changes.Should().OnlyContain(c => c.Kind == ChangeKind.Unchanged);
+    }
+
+    [Fact]
+    public void A_voided_imported_entry_stays_void_when_the_file_comes_again()
+    {
+        Apply(File, _checking);
+        var cafe = _session.Data.Transactions(_checking.Id).Single(t => t.Description == "Corner Cafe");
+        _session.Data.VoidTransaction(cafe.Id);
+
+        var plan = Apply(File, _checking);
+
+        plan.Changes.Should().ContainSingle(c => c.Kind == ChangeKind.KeepEdited).Which.Name.Should().Be("Household Checking");
+        _session.Data.Transactions(_checking.Id).Single(t => t.Id == cafe.Id).Status.Should().Be(TransactionStatus.Void);
+    }
+
+    [Fact]
+    public void An_account_fed_by_a_connection_refuses_a_file()
+    {
+        var sync = FakeBank.First(new DateTimeOffset(2026, 10, 12, 9, 0, 0, TimeSpan.Zero));
+        ImportService.Commit(_session, _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd)));
+        var connected = _session.Data.Accounts().Single(a => a.Name == FakeBank.Checking.Name);
+
+        var plan = Plan(File, connected);
+
+        plan.CanCommit.Should().BeFalse();
+        plan.Findings.Should().ContainSingle(f => f.Code == "one-source").Which.Title.Should().Contain(connected.Name);
+    }
+
+    [Fact]
+    public void Entries_typed_on_the_same_days_are_queued_for_review()
+    {
+        _session.Data.RecordTransaction(new Transaction(new TransactionId(Guid.CreateVersion7()), _checking.Id, new DateOnly(2026, 10, 2), Money.Usd(-4.50m),
+            TransactionStatus.Posted, "Coffee", Provenance.UserConfirmed(new DateOnly(2026, 10, 2))));
+        _session.Data.RecordTransaction(new Transaction(new TransactionId(Guid.CreateVersion7()), _checking.Id, new DateOnly(2026, 9, 20), Money.Usd(-8m),
+            TransactionStatus.Posted, "Older", Provenance.UserConfirmed(new DateOnly(2026, 9, 20))));
+
+        var plan = Apply(File, _checking);
+
+        plan.CanCommit.Should().BeTrue();
+        _session.Imports.ReviewItems().Should().ContainSingle(r => r.Code == "typed-overlap").Which.Detail.Should().StartWith("1 entry you added");
+    }
+
+    private ImportPlan Plan(string text, Account target)
+    {
+        var file = new SourceFile("bank.csv", Encoding.UTF8.GetBytes(text));
+        var batch = CsvImport.Map(file, CsvReader.Read(file.Content), Signed, new Dictionary<string, Account> { [""] = target }, Today, Currency.Usd);
+        return _imports.Plan(_session, batch);
+    }
+
+    private ImportPlan Apply(string text, Account target)
+    {
+        var plan = Plan(text, target);
+        ImportService.Commit(_session, plan);
+        return plan;
+    }
+}

@@ -73,6 +73,7 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
             context.PlanIncome();
             context.PlanSettings();
             context.PlanBalances();
+            context.PlanSources();
             context.PlanTransactions();
             context.PlanMissing();
         }
@@ -164,6 +165,24 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
         {
             foreach (var proposed in batch.Accounts)
             {
+                // A bank file names the Mossmint account it fills: one the user
+                // picked, or one this import creates with the ID it was given.
+                if (ImportKeys.AccountIn(proposed.Key) is { } chosen)
+                {
+                    _accountIds[proposed.Key] = chosen;
+                    if (_existingAccounts.FirstOrDefault(a => a.Id == chosen) is { } picked)
+                    {
+                        _changes.Add(new(ChangeKind.Unchanged, "Account", proposed.Key, picked.Name));
+                    }
+                    else
+                    {
+                        _newAccounts.Add(new Account(chosen, proposed.Name, proposed.Kind, Currency));
+                        _changes.Add(new(ChangeKind.Add, "Account", proposed.Key, proposed.Name, proposed.Kind.ToString()));
+                    }
+
+                    continue;
+                }
+
                 var account = new Account(default, proposed.Name, proposed.Kind, Currency);
                 if (Existing(LinkedEntity.Account, proposed.Key) is { } link && _existingAccounts.FirstOrDefault(a => a.Id.Value == link.EntityId) is { } current)
                 {
@@ -316,6 +335,38 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
             }
         }
 
+        // Until 0.8 can spot one transaction arriving from two sources, an
+        // account takes transactions from one source, and entries the user typed
+        // on the same days are queued so duplicates get voided by hand.
+        public void PlanSources()
+        {
+            var imported = store.Transactions();
+            var importedIds = imported.Select(t => t.Transaction.Id).ToHashSet();
+            foreach (var group in batch.Transactions.GroupBy(t => t.AccountKey))
+            {
+                var accountId = _accountIds[group.Key];
+                var name = AccountName(group.Key);
+                var incoming = ImportKeys.SourceOf($"{group.Key}|{group.First().ExternalId}");
+                if (imported.Where(t => t.Transaction.Account == accountId).Select(t => ImportKeys.SourceOf(t.Key)).FirstOrDefault(s => s != incoming) is { } other)
+                {
+                    Block("one-source", $"{name} already gets transactions from {ImportKeys.Describe(other)}",
+                        "Until Mossmint can spot the same transaction arriving from two places, each account takes transactions from one source. Choose another account for this one.",
+                        [group.First().Source]);
+                    continue;
+                }
+
+                var (first, last) = (group.Min(t => t.Date), group.Max(t => t.Date));
+                var typed = data.Transactions(accountId)
+                    .Count(t => !importedIds.Contains(t.Id) && t.Status != TransactionStatus.Void && t.EffectiveDate >= first && t.EffectiveDate <= last);
+                if (typed > 0)
+                {
+                    Review("typed-overlap", $"{name}: entries you added fall on the same days",
+                        $"{(typed == 1 ? "1 entry you added" : $"{typed} entries you added")} between {first:yyyy-MM-dd} and {last:yyyy-MM-dd} fall on days this import covers. Mossmint can't spot duplicates yet, so void any entry the import repeats.",
+                        [group.First().Source], group.Key);
+                }
+            }
+        }
+
         public void PlanTransactions()
         {
             var existing = store.Transactions().ToDictionary(t => t.Key);
@@ -325,6 +376,12 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
                 var accountId = _accountIds[proposed.AccountKey];
                 var name = AccountName(proposed.AccountKey);
                 var current = existing.GetValueOrDefault(key);
+                if (current is { Transaction.Status: TransactionStatus.Void })
+                {
+                    _changes.Add(new(ChangeKind.KeepEdited, "Transaction", key, name, $"You voided '{current.Transaction.Description}'; it stays void."));
+                    continue;
+                }
+
                 var transaction = new Transaction(current?.Transaction.Id ?? new TransactionId(NewId()), accountId, proposed.Date, proposed.Amount,
                     proposed.Status, proposed.Description, batch.ProvenanceFor(proposed.Source, proposed.Date));
                 if (current is not null && !current.RemovedAtSource && Fingerprint(current.Transaction) == Fingerprint(transaction))
