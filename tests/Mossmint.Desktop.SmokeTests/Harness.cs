@@ -58,7 +58,8 @@ internal sealed class Harness : IDisposable
     internal static readonly Argon2Settings Fast = new(1024, 1, 1);
 
     // Without fake updates the real Velopack service is used, which isn't installed under test.
-    public Harness(IAppUpdates? updates = null)
+    // A real connector provider is only for proving it stays silent; the fake is the default.
+    public Harness(IAppUpdates? updates = null, IConnectorProvider? simpleFin = null)
     {
         Root = Path.Combine(Path.GetTempPath(), "mossmint-ui-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Root);
@@ -71,7 +72,7 @@ internal sealed class Harness : IDisposable
             TimeProvider.System)
         {
             PreferencesFolder = Root,
-            SimpleFin = SimpleFin,
+            SimpleFin = simpleFin ?? SimpleFin,
         };
         if (updates is not null)
         {

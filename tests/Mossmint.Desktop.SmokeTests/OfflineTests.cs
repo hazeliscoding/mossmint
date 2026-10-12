@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Sockets;
 using Avalonia.Headless.XUnit;
+using Mossmint.Application.Forecasting;
+using Mossmint.Application.Import;
+using Mossmint.Application.Setup;
 using Mossmint.Desktop.ViewModels;
 
 namespace Mossmint.Desktop.SmokeTests;
@@ -29,6 +32,41 @@ public class OfflineTests
         app.Services.Backups.CreateLocal(app.Services.Context.Current);
 
         monitor.Events.Should().BeEmpty();
+    }
+
+    // M7's done-when: a connection left configured, and stale, never syncs on
+    // its own, and every offline workflow still works around it.
+    [AvaloniaFact]
+    public async Task A_stale_connection_never_syncs_on_its_own_and_everything_else_still_works()
+    {
+        using var monitor = new NetworkActivityMonitor();
+        using var app = new Harness(simpleFin: new Connectors.SimpleFin.SimpleFinProvider(TimeProvider.System));
+        app.CreateProfile();
+        app.Open();
+        var unlock = app.Screen<UnlockViewModel>();
+        unlock.Passphrase = Harness.Passphrase;
+        await unlock.UnlockCommand.ExecuteAsync(null);
+        var session = app.Services.Context.Current;
+        var entry = new ManualEntry(session.Data, TimeProvider.System);
+        var checking = entry.AddCashAccount("Checking", 1_000m);
+        entry.AddPaycheck(new PaycheckEntry("Paycheck", 2_000m, PayPattern.TwiceMonthly), checking.Id);
+        entry.AddBill(new BillEntry("Rent", 900m, 1), checking.Id);
+        session.Imports.SaveConnection(new Connection(Guid.CreateVersion7(), "simplefin", "https://user:pw@bridge.invalid/simplefin", "1700000000",
+            new Dictionary<string, Guid> { ["ACT-1"] = checking.Id.Value }, DateTimeOffset.Now.AddDays(-40), DateTimeOffset.Now.AddDays(-20)));
+
+        foreach (var destination in Enum.GetValues<Destination>())
+        {
+            app.ViewModel.OpenApp(destination);
+            Harness.Pump();
+        }
+
+        entry.RecordEntry(checking.Id, "Groceries", -42.10m, DateOnly.FromDateTime(DateTime.Now));
+        app.ViewModel.OpenApp(Destination.Overview);
+        app.Services.Backups.CreateLocal(session);
+
+        monitor.Events.Should().BeEmpty();
+        Forecasts.Build(session.Data, DateOnly.FromDateTime(DateTime.Now)).Should().BeOfType<ProfileForecast>();
+        app.ViewModel.Shell.DataMode.Should().Be("SimpleFIN · Manual sync");
     }
 
     [Fact]

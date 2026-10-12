@@ -267,7 +267,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review, and a voided import stays void.)
 - [x] A forecast journal: each forecast is kept as it was made, for 0.9's backtests. (The forecast the app shows, once a day; the rules are in `docs/financial-models/README.md`.)
 
-**Done when:** every offline workflow still works with any connector unconfigured, stale or offline.
+**Done when:** every offline workflow still works with any connector unconfigured, stale or offline. (Checked by `OfflineTests`: every screen, entries, the forecast and a backup with no connection and with a stale real SimpleFIN connection, with no network activity; and by `ConnectionsFlowTests`: a refused or unreachable sync changes nothing.)
 
 ## M8: Matching real activity to the plan (v0.8)
 

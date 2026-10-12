@@ -118,6 +118,15 @@ public class ConnectionsFlowTests
         page.StatusTone.Should().Be(StatusTone.Critical);
         page.Status.Should().Be("SimpleFIN no longer accepts this connection.");
         app.Services.Context.Current.Data.Counts().Should().Be(before);
+
+        // Offline: the network is down, so the sync waits and nothing else changes.
+        app.SimpleFin.NextFailure = new ConnectorException(ConnectorFailure.Unavailable, "Couldn't reach SimpleFIN. Check the internet connection and try again.");
+
+        await page.SyncCommand.ExecuteAsync(page.Connections.Single());
+
+        page.StatusTone.Should().Be(StatusTone.Warning);
+        app.Services.Context.Current.Data.Counts().Should().Be(before);
+        app.Services.Context.Current.Imports.Connections().Single().Cursor.Should().NotBeNull("the last good sync is still where the next one starts");
     }
 
     private static async Task<ConnectionsPageViewModel> OpenConnections(Harness app)
