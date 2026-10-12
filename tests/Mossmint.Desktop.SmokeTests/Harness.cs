@@ -147,7 +147,7 @@ internal sealed class FakeConnectorProvider : IConnectorProvider
 
     public string DisplayName => "SimpleFIN";
 
-    public List<ConnectorSync> Script { get; } = [FakeBank.First(DateTimeOffset.Now), FakeBank.Second(DateTimeOffset.Now)];
+    public List<ConnectorSync> Script { get; } = [FakeBank.First(DateTimeOffset.Now) with { Connector = new("simplefin") }, FakeBank.Second(DateTimeOffset.Now) with { Connector = new("simplefin") }];
 
     public ConnectorException? NextFailure { get; set; }
 

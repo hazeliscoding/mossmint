@@ -53,6 +53,9 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     private ConnectionRow? _confirmingDisconnect;
 
     [ObservableProperty]
+    private bool _eraseOnDisconnect;
+
+    [ObservableProperty]
     private string? _status;
 
     [ObservableProperty]
@@ -231,7 +234,7 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
     private void CancelPreview() => (Preview, _pending) = (null, null);
 
     [RelayCommand]
-    private void StartDisconnect(ConnectionRow row) => ConfirmingDisconnect = row;
+    private void StartDisconnect(ConnectionRow row) => (ConfirmingDisconnect, EraseOnDisconnect) = (row, false);
 
     [RelayCommand]
     private void CancelDisconnect() => ConfirmingDisconnect = null;
@@ -244,10 +247,18 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
             return;
         }
 
-        services.Context.Current.Imports.RemoveConnection(row.Connection.Id);
+        var imports = services.Context.Current.Imports;
+        imports.RemoveConnection(row.Connection.Id);
+        var kept = "what the connection brought in stays";
+        if (EraseOnDisconnect)
+        {
+            var (transactions, balances) = imports.EraseConnection(new ConnectorId(row.Connection.Connector));
+            kept = $"removed {Count(transactions, "transaction")} and {Count(balances, "balance")} it brought in";
+        }
+
         ConfirmingDisconnect = null;
         Refresh();
-        Show($"Disconnected. Mossmint deleted the key it kept; what the connection brought in stays. Remove Mossmint's access in {ProviderName} too.", StatusTone.Neutral);
+        Show($"Disconnected. Mossmint deleted the key it kept and {kept}. Remove Mossmint's access in {ProviderName} too.", StatusTone.Neutral);
     }
 
     // Fetches since the last sync, then asks about accounts it hasn't seen,

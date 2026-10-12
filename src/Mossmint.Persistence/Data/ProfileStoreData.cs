@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Mossmint.Application.Data;
 using Mossmint.Application.Forecasting;
 using Mossmint.Application.Import;
+using Mossmint.Connectors.Abstractions;
 using Mossmint.Domain;
 using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Debts;
@@ -338,6 +339,21 @@ internal sealed class ProfileStoreData(ProfileDbContext db, TimeProvider clock, 
         row.LinksJson = JsonSerializer.Serialize(connection.Links, Json);
         row.LastSyncAt = connection.LastSyncAt;
         db.SaveChanges();
+    }
+
+    public (int Transactions, int Balances) EraseConnection(ConnectorId connector)
+    {
+        var marker = $"|{connector}:";
+        var transactions = db.Transactions.Where(t => t.SourceKey != null && t.SourceKey.Contains(marker)).ToList();
+        var prefix = ConnectorBatches.ReferencePrefix(connector);
+        var balances = db.Balances.AsEnumerable()
+            .Where(b => JsonSerializer.Deserialize<Provenance>(b.ProvenanceJson, Json) is { Source: SourceKind.Connector, Reference: { } r } && r.StartsWith(prefix, StringComparison.Ordinal))
+            .ToList();
+        db.Transactions.RemoveRange(transactions);
+        db.Balances.RemoveRange(balances);
+        Audit("connection.erased", "Connection", Guid.Empty, $"{connector}: {transactions.Count} transactions, {balances.Count} balances");
+        db.SaveChanges();
+        return (transactions.Count, balances.Count);
     }
 
     public void RemoveConnection(Guid id)

@@ -80,4 +80,9 @@ public static class ConnectorBatches
     }
 
     public static string Scope(ConnectorId connector) => $"connector:{connector}";
+
+    // The start of every provenance reference this connector's batches write
+    // (ImportBatch.Reference: the scope's hash prefix, then the location).
+    public static string ReferencePrefix(ConnectorId connector) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Scope(connector))))[..12] + ":";
 }

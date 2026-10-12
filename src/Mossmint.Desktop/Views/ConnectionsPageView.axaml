@@ -118,7 +118,8 @@
       <StackPanel Spacing="12">
         <TextBlock Classes="section" Text="Disconnect SimpleFIN?" />
         <TextBlock Classes="prose secondary" TextWrapping="Wrap"
-                   Text="Mossmint deletes the key it keeps for this connection. Accounts, balances and transactions it brought in stay. SimpleFIN can't be told from here, so remove Mossmint's access in SimpleFIN as well." />
+                   Text="Mossmint deletes the key it keeps for this connection. SimpleFIN can't be told from here, so remove Mossmint's access in SimpleFIN as well." />
+        <CheckBox IsChecked="{Binding EraseOnDisconnect}" Content="Also remove the transactions and balances it brought in (accounts stay)" />
         <StackPanel Orientation="Horizontal" Spacing="10">
           <Button Classes="danger" Content="Disconnect" Command="{Binding ConfirmDisconnectCommand}" />
           <Button Classes="ghost" Content="Keep it" IsCancel="True" Command="{Binding CancelDisconnectCommand}" />

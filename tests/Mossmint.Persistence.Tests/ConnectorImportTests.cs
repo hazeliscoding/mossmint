@@ -181,6 +181,24 @@ public sealed class ConnectorImportTests : IDisposable
     }
 
     [Fact]
+    public void Erasing_a_connection_removes_what_it_brought_in_and_nothing_else()
+    {
+        Apply(FakeBank.First(Morning));
+        var checking = _linked[FakeBank.Checking.ExternalId].Id;
+        _session.Data.RecordTransaction(new Transaction(new TransactionId(Guid.CreateVersion7()), checking, Today, Money.Usd(-3m),
+            TransactionStatus.Posted, "Typed by hand", Provenance.UserConfirmed(Today)));
+        _session.Data.RecordBalance(new BalanceSnapshot(checking, Money.Usd(1_400m), Provenance.UserConfirmed(Today)));
+
+        var erased = _session.Imports.EraseConnection(FakeBank.Id);
+
+        erased.Should().Be((3, 2));
+        _session.Data.Transactions(checking).Should().ContainSingle().Which.Description.Should().Be("Typed by hand");
+        _session.Data.Balances(checking).Should().ContainSingle().Which.Provenance.Source.Should().Be(SourceKind.UserConfirmed);
+        _session.Data.Accounts().Should().HaveCount(2, "accounts stay; only what the connection reported goes");
+        Apply(FakeBank.First(Morning)).Count(ChangeKind.Add).Should().Be(5, "a later sync can bring it all back");
+    }
+
+    [Fact]
     public void A_connection_and_its_credential_stay_inside_the_profile_and_out_of_exports()
     {
         const string Secret = "https://user:s3cret-token@bridge.example/simplefin";

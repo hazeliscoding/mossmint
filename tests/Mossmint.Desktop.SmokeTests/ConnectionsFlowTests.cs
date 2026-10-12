@@ -69,6 +69,33 @@ public class ConnectionsFlowTests
     }
 
     [AvaloniaFact]
+    public async Task Disconnecting_can_also_erase_what_the_connection_brought_in()
+    {
+        using var app = new Harness();
+        var page = await OpenConnections(app);
+        page.StartConnectCommand.Execute(null);
+        page.SetupToken = FakeConnectorProvider.Token;
+        await page.ConnectCommand.ExecuteAsync(null);
+        foreach (var row in page.Linking)
+        {
+            row.Selected = row.Choices.Single(c => c.IsNew);
+        }
+
+        await page.ContinueCommand.ExecuteAsync(null);
+        await page.ImportCommand.ExecuteAsync(null);
+        var data = app.Services.Context.Current.Data;
+        data.Accounts().SelectMany(a => data.Transactions(a.Id)).Should().NotBeEmpty();
+
+        page.StartDisconnectCommand.Execute(page.Connections.Single());
+        page.EraseOnDisconnect = true;
+        page.ConfirmDisconnectCommand.Execute(null);
+
+        data.Accounts().SelectMany(a => data.Transactions(a.Id)).Should().BeEmpty();
+        data.Accounts().SelectMany(a => data.Balances(a.Id)).Should().BeEmpty();
+        page.Status.Should().Contain("removed 3 transactions and 2 balances");
+    }
+
+    [AvaloniaFact]
     public async Task A_refused_sync_says_why_and_changes_nothing()
     {
         using var app = new Harness();

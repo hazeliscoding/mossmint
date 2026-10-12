@@ -48,7 +48,7 @@ Until 0.8 can spot duplicates, each account takes transactions from one source. 
 
 If your bank offers no file to download, **Connections** can sync it through [SimpleFIN Bridge](https://bridge.simplefin.org), a separate paid service. You sign in to your bank at SimpleFIN, never in Mossmint, and SimpleFIN gives you a one-time setup token. Paste it into **Connect SimpleFIN…**: Mossmint shows which server the token points to before sending anything, then asks which of your accounts each bank account feeds (or leave one out). The first sync, up to 90 days back, is shown as a dry run; after that, **Sync now** brings new transactions and balances straight in and says what changed. Pending charges wait until they post. A balance from the bank counts as confirmed, so a fresh one clears *needs confirmation*.
 
-Mossmint never syncs on its own. **Disconnect…** deletes the key Mossmint kept and leaves what was imported; remove Mossmint's access in SimpleFIN too.
+Mossmint never syncs on its own. **Disconnect…** deletes the key Mossmint kept and, if you tick the box, the transactions and balances the connection brought in; remove Mossmint's access in SimpleFIN too.
 
 ## Debts and scenarios
 

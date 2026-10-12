@@ -1,4 +1,5 @@
 using Mossmint.Application.Data;
+using Mossmint.Connectors.Abstractions;
 using Mossmint.Domain.Accounts;
 using Mossmint.Domain.Debts;
 using Mossmint.Domain.Planning;
@@ -107,6 +108,10 @@ public interface IImportStore
 
     // Deletes the stored credential with the connection; what it imported stays.
     void RemoveConnection(Guid id);
+
+    // Deletes the transactions and balances a connector brought in, when the
+    // user asks on disconnecting. Accounts and import history stay.
+    (int Transactions, int Balances) EraseConnection(ConnectorId connector);
 }
 
 // A connection the user added: its connector, the credential the provider

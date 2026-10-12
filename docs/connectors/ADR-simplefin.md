@@ -42,7 +42,7 @@ This is the first code in Mossmint that makes a network call other than the opt-
 
 ### Disconnecting
 
-Disconnecting deletes the stored access URL. SimpleFIN has no revoke call, so Mossmint tells the user to remove the app's access at SimpleFIN too. What the connection imported stays, like any import.
+Disconnecting deletes the stored access URL. SimpleFIN has no revoke call, so Mossmint tells the user to remove the app's access at SimpleFIN too. What the connection imported stays, like any import, unless the user also ticks *remove the transactions and balances it brought in*; then those are deleted (the audit trail records the counts), while accounts and the import history stay.
 
 ## Consequences
 

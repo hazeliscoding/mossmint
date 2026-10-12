@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** M7 (v0.7): bank data in. CSV, OFX/QFX and SimpleFIN are in; erasing on disconnect and the forecast journal are next. M5's hand Narrator pass is still to do.
+**Next up:** M7 (v0.7): bank data in. CSV, OFX/QFX and SimpleFIN are in; the forecast journal is next. M5's hand Narrator pass is still to do.
 
 ## Releases
 
@@ -261,7 +261,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] SimpleFIN adapter ([ADR](docs/connectors/ADR-simplefin.md)):
   - The user claims a setup token once. The credentials live only in the encrypted profile and travel as Basic auth, never in a request URL.
   - Syncing is manual, with **Sync now**. Request windows overlap by five days, and errors are shown per account.
-  - [ ] Disconnecting can also erase what the connection brought in (the provider ADR's promise).
+  - [x] Disconnecting can also erase the transactions and balances the connection brought in (the provider ADR's promise); accounts and import history stay.
 - [x] Bank-reported balances become connector balance snapshots, so a fresh balance can clear *needs confirmation*. (Statement files now; SimpleFIN goes through the same path.)
 - [x] One transaction source per account until 0.8 detects duplicates. A deleted imported transaction stays deleted. (Entries typed on the same days go to review, and a voided import stays void.)
 - [ ] A forecast journal: each forecast is kept as it was made, for 0.9's backtests.
