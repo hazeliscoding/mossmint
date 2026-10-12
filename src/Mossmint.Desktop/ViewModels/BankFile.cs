@@ -26,17 +26,19 @@ public sealed partial class DestinationRow : ObservableObject
         new(AccountKind.Checking, "Checking"), new(AccountKind.Savings, "Savings"), new(AccountKind.CreditCard, "Credit card"), new(AccountKind.Cash, "Cash"),
     ];
 
-    public DestinationRow(string source, string label, IReadOnlyList<DestinationOption> choices, DestinationOption? selected, string newName)
+    public DestinationRow(string source, string label, IReadOnlyList<DestinationOption> choices, DestinationOption? selected, string newName,
+        AccountKind kind = AccountKind.Checking)
     {
         Source = source;
         Label = label;
         Choices = choices;
         _selected = selected;
         _newName = newName;
-        _newKind = Kinds[0];
+        _newKind = Kinds.FirstOrDefault(k => k.Kind == kind) ?? Kinds[0];
     }
 
-    // The value in the file's Account column, or "" when the whole file is one account.
+    // What the file calls this account: the value in a CSV's Account column
+    // ("" when the whole file is one account), or a statement's account key.
     public string Source { get; }
 
     public string Label { get; }
@@ -54,6 +56,109 @@ public sealed partial class DestinationRow : ObservableObject
     private KindOption _newKind;
 
     public bool IsNew => Selected?.IsNew == true;
+
+    public static DestinationOption[] ChoicesFor(IReadOnlyList<Account> accounts, bool canLeaveOut) =>
+    [
+        .. accounts.Select(a => new DestinationOption(a, a.Name)),
+        new(null, "A new account", IsNew: true),
+        .. canLeaveOut ? [new DestinationOption(null, "Leave these rows out")] : Array.Empty<DestinationOption>(),
+    ];
+
+    // The account each row's source goes to, or null and an error when a choice
+    // is missing. New accounts get their ID here so later files find them.
+    public static IReadOnlyDictionary<string, Account>? Resolve(IEnumerable<DestinationRow> rows, Currency currency, Func<Guid> newId, out string? error)
+    {
+        error = null;
+        var targets = new Dictionary<string, Account>();
+        foreach (var row in rows)
+        {
+            if (row.Selected is null)
+            {
+                error = $"Choose an account for {row.Label}.";
+                return null;
+            }
+
+            if (row.IsNew && string.IsNullOrWhiteSpace(row.NewName))
+            {
+                error = $"Give the new account for {row.Label} a name.";
+                return null;
+            }
+
+            if (row.IsNew)
+            {
+                targets[row.Source] = new Account(new AccountId(newId()), row.NewName.Trim(), row.NewKind.Kind, currency);
+            }
+            else if (row.Selected.Account is { } account)
+            {
+                targets[row.Source] = account;
+            }
+        }
+
+        if (targets.Count == 0)
+        {
+            error = "Every account is left out, so there's nothing to import.";
+            return null;
+        }
+
+        return targets;
+    }
+}
+
+// The step for an OFX or QFX file: its statements name their accounts, so the
+// only question is which Mossmint account each one goes to.
+public sealed partial class StatementFileViewModel : ObservableObject
+{
+    private readonly Currency _currency;
+
+    public StatementFileViewModel(SourceFile file, string path, OfxFile ofx, Func<string, Guid?> remembered, IReadOnlyList<Account> accounts, Currency currency)
+    {
+        File = file;
+        Path = path;
+        Ofx = ofx;
+        _currency = currency;
+        Summary = ofx.Statements.Count == 1 ? "One statement." : $"{ofx.Statements.Count} statements.";
+        foreach (var statement in ofx.Statements)
+        {
+            var key = OfxImport.AccountKey(statement);
+            var choices = DestinationRow.ChoicesFor(accounts, canLeaveOut: ofx.Statements.Count > 1);
+            var selected = remembered(key) is { } id ? choices.FirstOrDefault(c => c.Account?.Id.Value == id) : null;
+            var balance = statement.Ledger is { } l ? $", balance as of {l.AsOf.ToString("d MMM yyyy", CultureInfo.CurrentCulture)}" : "";
+            var kind = statement.Type switch
+            {
+                OfxAccountType.CreditCard or OfxAccountType.CreditLine => AccountKind.CreditCard,
+                OfxAccountType.Savings or OfxAccountType.MoneyMarket => AccountKind.Savings,
+                _ => AccountKind.Checking,
+            };
+            Destinations.Add(new DestinationRow(key, $"{OfxImport.Describe(statement)} ({(statement.Transactions.Count == 1 ? "1 transaction" : $"{statement.Transactions.Count} transactions")}{balance})", choices, selected,
+                OfxImport.Describe(statement), kind));
+        }
+    }
+
+    public SourceFile File { get; }
+
+    public string Path { get; }
+
+    public OfxFile Ofx { get; }
+
+    public string Summary { get; }
+
+    public ObservableCollection<DestinationRow> Destinations { get; } = [];
+
+    [ObservableProperty]
+    private string? _error;
+
+    public IReadOnlyDictionary<string, Account>? Targets(Func<Guid> newId)
+    {
+        if (Destinations.Count == 0)
+        {
+            Error = "This file has no bank or card statements in it.";
+            return null;
+        }
+
+        var targets = DestinationRow.Resolve(Destinations, _currency, newId, out var error);
+        Error = error;
+        return targets;
+    }
 }
 
 // The "Match the columns" step for one bank file: a guess (or the mapping
@@ -205,37 +310,8 @@ public sealed partial class BankFileViewModel : ObservableObject
             return null;
         }
 
-        var targets = new Dictionary<string, Account>();
-        foreach (var row in Destinations)
-        {
-            if (row.Selected is null)
-            {
-                Error = $"Choose an account for {row.Label}.";
-                return null;
-            }
-
-            if (row.IsNew && string.IsNullOrWhiteSpace(row.NewName))
-            {
-                Error = $"Give the new account for {row.Label} a name.";
-                return null;
-            }
-
-            if (row.IsNew)
-            {
-                targets[row.Source] = new Account(new AccountId(newId()), row.NewName.Trim(), row.NewKind.Kind, _currency);
-            }
-            else if (row.Selected.Account is { } account)
-            {
-                targets[row.Source] = account;
-            }
-        }
-
-        if (targets.Count == 0)
-        {
-            Error = "Every account is left out, so there's nothing to import.";
-            return null;
-        }
-
+        var targets = DestinationRow.Resolve(Destinations, _currency, newId, out var error);
+        Error = error;
         return targets;
     }
 
@@ -270,12 +346,7 @@ public sealed partial class BankFileViewModel : ObservableObject
 
         foreach (var (source, count) in sources)
         {
-            DestinationOption[] choices =
-            [
-                .. _accounts.Select(a => new DestinationOption(a, a.Name)),
-                new(null, "A new account", IsNew: true),
-                .. AccountColumn.Index is null ? Array.Empty<DestinationOption>() : [new DestinationOption(null, "Leave these rows out")],
-            ];
+            var choices = DestinationRow.ChoicesFor(_accounts, canLeaveOut: AccountColumn.Index is not null);
             var selected = _remembered.TryGetValue(source, out var id) ? choices.FirstOrDefault(c => c.Account?.Id.Value == id) : null;
             selected ??= source.Length > 0 ? choices.FirstOrDefault(c => string.Equals(c.Account?.Name, source, StringComparison.CurrentCultureIgnoreCase)) : null;
             var label = source.Length == 0 ? $"this file ({count} rows)" : $"'{source}' ({count} rows)";

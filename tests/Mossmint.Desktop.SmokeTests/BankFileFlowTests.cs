@@ -79,6 +79,40 @@ public class BankFileFlowTests
         imports.Preview.Plan.Batch.Transactions.Select(t => t.Date).Should().Equal(new DateOnly(2026, 2, 1), new DateOnly(2026, 4, 3));
     }
 
+    [AvaloniaFact]
+    public async Task A_statement_file_only_asks_where_each_account_goes()
+    {
+        using var app = new Harness();
+        var imports = await OpenImports(app);
+        const string Statement = "OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:1252\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>USD" +
+            "<CCACCTFROM><ACCTID>4111000000004321</CCACCTFROM><BANKTRANLIST><DTSTART>20261001<DTEND>20261012" +
+            "<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20261004<TRNAMT>-25.10<FITID>CC-1<NAME>GREEN GROCER</STMTTRN></BANKTRANLIST>" +
+            "<LEDGERBAL><BALAMT>-25.10<DTASOF>20261012</LEDGERBAL></CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1></OFX>";
+        app.Dialogs.NextBankFile = Write(app, "card.qfx", Statement);
+
+        await imports.ChooseBankFileCommand.ExecuteAsync(null);
+        Harness.Pump();
+
+        imports.BankFile.Should().BeNull();
+        var statement = imports.StatementFile!;
+        app.VisibleTexts().Should().Contain("Choose the accounts");
+        var row = statement.Destinations.Should().ContainSingle().Subject;
+        row.Label.Should().Contain("Card ending 4321").And.NotContain("4111000000004321");
+        row.Selected = row.Choices.Single(c => c.IsNew);
+        row.NewKind.Kind.Should().Be(AccountKind.CreditCard);
+
+        await imports.PreviewStatementFileCommand.ExecuteAsync(null);
+        await imports.ImportCommand.ExecuteAsync(null);
+        Harness.Pump();
+
+        var card = app.Services.Context.Current.Data.Accounts().Single(a => a.Kind == AccountKind.CreditCard);
+        app.Services.Context.Current.Data.Balances(card.Id).Single().Balance.Should().Be(Money.Usd(25.10m));
+        app.Services.Context.Current.Data.Transactions(card.Id).Single().Amount.Should().Be(Money.Usd(25.10m));
+
+        await imports.ChooseBankFileCommand.ExecuteAsync(null);
+        imports.StatementFile!.Destinations.Single().Selected!.Account!.Id.Should().Be(card.Id, "the statement's account is remembered");
+    }
+
     private static async Task<ImportsPageViewModel> OpenImports(Harness app)
     {
         app.CreateProfile();

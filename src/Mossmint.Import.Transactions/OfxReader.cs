@@ -43,6 +43,13 @@ public static partial class OfxReader
 {
     private const int MaxDepth = 32;
 
+    // A statement file says so near the top: a 1.x header or an <OFX> element.
+    public static bool LooksLikeOfx(byte[] content)
+    {
+        var head = Encoding.ASCII.GetString(content, 0, Math.Min(content.Length, 4096));
+        return head.Contains("OFXHEADER", StringComparison.OrdinalIgnoreCase) || head.Contains("<OFX>", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static OfxFile Read(byte[] content)
     {
         var text = Decode(content);

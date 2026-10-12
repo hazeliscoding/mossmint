@@ -5,6 +5,32 @@
              x:Class="Mossmint.Desktop.Views.ImportsPageView"
              x:DataType="vm:ImportsPageViewModel">
 
+  <UserControl.DataTemplates>
+    <!-- Where one source account's rows go; shared by CSV and statement files. -->
+    <DataTemplate DataType="vm:DestinationRow">
+      <WrapPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <StackPanel Spacing="4" Width="340" Margin="0,0,12,6">
+          <TextBlock Classes="field-label" Text="{Binding Label, StringFormat='Rows from {0}'}" TextWrapping="Wrap" />
+          <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" PlaceholderText="Choose an account" HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="{Binding Label, StringFormat='Account for {0}'}">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:DestinationOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Spacing="4" Width="220" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
+          <TextBlock Classes="field-label" Text="New account name" />
+          <TextBox Text="{Binding NewName}" AutomationProperties.Name="{Binding Label, StringFormat='New account name for {0}'}" />
+        </StackPanel>
+        <StackPanel Spacing="4" Width="160" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
+          <TextBlock Classes="field-label" Text="Type" />
+          <ComboBox ItemsSource="{x:Static vm:DestinationRow.Kinds}" SelectedItem="{Binding NewKind}" HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="{Binding Label, StringFormat='New account type for {0}'}">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:KindOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+      </WrapPanel>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
   <StackPanel Spacing="20" MaxWidth="980" HorizontalAlignment="Left">
     <StackPanel Spacing="4">
       <TextBlock Classes="page-title" Text="{Binding Title}" />
@@ -31,9 +57,9 @@
       <StackPanel Spacing="12">
         <TextBlock Classes="section" Text="Import a file from your bank" />
         <TextBlock Classes="prose secondary"
-                   Text="A CSV your bank lets you download, or an export from YNAB, Monarch, Actual, Mint or Mossmint. You match its columns once and Mossmint remembers them for the next file from the same place. Nothing is saved until you've seen the dry run." />
+                   Text="A CSV or OFX/QFX statement your bank lets you download, or an export from YNAB, Monarch, Actual, Mint or Mossmint. You choose where it goes once and Mossmint remembers it for the next file from the same place. Nothing is saved until you've seen the dry run." />
         <StackPanel Orientation="Horizontal" Spacing="10">
-          <Button Classes="primary" Content="Choose a CSV file…" Command="{Binding ChooseBankFileCommand}" />
+          <Button Classes="primary" Content="Choose a file…" Command="{Binding ChooseBankFileCommand}" />
         </StackPanel>
       </StackPanel>
     </Border>
@@ -117,36 +143,30 @@
 
         <Border Classes="separator" />
         <TextBlock Classes="card-title" Text="Where the rows go" />
-        <ItemsControl ItemsSource="{Binding Destinations}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:DestinationRow">
-              <WrapPanel Orientation="Horizontal" Margin="0,0,0,6">
-                <StackPanel Spacing="4" Width="300" Margin="0,0,12,6">
-                  <TextBlock Classes="field-label" Text="{Binding Label, StringFormat='Rows from {0}'}" TextTrimming="CharacterEllipsis" />
-                  <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" PlaceholderText="Choose an account" HorizontalAlignment="Stretch"
-                            AutomationProperties.Name="{Binding Label, StringFormat='Account for {0}'}">
-                    <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:DestinationOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
-                  </ComboBox>
-                </StackPanel>
-                <StackPanel Spacing="4" Width="220" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
-                  <TextBlock Classes="field-label" Text="New account name" />
-                  <TextBox Text="{Binding NewName}" AutomationProperties.Name="{Binding Label, StringFormat='New account name for {0}'}" />
-                </StackPanel>
-                <StackPanel Spacing="4" Width="160" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
-                  <TextBlock Classes="field-label" Text="Type" />
-                  <ComboBox ItemsSource="{x:Static vm:DestinationRow.Kinds}" SelectedItem="{Binding NewKind}" HorizontalAlignment="Stretch"
-                            AutomationProperties.Name="{Binding Label, StringFormat='New account type for {0}'}">
-                    <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:KindOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
-                  </ComboBox>
-                </StackPanel>
-              </WrapPanel>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
+        <ItemsControl ItemsSource="{Binding Destinations}" />
 
         <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <StackPanel Orientation="Horizontal" Spacing="10">
           <Button Classes="primary" Content="Preview the import" Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).PreviewBankFileCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).CancelBankFileCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Step 1c: choose the accounts a statement file goes to. -->
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="24,20" IsVisible="{Binding IsPlacing}">
+      <StackPanel Spacing="14" DataContext="{Binding StatementFile}" x:DataType="vm:StatementFileViewModel">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="section" Text="Choose the accounts" />
+          <TextBlock Text="{Binding File.Name, FallbackValue=''}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+          <TextBlock Classes="prose secondary" Text="{Binding Summary, FallbackValue=''}" TextWrapping="Wrap" />
+          <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                     Text="Each transaction is matched by the bank's own ID, so a statement that overlaps an earlier one adds only what's new. The balance it reports counts as confirmed." />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Destinations}" />
+        <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Preview the import" Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).PreviewStatementFileCommand}" />
           <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding $parent[UserControl].((vm:ImportsPageViewModel)DataContext).CancelBankFileCommand}" />
         </StackPanel>
       </StackPanel>

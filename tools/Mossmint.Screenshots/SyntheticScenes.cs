@@ -139,6 +139,42 @@ internal sealed class SyntheticScenes : IDisposable
         return window;
     }
 
+    // A made-up two-account statement file, the checking one matched to the sample household.
+    public MainWindow Statement()
+    {
+        var root = NewRoot();
+        var path = Path.Combine(root, "statement-october.qfx");
+        File.WriteAllText(path, """
+            OFXHEADER:100
+            DATA:OFXSGML
+            VERSION:102
+            CHARSET:1252
+
+            <OFX><BANKMSGSRSV1>
+            <STMTTRNRS><STMTRS><CURDEF>USD<BANKACCTFROM><BANKID>011000015<ACCTID>000555004417<ACCTTYPE>CHECKING</BANKACCTFROM>
+            <BANKTRANLIST><DTSTART>20261001<DTEND>20261008
+            <STMTTRN><TRNTYPE>CREDIT<DTPOSTED>20261001<TRNAMT>1840.00<FITID>C-1<NAME>PAYROLL DEPOSIT</STMTTRN>
+            <STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20261003<TRNAMT>-96.20<FITID>C-2<NAME>CITY POWER</STMTTRN>
+            </BANKTRANLIST><LEDGERBAL><BALAMT>2411.45<DTASOF>20261008</LEDGERBAL></STMTRS></STMTTRNRS>
+            <STMTTRNRS><STMTRS><CURDEF>USD<BANKACCTFROM><BANKID>011000015<ACCTID>000555009032<ACCTTYPE>SAVINGS</BANKACCTFROM>
+            <BANKTRANLIST><DTSTART>20261001<DTEND>20261008
+            <STMTTRN><TRNTYPE>INT<DTPOSTED>20261005<TRNAMT>0.42<FITID>S-1<NAME>INTEREST</STMTTRN>
+            </BANKTRANLIST><LEDGERBAL><BALAMT>1200.42<DTASOF>20261008</LEDGERBAL></STMTRS></STMTTRNRS>
+            </BANKMSGSRSV1></OFX>
+            """);
+        var services = Services(root, bankFile: path);
+        services.Context.Open(Seed(services));
+        var window = Window(services);
+        var vm = (MainWindowViewModel)window.DataContext!;
+        vm.OpenApp(Destination.Imports);
+        var page = (ImportsPageViewModel)vm.Shell.CurrentPage!;
+        Wait(page.ChooseBankFileCommand.ExecuteAsync(null));
+        var (checking, savings) = (page.StatementFile!.Destinations[0], page.StatementFile.Destinations[1]);
+        checking.Selected = checking.Choices.First(c => c.Account?.Kind == AccountKind.Checking);
+        savings.Selected = savings.Choices.First(c => c.IsNew);
+        return window;
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();

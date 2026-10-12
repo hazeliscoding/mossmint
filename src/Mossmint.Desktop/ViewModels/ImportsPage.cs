@@ -88,15 +88,15 @@ public sealed class ImportPreviewViewModel(ImportPlan plan, IReadOnlyList<string
 public sealed partial class ImportsPageViewModel(AppServices services)
     : PageViewModel(Destination.Imports, "Imports", "Preview and import Excel workbooks and files from your bank. Originals are only read, never changed.")
 {
-    // The bank file mapping to remember once its import is committed.
-    private (string Fingerprint, SavedCsvMapping Mapping)? _pendingMapping;
+    // What a bank file import remembers once it is committed: fingerprint, value.
+    private IReadOnlyList<(string Fingerprint, string Value)> _pendingMappings = [];
 
     public ObservableCollection<ReviewItemRow> Review { get; } = [];
 
     public ObservableCollection<HistoryRow> History { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPreview), nameof(IsChoosing), nameof(IsMatching))]
+    [NotifyPropertyChangedFor(nameof(HasPreview), nameof(IsChoosing), nameof(IsMatching), nameof(IsPlacing))]
     [NotifyCanExecuteChangedFor(nameof(ImportCommand), nameof(SaveReportCommand))]
     private ImportPreviewViewModel? _preview;
 
@@ -105,13 +105,17 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     private BankFileViewModel? _bankFile;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsChoosing), nameof(IsPlacing))]
+    private StatementFileViewModel? _statementFile;
+
+    [ObservableProperty]
     private string? _status;
 
     [ObservableProperty]
     private StatusTone _statusTone = StatusTone.Neutral;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ChooseWorkbooksCommand), nameof(ChooseBankFileCommand), nameof(PreviewBankFileCommand), nameof(ImportCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ChooseWorkbooksCommand), nameof(ChooseBankFileCommand), nameof(PreviewBankFileCommand), nameof(PreviewStatementFileCommand), nameof(ImportCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -122,9 +126,11 @@ public sealed partial class ImportsPageViewModel(AppServices services)
 
     public bool HasPreview => Preview is not null;
 
-    public bool IsChoosing => Preview is null && BankFile is null;
+    public bool IsChoosing => Preview is null && BankFile is null && StatementFile is null;
 
     public bool IsMatching => Preview is null && BankFile is not null;
+
+    public bool IsPlacing => Preview is null && StatementFile is not null;
 
     public bool HasReview => Review.Count > 0;
 
@@ -177,15 +183,23 @@ public sealed partial class ImportsPageViewModel(AppServices services)
         try
         {
             var session = services.Context.Current;
-            BankFile = await Task.Run(() =>
+            var (accounts, currency) = (session.Data.Accounts(), session.Data.Settings().Currency);
+            var opened = await Task.Run<object>(() =>
             {
                 var file = SourceFiles.Read(path);
+                if (OfxReader.LooksLikeOfx(file.Content))
+                {
+                    return new StatementFileViewModel(file, path, OfxReader.Read(file.Content),
+                        key => Guid.TryParse(session.Imports.FileMapping(StatementKey(key)), out var id) ? id : null, accounts, currency);
+                }
+
                 var table = CsvReader.Read(file.Content);
                 var saved = session.Imports.FileMapping(CsvMappings.Fingerprint(table)) is { } json ? SavedCsvMapping.FromJson(json) : null;
-                return new BankFileViewModel(file, path, table, CsvMappings.Guess(table), saved, session.Data.Accounts(), session.Data.Settings().Currency);
+                return new BankFileViewModel(file, path, table, CsvMappings.Guess(table), saved, accounts, currency);
             });
+            (BankFile, StatementFile) = (opened as BankFileViewModel, opened as StatementFileViewModel);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or CsvFormatException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or CsvFormatException or OfxFormatException)
         {
             Show($"Couldn't read that file: {e.Message}", StatusTone.Critical);
         }
@@ -211,7 +225,30 @@ public sealed partial class ImportsPageViewModel(AppServices services)
             var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);
             var plan = await Task.Run(() => services.Imports.Plan(session,
                 CsvImport.Map(file.File, CsvReader.Read(file.File.Content), mapping, targets, today, session.Data.Settings().Currency)));
-            _pendingMapping = (file.Fingerprint, BankFileViewModel.Remember(mapping, targets));
+            _pendingMappings = [(file.Fingerprint, BankFileViewModel.Remember(mapping, targets).ToJson())];
+            Preview = new ImportPreviewViewModel(plan, [file.Path]);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private async Task PreviewStatementFile()
+    {
+        if (StatementFile is not { } file || file.Targets(() => Guid.CreateVersion7(services.Clock.GetUtcNow())) is not { } targets)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var session = services.Context.Current;
+            var today = DateOnly.FromDateTime(services.Clock.GetLocalNow().DateTime);
+            var plan = await Task.Run(() => services.Imports.Plan(session, OfxImport.Map(file.File, file.Ofx, targets, today, session.Data.Settings().Currency)));
+            _pendingMappings = [.. targets.Select(t => (StatementKey(t.Key), t.Value.Id.Value.ToString()))];
             Preview = new ImportPreviewViewModel(plan, [file.Path]);
         }
         finally
@@ -221,7 +258,7 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     }
 
     [RelayCommand]
-    private void CancelBankFile() => BankFile = null;
+    private void CancelBankFile() => (BankFile, StatementFile) = (null, null);
 
     [RelayCommand(CanExecute = nameof(CanImport))]
     private async Task Import()
@@ -231,13 +268,13 @@ public sealed partial class ImportsPageViewModel(AppServices services)
         try
         {
             var session = services.Context.Current;
-            var remember = _pendingMapping;
+            var remember = _pendingMappings;
             await Task.Run(() =>
             {
                 ImportService.Commit(session, preview.Plan);
-                if (remember is { } r)
+                foreach (var (fingerprint, value) in remember)
                 {
-                    session.Imports.SaveFileMapping(r.Fingerprint, r.Mapping.ToJson());
+                    session.Imports.SaveFileMapping(fingerprint, value);
                 }
             });
             var untouched = preview.Paths.All(path =>
@@ -247,8 +284,8 @@ public sealed partial class ImportsPageViewModel(AppServices services)
                 (untouched ? "The original files are unchanged (SHA-256 checked after the import)." : "A file changed on disk during the import; preview it again to be sure."),
                 untouched ? StatusTone.Healthy : StatusTone.Warning);
             Preview = null;
-            BankFile = null;
-            _pendingMapping = null;
+            (BankFile, StatementFile) = (null, null);
+            _pendingMappings = [];
             Refresh();
         }
         catch (StaleImportPlanException e)
@@ -270,8 +307,11 @@ public sealed partial class ImportsPageViewModel(AppServices services)
     private void CancelPreview()
     {
         Preview = null;
-        _pendingMapping = null;
+        _pendingMappings = [];
     }
+
+    // A statement's account is remembered by its hashed account key.
+    private static string StatementKey(string accountKey) => $"ofx:{accountKey}";
 
     [RelayCommand(CanExecute = nameof(HasPreview))]
     private async Task SaveReport()

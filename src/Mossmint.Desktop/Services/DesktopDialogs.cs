@@ -19,7 +19,7 @@ public interface IDesktopDialogs
     // Paths of the workbooks the user picked; empty when they cancel.
     Task<IReadOnlyList<string>> PickWorkbooksAsync();
 
-    // A CSV a bank or another app exported; null when the user cancels.
+    // A CSV or statement file a bank or another app exported; null when the user cancels.
     Task<string?> PickBankFileAsync();
 
     Task CopyAsync(string text);
@@ -29,7 +29,7 @@ internal sealed class AvaloniaDesktopDialogs : IDesktopDialogs
 {
     private static readonly FilePickerFileType Backup = new("Mossmint backup") { Patterns = ["*.mmbak"] };
     private static readonly FilePickerFileType Workbook = new("Excel workbook") { Patterns = ["*.xlsx"] };
-    private static readonly FilePickerFileType BankFile = new("Bank file (CSV)") { Patterns = ["*.csv", "*.tsv", "*.txt"] };
+    private static readonly FilePickerFileType BankFile = new("Bank file (CSV, OFX, QFX)") { Patterns = ["*.csv", "*.tsv", "*.txt", "*.ofx", "*.qfx"] };
 
     public TopLevel? Owner { get; set; }
 
