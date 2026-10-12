@@ -155,6 +155,12 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
                 Block("fractional-amount", "An amount has fractions of a cent", $"{balance.Label}: {balance.Balance} can't be stored exactly.", [balance.Source]);
             }
 
+            foreach (var group in batch.Transactions.GroupBy(t => (t.AccountKey, t.ExternalId)).Where(g => g.Count() > 1))
+            {
+                Block("duplicate-key", "The same transaction appears twice", $"Two rows claim to be '{group.Key.ExternalId}' in one account.",
+                    [.. group.Select(t => t.Source)]);
+            }
+
             foreach (var transaction in batch.Transactions.Where(t => !t.Amount.IsWholeMinorUnits))
             {
                 Block("fractional-amount", "An amount has fractions of a cent", $"{transaction.Description}: {transaction.Amount} can't be stored exactly.", [transaction.Source]);

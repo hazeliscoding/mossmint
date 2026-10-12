@@ -59,7 +59,7 @@ internal sealed class SimpleFinConnector(SimpleFinProvider provider, string cred
         {
             return Map(json, now, provider.Clock.LocalTimeZone, errors);
         }
-        catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException or KeyNotFoundException or OverflowException)
+        catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException or KeyNotFoundException or OverflowException or ArgumentOutOfRangeException)
         {
             throw new ConnectorException(ConnectorFailure.Invalid, "SimpleFIN's answer couldn't be read. Try again later.");
         }
@@ -145,11 +145,14 @@ internal sealed class SimpleFinConnector(SimpleFinProvider provider, string cred
     }
 
     // SimpleFIN only names accounts; this is a starting guess the user can change.
+    // "Checking" and "saving" win over "credit", so a credit union's checking
+    // account isn't taken for a card.
     private static AccountKind Kind(string name) => name.ToLowerInvariant() switch
     {
-        var n when n.Contains("card", StringComparison.Ordinal) || n.Contains("credit", StringComparison.Ordinal) => AccountKind.CreditCard,
+        var n when n.Contains("checking", StringComparison.Ordinal) => AccountKind.Checking,
         var n when n.Contains("saving", StringComparison.Ordinal) => AccountKind.Savings,
-        var n when n.Contains("loan", StringComparison.Ordinal) => AccountKind.InstallmentLoan,
+        var n when n.Contains("card", StringComparison.Ordinal) => AccountKind.CreditCard,
+        var n when n.Contains("loan", StringComparison.Ordinal) || n.Contains("mortgage", StringComparison.Ordinal) => AccountKind.InstallmentLoan,
         _ => AccountKind.Checking,
     };
 

@@ -24,6 +24,7 @@ public sealed partial class DestinationRow : ObservableObject
     public static readonly IReadOnlyList<KindOption> Kinds =
     [
         new(AccountKind.Checking, "Checking"), new(AccountKind.Savings, "Savings"), new(AccountKind.CreditCard, "Credit card"), new(AccountKind.Cash, "Cash"),
+        new(AccountKind.InstallmentLoan, "Loan"),
     ];
 
     public DestinationRow(string source, string label, IReadOnlyList<DestinationOption> choices, DestinationOption? selected, string newName,

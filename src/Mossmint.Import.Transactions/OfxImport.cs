@@ -38,6 +38,10 @@ public static class OfxImport
         var transactions = new List<ProposedTransaction>();
         var balances = new List<ProposedBalance>();
         var used = new List<Account>();
+
+        // Counted per Mossmint account: two statements sent to one account
+        // (or two banks' accounts using the same IDs) must not collide.
+        var seen = new Dictionary<(AccountId, string), int>();
         foreach (var statement in ofx.Statements)
         {
             var label = Describe(statement);
@@ -58,11 +62,10 @@ public static class OfxImport
             findings.AddRange(statement.Problems.Select(p => new ImportFinding("ofx-unreadable", FindingSeverity.Blocking, $"{label}: something can't be read", p, [whole])));
             used.Add(account);
             var key = ImportKeys.Account(account.Id);
-            var seen = new Dictionary<string, int>();
             foreach (var t in statement.Transactions)
             {
                 // A bank that repeats an ID within one file still sent two transactions.
-                var occurrence = seen[t.FitId] = seen.GetValueOrDefault(t.FitId) + 1;
+                var occurrence = seen[(account.Id, t.FitId)] = seen.GetValueOrDefault((account.Id, t.FitId)) + 1;
                 var id = occurrence == 1 ? t.FitId : $"{t.FitId}#{occurrence}";
                 if (occurrence == 2)
                 {

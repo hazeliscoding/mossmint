@@ -129,6 +129,27 @@ public sealed class BankFileImportTests : IDisposable
     }
 
     [Fact]
+    public void The_same_transaction_twice_in_one_batch_blocks_instead_of_failing_at_save()
+    {
+        var key = ImportKeys.Account(_checking.Id);
+        var source = new SourceRef("bank.ofx", "x");
+        var batch = new ImportBatch("test", ImportOrigin.BankFile, Today, Currency.Usd, [new SourceFileInfo("bank.ofx", "00", 0, "test")])
+        {
+            Accounts = [new ProposedAccount(key, _checking.Name, _checking.Kind, [source])],
+            Transactions =
+            [
+                new ProposedTransaction(key, "ofx:1", Today, Money.Usd(-1m), TransactionStatus.Posted, "One", source),
+                new ProposedTransaction(key, "ofx:1", Today, Money.Usd(-2m), TransactionStatus.Posted, "Other", source),
+            ],
+        };
+
+        var plan = _imports.Plan(_session, batch);
+
+        plan.CanCommit.Should().BeFalse();
+        plan.Findings.Should().ContainSingle(f => f.Code == "duplicate-key");
+    }
+
+    [Fact]
     public void A_files_mapping_is_remembered_inside_the_profile()
     {
         _session.Imports.FileMapping("3f2a").Should().BeNull();

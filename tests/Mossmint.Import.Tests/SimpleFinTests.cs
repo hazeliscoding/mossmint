@@ -162,6 +162,34 @@ public sealed class SimpleFinTests
     }
 
     [Fact]
+    public async Task An_impossible_date_is_invalid_rather_than_a_crash()
+    {
+        var json = AccountSet.Replace("1791806400", "99999999999999", StringComparison.Ordinal);
+        json.Should().Contain("99999999999999");
+        var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, json))).Open(Access);
+
+        var sync = () => connector.SyncAsync(null, CancellationToken.None);
+
+        (await sync.Should().ThrowAsync<ConnectorException>()).Which.Failure.Should().Be(ConnectorFailure.Invalid);
+    }
+
+    [Theory]
+    [InlineData("Credit Union Checking", AccountKind.Checking)]
+    [InlineData("Everyday Savings", AccountKind.Savings)]
+    [InlineData("Rewards Visa Card", AccountKind.CreditCard)]
+    [InlineData("Platinum Credit Card", AccountKind.CreditCard)]
+    [InlineData("Auto Loan", AccountKind.InstallmentLoan)]
+    public async Task Account_kinds_are_guessed_from_names_without_mistaking_a_credit_union(string name, AccountKind kind)
+    {
+        var json = AccountSet.Replace("\"name\": \"Everyday Checking\"", $"\"name\": \"{name}\"", StringComparison.Ordinal);
+        var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, json))).Open(Access);
+
+        var sync = await connector.SyncAsync(null, CancellationToken.None);
+
+        sync.Accounts[0].Kind.Should().Be(kind);
+    }
+
+    [Fact]
     public async Task A_garbled_answer_is_invalid()
     {
         var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, "<html>maintenance</html>"))).Open(Access);
