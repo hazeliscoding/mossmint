@@ -109,6 +109,8 @@ internal static class ProfileMigrator
         }
 
         File.Copy(snapshot, path, overwrite: true);
+        using var copied = new FileStream(path, FileMode.Open, FileAccess.ReadWrite);
+        copied.Flush(flushToDisk: true);
     }
 }
 
