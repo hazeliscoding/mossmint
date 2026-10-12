@@ -13,7 +13,8 @@ flowchart LR
     shapes -->|unknown| block["Blocking finding"]
     budget --> batch["Import batch<br/>proposals + findings + raw rows"]
     debts --> batch
-    connectors["Connector sync<br/>(fakes only before M7)"] --> batch
+    bankfiles["Bank files (CSV, OFX)<br/>see bank-files.md"] --> batch
+    connectors["SimpleFIN sync"] --> batch
     batch --> plan["Dry run<br/>validate, match, reconcile"]
     plan -->|"you confirm"| commit["Encrypted snapshot,<br/>then one transaction"]
     commit --> profile[("Profile<br/>records + review queue<br/>+ source trail")]
