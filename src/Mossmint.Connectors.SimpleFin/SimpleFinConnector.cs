@@ -19,6 +19,10 @@ internal sealed class SimpleFinConnector(SimpleFinProvider provider, string cred
     private const int OverlapDays = 5;
     private const int MaxText = 200;
 
+    // A page of problems is plenty to show; more is a broken or hostile server,
+    // and spreading each over every account could otherwise multiply without end.
+    private const int MaxErrors = 50;
+
     public ConnectorId Id => SimpleFinProvider.ProviderId;
 
     public string DisplayName => provider.DisplayName;
@@ -110,16 +114,28 @@ internal sealed class SimpleFinConnector(SimpleFinProvider provider, string cred
         }
 
         // A problem with a whole bank connection is a problem for each of its accounts.
-        var connectionOf = Items(root, "accounts").Where(a => Text(a, "id") is not null).ToDictionary(a => Text(a, "id")!, a => Text(a, "conn_id"));
-        foreach (var (account, connection, message) in reported)
+        var connectionOf = new Dictionary<string, string?>();
+        foreach (var account in Items(root, "accounts"))
+        {
+            if (Text(account, "id") is { } id)
+            {
+                connectionOf.TryAdd(id, Text(account, "conn_id"));
+            }
+        }
+
+        foreach (var (account, connection, message) in reported.Distinct())
         {
             var affected = account is not null || connection is null ? [account] : connectionOf.Where(a => a.Value == connection).Select(a => (string?)a.Key).ToList();
-            errors.AddRange((affected.Count == 0 ? [null] : affected).Select(id => new ConnectorError(id, message)));
+            errors.AddRange((affected.Count == 0 ? [null] : affected).Select(id => new ConnectorError(id, message)).Take(MaxErrors - errors.Count));
+            if (errors.Count >= MaxErrors)
+            {
+                break;
+            }
         }
 
         return new ConnectorSync(SimpleFinProvider.ProviderId, now, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), accounts, balances, transactions, [])
         {
-            Errors = errors,
+            Errors = [.. errors.Take(MaxErrors)],
         };
     }
 

@@ -201,6 +201,19 @@ public sealed class SimpleFinTests
     }
 
     [Fact]
+    public async Task A_flood_of_errors_and_accounts_is_capped_and_duplicate_ids_dont_crash()
+    {
+        var errors = string.Join(",", Enumerable.Range(0, 5_000).Select(i => $"{{ \"code\": \"con.auth\", \"msg\": \"Problem {i}\", \"conn_id\": \"CON-1\" }}"));
+        var accounts = string.Join(",", Enumerable.Range(0, 5_000).Select(i => $"{{ \"id\": \"ACT-{i % 4_000}\", \"name\": \"A\", \"conn_id\": \"CON-1\", \"currency\": \"USD\", \"balance\": \"1.00\", \"balance-date\": 1791806400 }}"));
+        var json = $"{{ \"errlist\": [{errors}], \"connections\": [], \"accounts\": [{accounts}] }}";
+        var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, json))).Open(Access);
+
+        var sync = await connector.SyncAsync(null, CancellationToken.None);
+
+        sync.Errors.Count.Should().BeLessThanOrEqualTo(50, "a page of problems is plenty to show; more is a broken or hostile server");
+    }
+
+    [Fact]
     public async Task A_garbled_answer_is_invalid()
     {
         var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, "<html>maintenance</html>"))).Open(Access);
