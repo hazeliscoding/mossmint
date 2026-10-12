@@ -64,7 +64,7 @@ public static partial class CsvReader
         ReadOnlySpan<byte> bytes = content;
         if (bytes.StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF]))
         {
-            return (Strict(bytes[3..]) ?? throw new CsvFormatException("The file says it is UTF-8 but isn't."), CsvEncoding.Utf8);
+            return (TextDecoding.StrictUtf8(bytes[3..]) ?? throw new CsvFormatException("The file says it is UTF-8 but isn't."), CsvEncoding.Utf8);
         }
 
         if (bytes.StartsWith((ReadOnlySpan<byte>)[0xFF, 0xFE]))
@@ -77,21 +77,9 @@ public static partial class CsvReader
             return (Encoding.BigEndianUnicode.GetString(bytes[2..]), CsvEncoding.Utf16);
         }
 
-        return Strict(bytes) is { } utf8
+        return TextDecoding.StrictUtf8(bytes) is { } utf8
             ? (utf8, CsvEncoding.Utf8)
-            : (CodePagesEncodingProvider.Instance.GetEncoding(1252)!.GetString(bytes), CsvEncoding.Windows1252);
-    }
-
-    private static string? Strict(ReadOnlySpan<byte> bytes)
-    {
-        try
-        {
-            return new UTF8Encoding(false, throwOnInvalidBytes: true).GetString(bytes);
-        }
-        catch (DecoderFallbackException)
-        {
-            return null;
-        }
+            : (TextDecoding.Windows1252.GetString(bytes), CsvEncoding.Windows1252);
     }
 
     private static (double Ratio, int Width) Consistency(List<CsvRow> records)
