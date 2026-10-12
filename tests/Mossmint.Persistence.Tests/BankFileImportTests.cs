@@ -102,6 +102,33 @@ public sealed class BankFileImportTests : IDisposable
     }
 
     [Fact]
+    public void A_statement_balance_is_confirmed_and_an_overlapping_statement_adds_only_whats_new()
+    {
+        ApplyOfx(Statement(("T-1", "20261001", "1200.00"), ("T-2", "20261002", "-4.50")), "1295.50", "20261002");
+
+        var plan = ApplyOfx(Statement(("T-2", "20261002", "-4.50"), ("T-3", "20261011", "-20.00")), "1275.50", "20261011");
+
+        plan.Changes.Where(c => c.Entity == "Transaction").Select(c => c.Kind).Should().BeEquivalentTo([ChangeKind.Unchanged, ChangeKind.Add]);
+        _session.Data.Transactions(_checking.Id).Should().HaveCount(3);
+        var newest = _session.Data.Balances(_checking.Id)[0];
+        newest.Balance.Should().Be(Money.Usd(1275.50m));
+        newest.Provenance.Confidence.Should().Be(Confidence.Confirmed, "a balance the bank reported can clear needs confirmation");
+        _session.Data.Transactions(_checking.Id).Should().OnlyContain(t => t.Provenance.Source == SourceKind.Imported);
+    }
+
+    [Fact]
+    public void A_statement_cannot_join_an_account_fed_by_csv()
+    {
+        Apply(File, _checking);
+
+        var file = new SourceFile("statement.ofx", Encoding.UTF8.GetBytes(Statement(("T-9", "20261011", "-20.00"))));
+        var ofx = OfxReader.Read(file.Content);
+        var plan = _imports.Plan(_session, OfxImport.Map(file, ofx, new Dictionary<string, Account> { [OfxImport.AccountKey(ofx.Statements[0])] = _checking }, Today, Currency.Usd));
+
+        plan.Findings.Should().ContainSingle(f => f.Code == "one-source").Which.Title.Should().Contain("CSV files");
+    }
+
+    [Fact]
     public void A_files_mapping_is_remembered_inside_the_profile()
     {
         _session.Imports.FileMapping("3f2a").Should().BeNull();
@@ -111,6 +138,25 @@ public sealed class BankFileImportTests : IDisposable
 
         _session.Imports.FileMapping("3f2a").Should().Be("{\"second\":true}");
         _session.Imports.FileMapping("other").Should().BeNull();
+    }
+
+    private static string Statement(params (string Id, string Date, string Amount)[] rows) =>
+        "<?xml version=\"1.0\"?><OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>USD</CURDEF>" +
+        "<BANKACCTFROM><BANKID>011000015</BANKID><ACCTID>000555000111</ACCTID><ACCTTYPE>CHECKING</ACCTTYPE></BANKACCTFROM><BANKTRANLIST>" +
+        string.Concat(rows.Select(r => $"<STMTTRN><TRNTYPE>OTHER</TRNTYPE><DTPOSTED>{r.Date}</DTPOSTED><TRNAMT>{r.Amount}</TRNAMT><FITID>{r.Id}</FITID><NAME>Entry {r.Id}</NAME></STMTTRN>")) +
+        "</BANKTRANLIST>" +
+        "</STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>";
+
+    private ImportPlan ApplyOfx(string text, string balance, string asOf) => ApplyOfx(text.Replace("</BANKTRANLIST>",
+        $"</BANKTRANLIST><LEDGERBAL><BALAMT>{balance}</BALAMT><DTASOF>{asOf}</DTASOF></LEDGERBAL>", StringComparison.Ordinal));
+
+    private ImportPlan ApplyOfx(string text)
+    {
+        var file = new SourceFile("statement.ofx", Encoding.UTF8.GetBytes(text));
+        var ofx = OfxReader.Read(file.Content);
+        var plan = _imports.Plan(_session, OfxImport.Map(file, ofx, new Dictionary<string, Account> { [OfxImport.AccountKey(ofx.Statements[0])] = _checking }, Today, Currency.Usd));
+        ImportService.Commit(_session, plan);
+        return plan;
     }
 
     private ImportPlan Plan(string text, Account target)

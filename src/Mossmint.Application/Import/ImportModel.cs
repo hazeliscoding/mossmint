@@ -172,6 +172,12 @@ public sealed record ImportBatch(
     public Provenance ProvenanceFor(SourceRef source, DateOnly asOf) => Origin == ImportOrigin.Connector
         ? Provenance.Connector(asOf, Reference(source))
         : Provenance.Imported(asOf, Reference(source));
+
+    // A balance the bank itself reported, through a connection or a statement
+    // file, is confirmed and can clear *needs confirmation*; a workbook's isn't.
+    public Provenance BalanceProvenanceFor(SourceRef source, DateOnly asOf) => Origin is ImportOrigin.Connector or ImportOrigin.BankFile
+        ? Provenance.Connector(asOf, Reference(source))
+        : Provenance.Imported(asOf, Reference(source));
 }
 
 // Turns source files into a batch. The workbook importer implements it.

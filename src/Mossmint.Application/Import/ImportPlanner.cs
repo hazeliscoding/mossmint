@@ -297,7 +297,7 @@ public sealed class ImportPlanner(IProfileData data, IImportStore store, TimePro
                 foreach (var proposed in group.OrderBy(b => b.AsOf))
                 {
                     var reference = batch.Reference(proposed.Source);
-                    var snapshot = new BalanceSnapshot(accountId, proposed.Balance, batch.ProvenanceFor(proposed.Source, proposed.AsOf),
+                    var snapshot = new BalanceSnapshot(accountId, proposed.Balance, batch.BalanceProvenanceFor(proposed.Source, proposed.AsOf),
                         AccruedInterest: proposed.AccruedInterest);
                     var same = existing.Where(e => e.Provenance.AsOf == proposed.AsOf && SameLocation(e.Provenance.Reference, reference)).ToList();
                     if (same.Any(e => e.Balance == proposed.Balance && e.AccruedInterest == proposed.AccruedInterest))
