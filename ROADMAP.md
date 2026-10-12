@@ -2,7 +2,7 @@
 
 Mossmint is a local-first Windows desktop app (C#, .NET 10, Avalonia) for paycheck forecasting and debt payoff planning. This file tracks what gets built, in what order, and the decisions already made. It is also the status file: tick items here as they land.
 
-**Next up:** publishing the 0.6.0 draft, then M7 (v0.7): bank data in. M5's hand Narrator pass is still to do.
+**Next up:** M7 (v0.7): bank data in. M5's hand Narrator pass is still to do.
 
 ## Releases
 
@@ -13,7 +13,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 | [0.3.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.3.0) | M0–M3: skeleton, financial engine, encrypted profiles, workbook import | Released 2026-10-09 |
 | [0.4.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.4.0) | M4: dashboard and daily flows | Released 2026-10-10 |
 | [0.5.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.5.0) | M5: scenarios, debt planning and bill editing | Released 2026-10-11 |
-| [0.6.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.6.0) | M6: Windows release (signing, export, daily update check, sample household, upgrade test, user docs) | Draft, 2026-10-11 |
+| [0.6.0](https://github.com/hazeliscoding/mossmint/releases/tag/v0.6.0) | M6: Windows release (signing, export, daily update check, sample household, upgrade test, user docs) | Released 2026-10-11 |
 | 0.7 | M7: bank data in (CSV, OFX/QFX, SimpleFIN) | Planned |
 | 0.8 | M8: matching real activity to the plan | Planned |
 | 0.9 | M9: learning from history | Planned |
