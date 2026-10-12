@@ -53,8 +53,8 @@ public static class CsvMappings
 
         var preset = Presets.FirstOrDefault(p => p.Columns.All(names.Contains));
         var columns = Enumerable.Range(0, table.Header.Count).ToList();
-        var formats = columns.ToDictionary(c => c, c => Values(c).Any()
-            ? DateFormatChoices.Where(f => Values(c).All(v => CsvValues.TryDate(v, f, out _))).ToList()
+        var formats = columns.ToDictionary(c => c, c => Values(c).Where(CsvValues.CouldBeDate).ToList() is { Count: > 0 } dates
+            ? DateFormatChoices.Where(f => dates.All(v => CsvValues.TryDate(v, f, out _))).ToList()
             : []);
         var date = preset.Name is null
             ? columns.Where(c => formats[c].Count > 0).OrderBy(c => names.ElementAtOrDefault(c)?.Contains("date", StringComparison.Ordinal) == true ? 0 : 1).DefaultIfEmpty(0).First()

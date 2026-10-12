@@ -43,6 +43,15 @@ public static partial class OfxReader
 {
     private const int MaxDepth = 32;
 
+    // SGML leaves never close, so an empty one looks like an aggregate. Only
+    // these names (and the *RS and *RSV1 wrappers) open one; anything else is a
+    // leaf, so an empty <MEMO> can't swallow the transaction after it.
+    private static readonly HashSet<string> Aggregates =
+    [
+        "OFX", "STATUS", "FI", "BANKACCTFROM", "BANKACCTTO", "CCACCTFROM", "CCACCTTO", "BANKTRANLIST", "STMTTRN", "PAYEE",
+        "LEDGERBAL", "AVAILBAL", "BALLIST", "BAL", "CURRENCY", "ORIGCURRENCY",
+    ];
+
     // A statement file says so near the top: a 1.x header or an <OFX> element.
     public static bool LooksLikeOfx(byte[] content)
     {
@@ -215,7 +224,7 @@ public static partial class OfxReader
             {
                 leaf = null;
             }
-            else if (!string.IsNullOrWhiteSpace(raw))
+            else if (!IsAggregate(node.Name))
             {
                 node.Value = Unescape(raw.Trim());
                 leaf = node;
@@ -235,6 +244,9 @@ public static partial class OfxReader
         return root;
     }
 
+    private static bool IsAggregate(string name) =>
+        Aggregates.Contains(name) || name.EndsWith("RS", StringComparison.Ordinal) || name.EndsWith("RSV1", StringComparison.Ordinal) || name.EndsWith("RSV2", StringComparison.Ordinal);
+
     private static string Unescape(string value) => Entity().Replace(value, m => m.Groups[1].Value switch
     {
         "amp" => "&",
@@ -243,10 +255,13 @@ public static partial class OfxReader
         "quot" => "\"",
         "apos" => "'",
         "nbsp" => " ",
-        var n when n.StartsWith("#x", StringComparison.OrdinalIgnoreCase) && int.TryParse(n[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var c) && c is > 0 and <= 0x10FFFF => char.ConvertFromUtf32(c),
-        var n when n.StartsWith('#') && int.TryParse(n[1..], NumberStyles.None, CultureInfo.InvariantCulture, out var c) && c is > 0 and <= 0x10FFFF => char.ConvertFromUtf32(c),
+        var n when n.StartsWith("#x", StringComparison.OrdinalIgnoreCase) && int.TryParse(n[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var c) && IsScalar(c) => char.ConvertFromUtf32(c),
+        var n when n.StartsWith('#') && int.TryParse(n[1..], NumberStyles.None, CultureInfo.InvariantCulture, out var c) && IsScalar(c) => char.ConvertFromUtf32(c),
         _ => m.Value,
     });
+
+    // A reference to half a surrogate pair names no character, so it stays as written.
+    private static bool IsScalar(int c) => c is > 0 and <= 0x10FFFF and not (>= 0xD800 and <= 0xDFFF);
 
     [GeneratedRegex(@"&(#[xX][0-9a-fA-F]{1,6}|#\d{1,7}|amp|lt|gt|quot|apos|nbsp);")]
     private static partial Regex Entity();

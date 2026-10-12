@@ -86,6 +86,26 @@ public sealed class CsvImportTests
         CsvValues.TryAmount(text, '.', out _).Should().BeFalse();
 
     [Theory]
+    [InlineData("(-4.50)")]
+    [InlineData("-4.50-")]
+    [InlineData("123456789012345678901234567890")]
+    public void Refuses_amounts_with_two_signs_or_too_many_digits(string text) =>
+        CsvValues.TryAmount(text, '.', out _).Should().BeFalse();
+
+    [Theory]
+    [InlineData("Date,Payee,Outflow,Inflow\n10/1/2026,Cafe,-4.50,\n", AmountStyle.SeparateColumns)]
+    [InlineData("Date,Payee,Amount,Type\n10/1/2026,Cafe,-4.50,debit\n", AmountStyle.WithDirection)]
+    public void A_negative_amount_where_a_column_already_gives_the_direction_blocks(string text, AmountStyle style)
+    {
+        var mapping = new CsvMapping(0, "M/d/yyyy", 1, style, Amount: 2, MoneyOut: 2, MoneyIn: 3, Direction: 3);
+
+        var batch = Map(text, mapping, Checking);
+
+        batch.Transactions.Should().BeEmpty();
+        batch.Findings.Should().ContainSingle(f => f.Code == "csv-amount" && f.Severity == FindingSeverity.Blocking);
+    }
+
+    [Theory]
     [InlineData("01/02/2026", "M/d/yyyy", 2026, 1, 2)]
     [InlineData("1/2/26", "M/d/yy", 2026, 1, 2)]
     [InlineData("02/01/2026", "d/M/yyyy", 2026, 1, 2)]

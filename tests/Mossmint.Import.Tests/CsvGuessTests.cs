@@ -96,6 +96,23 @@ public sealed class CsvGuessTests
     }
 
     [Fact]
+    public void A_totals_line_doesnt_stop_the_date_format_being_found()
+    {
+        var guess = Guess("Date,Description,Amount\n2026-10-01,Paycheck,1200.00\n2026-10-02,Cafe,-4.50\nTotal,,1195.50\n");
+
+        guess.DateFormats.Should().Equal("yyyy-MM-dd");
+        guess.Mapping.Date.Should().Be(0);
+    }
+
+    [Fact]
+    public void A_reference_too_long_for_a_number_is_just_text()
+    {
+        var guess = Guess("Date,Reference,Description,Amount\n2026-10-01,123456789012345678901234567890,Paycheck,1200.00\n");
+
+        guess.Mapping.Amount.Should().Be(3);
+    }
+
+    [Fact]
     public void The_fingerprint_follows_the_header_not_the_rows()
     {
         var a = CsvMappings.Fingerprint(CsvReader.Read(Encoding.UTF8.GetBytes("Date,Description,Amount\n2026-10-01,A,1\n")));

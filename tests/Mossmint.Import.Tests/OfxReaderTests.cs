@@ -159,6 +159,26 @@ public sealed class OfxReaderTests
         statement.Problems.Should().HaveCount(2).And.Contain(p => p.Contains("no FITID", StringComparison.Ordinal)).And.Contain(p => p.Contains("'twelve'", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void An_empty_element_doesnt_swallow_what_follows_it()
+    {
+        var empty = Sgml.Replace("<DTSTART>20261001", "<DTSTART>", StringComparison.Ordinal).Replace("<NAME>PAYROLL DEPOSIT", "<MEMO>\n<NAME>PAYROLL DEPOSIT", StringComparison.Ordinal);
+
+        var statement = OfxReader.Read(Encoding.ASCII.GetBytes(empty)).Statements.Single();
+
+        statement.Transactions.Should().HaveCount(3);
+        statement.Transactions[0].Description.Should().Be("PAYROLL DEPOSIT");
+        statement.Problems.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_character_reference_to_half_a_surrogate_pair_stays_as_written()
+    {
+        var odd = Xml.Replace("Payment &#8211; thank you", "Payment &#xD800; thank you", StringComparison.Ordinal);
+
+        OfxReader.Read(Encoding.UTF8.GetBytes(odd)).Statements.Single().Transactions[1].Description.Should().Be("Payment &#xD800; thank you");
+    }
+
     [Theory]
     [InlineData("<?xml version=\"1.0\"?><!DOCTYPE OFX [<!ENTITY x \"boom\">]><OFX>&x;</OFX>")]
     [InlineData("<?xml version=\"1.0\"?><!ENTITY x SYSTEM \"file:///c:/windows/win.ini\"><OFX></OFX>")]
@@ -172,7 +192,7 @@ public sealed class OfxReaderTests
     [Fact]
     public void Refuses_absurdly_deep_nesting()
     {
-        var deep = "<OFX>" + string.Concat(Enumerable.Repeat("<A>", 500)) + "x" + string.Concat(Enumerable.Repeat("</A>", 500)) + "</OFX>";
+        var deep = "<OFX>" + string.Concat(Enumerable.Repeat("<STMTRS>", 500)) + "<CURDEF>USD" + string.Concat(Enumerable.Repeat("</STMTRS>", 500)) + "</OFX>";
 
         FluentActions.Invoking(() => OfxReader.Read(Encoding.UTF8.GetBytes(deep))).Should().Throw<OfxFormatException>().WithMessage("*nested*");
     }

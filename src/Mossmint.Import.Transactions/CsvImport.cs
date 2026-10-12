@@ -150,6 +150,10 @@ public static partial class CsvImport
             cell(column) is var text && blankIsZero && text.Length == 0 ? 0m
             : CsvValues.TryAmount(text, mapping.DecimalSeparator, out var amount) ? amount : null;
 
+        // Where a column already says which way the money went, a negative
+        // number could be money the other way or a reversal, so it isn't read.
+        decimal? Unsigned(int? column, bool blankIsZero) => Read(column, blankIsZero) is { } value && value >= 0 ? value : null;
+
         switch (mapping.Amounts)
         {
             case AmountStyle.SpendingNegative or AmountStyle.AsMossmint:
@@ -157,11 +161,11 @@ public static partial class CsvImport
             case AmountStyle.SpendingPositive:
                 return -Read(mapping.Amount, false);
             case AmountStyle.SeparateColumns:
-                return Read(mapping.MoneyIn, true) - Read(mapping.MoneyOut, true);
+                return Unsigned(mapping.MoneyIn, true) - Unsigned(mapping.MoneyOut, true);
             default:
                 var direction = cell(mapping.Direction).ToLowerInvariant();
                 var sign = direction is "credit" or "cr" or "deposit" ? 1 : direction is "debit" or "dr" or "withdrawal" ? -1 : 0;
-                return sign == 0 ? null : sign * Read(mapping.Amount, false);
+                return sign == 0 ? null : sign * Unsigned(mapping.Amount, false);
         }
     }
 

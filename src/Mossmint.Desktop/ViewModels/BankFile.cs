@@ -320,7 +320,7 @@ public sealed partial class BankFileViewModel : ObservableObject
 
     private void RefreshDateFormats(string? keep)
     {
-        var values = Values(DateColumn.Index).ToList();
+        var values = Values(DateColumn.Index).Where(CsvValues.CouldBeDate).ToList();
         var fitting = CsvMappings.DateFormatChoices.Where(f => values.Count > 0 && values.All(v => CsvValues.TryDate(v, f, out _))).ToList();
         DateFormats.Clear();
         foreach (var format in fitting)
