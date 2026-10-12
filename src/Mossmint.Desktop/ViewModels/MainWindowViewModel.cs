@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mossmint.Application.Profiles;
@@ -93,24 +92,35 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IAppNavigator
 
     private void ShowCreateThenImport() => ShowCreate(() => OpenApp(Destination.Imports));
 
-    // The sample opens on this PC with a passphrase nobody sees: it holds nothing worth
-    // recovering, so there's no recovery key to save. Returns why it failed, if it did.
+    // The sample opens on this PC, and its passphrase is public (SampleHousehold.Passphrase):
+    // it holds nothing worth recovering, so there's no recovery key to save. A sample that
+    // fails halfway is deleted. Returns why it failed, if it did.
     private async Task<string?> TrySample()
     {
         try
         {
             var created = await Task.Run(() =>
             {
-                var created = _services.Profiles.Create(SampleHousehold.ProfileName, Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)), unlockOnThisDevice: true);
-                SampleHousehold.Fill(created.Session.Data, _services.Clock);
-                return created;
+                var created = _services.Profiles.Create(SampleHousehold.ProfileName, SampleHousehold.Passphrase, unlockOnThisDevice: true);
+                try
+                {
+                    SampleHousehold.Fill(created.Session.Data, _services.Clock);
+                    return created;
+                }
+                catch
+                {
+                    var id = created.Session.Profile.Id;
+                    created.Session.Dispose();
+                    _services.Profiles.Delete(id);
+                    throw;
+                }
             });
             _services.Context.Open(created.Session);
             OpenAppCommand.NotifyCanExecuteChanged();
             OpenApp(Destination.Overview);
             return null;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or PlatformNotSupportedException)
+        catch (Exception e)
         {
             return $"The sample couldn't be created: {e.Message}";
         }

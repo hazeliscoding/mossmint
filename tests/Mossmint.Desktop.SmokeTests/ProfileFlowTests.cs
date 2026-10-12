@@ -1,4 +1,5 @@
 using Avalonia.Headless.XUnit;
+using Mossmint.Application.Profiles;
 using Mossmint.Application.Setup;
 using Mossmint.Desktop.ViewModels;
 
@@ -218,6 +219,11 @@ public class ProfileFlowTests
         var profile = app.Services.Profiles.List().Should().ContainSingle().Subject;
         (profile.Name, profile.UnlocksOnThisDevice).Should().Be(("Sample household", true));
         app.Services.Context.Current.Data.Bills().Should().NotBeEmpty();
+
+        // Without this PC (unlock turned off, Windows reset), its known passphrase still opens it, so it can always be deleted.
+        app.ViewModel.Lock();
+        app.Services.Profiles.Unlock(profile.Id, new UnlockSecret.Passphrase(SampleHousehold.Passphrase))
+            .Should().BeOfType<UnlockResult.Unlocked>().Which.Session.Dispose();
     }
 
     // Export writes readable files, so it only runs after its warning, and never over an earlier export.

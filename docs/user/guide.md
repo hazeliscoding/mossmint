@@ -18,7 +18,7 @@ The welcome screen offers three ways in:
 - **Start fresh** walks you through a checking account, paychecks, bills, debts and savings, one short step at a time. Every step can be skipped.
 - **Restore an encrypted backup** brings a profile from another PC.
 
-**Just looking?** *Try a sample household* opens a separate profile full of made-up numbers, so you can try every page first. Delete it any time from **Settings → Delete profile**.
+**Just looking?** *Try a sample household* opens a separate profile full of made-up numbers, so you can try every page first. It opens on this PC; its passphrase is `sample household` for anywhere else, so don't keep real numbers in it. Delete it any time from **Settings → Delete profile**.
 
 ![The welcome screen: Import my finances, Start fresh, Restore an encrypted backup, and Try a sample household](../screenshots/welcome-light.png)
 

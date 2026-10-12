@@ -108,7 +108,7 @@
         <WrapPanel ItemSpacing="4" Margin="4,0,0,0">
           <TextBlock Classes="compact faint" Text="Just looking?" VerticalAlignment="Center" />
           <Button Classes="link" FontSize="12" Content="Try a sample household"
-                  Command="{Binding TrySampleCommand}" ToolTip.Tip="Opens a separate profile full of made-up numbers. Delete it any time." />
+                  Command="{Binding TrySampleCommand}" ToolTip.Tip="Opens a separate profile full of made-up numbers, on this PC. Its passphrase is “sample household”. Delete it any time in Settings." />
         </WrapPanel>
         <TextBlock Classes="error" Margin="4,0,0,0" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
       </StackPanel>

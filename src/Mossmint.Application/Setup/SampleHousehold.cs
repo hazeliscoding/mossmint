@@ -9,6 +9,10 @@ public static class SampleHousehold
 {
     public const string ProfileName = "Sample household";
 
+    // Public on purpose: the sample holds only made-up numbers, and a passphrase anyone can
+    // look up means it can always be unlocked, deleted or restored, with or without this PC.
+    public const string Passphrase = "sample household";
+
     public static void Fill(IProfileData data, TimeProvider clock)
     {
         var entry = new ManualEntry(data, clock);
