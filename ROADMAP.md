@@ -134,6 +134,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 
 - **Code signing is set up for 0.6** (owner's call, reusing the signing account and certificate profile Prompuff uses). A dedicated app registration with no secrets trusts only the `release` environment, which only `v*` tags can deploy to, through a federated credential, and it may sign only with that one certificate profile. The account and profile names live in the environment's variables, not in the public workflow. The release job checks that both the installer and the app inside the portable package are signed; manual runs and forks still build unsigned. A newly signed installer still gets SmartScreen's "unrecognized app" warning, now showing the publisher's name, until downloads build reputation.
 - **Export gives both a complete file and spreadsheets** (the test user's pick). **Export** writes one JSON file holding the whole profile, as a copy to keep or a way to move to another app, plus CSV files of transactions, bills and debts that open in Excel. A warning comes first, because neither is encrypted.
+- **The sample household lives on Welcome** (the test user's pick). A quiet *Try a sample household* link, not a card, creates a separate profile clearly named as a sample, filled with the made-up household the screenshots use. It can be deleted like any profile and never touches a real one. It lets someone try every page before typing a real number, and show Mossmint to a friend without showing their money.
 
 ## M0: Skeleton and guardrails (v0.3.0)
 
@@ -290,6 +291,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - macOS and Linux builds.
 - A live Safe to spend preview while typing an entry, and *Override a date* for a single paycheck.
 - Page or virtualize the ledger and the forecast table once months of entries pile up; every row is drawn today, which is fine at current sizes (0.4 accessibility audit).
+- **Joint accounts by person** (raised by the test user): when two people's paychecks land in one account, show whose paycheck paid which bill and each person's share of what's left. Today the Paychecks page splits a joint account by payday, not by person.
 - Plaid relay (a stretch goal after 1.0), only if demand justifies it, behind its own ADR and threat model.
 
 ## Maybe later
