@@ -180,6 +180,14 @@ public sealed partial class ConnectionsPageViewModel(AppServices services)
             return;
         }
 
+        // Two bank accounts feeding one account would mix two balances into one.
+        var taken = pending.Links.Where(l => l.Value != Guid.Empty && !targets.ContainsKey(l.Key)).Select(l => l.Value);
+        if (targets.Values.Select(a => a.Id.Value).Concat(taken).GroupBy(id => id).Any(g => g.Count() > 1))
+        {
+            LinkError = "Two bank accounts can't feed the same Mossmint account. Leave one out, or make a new account for it.";
+            return;
+        }
+
         foreach (var row in Linking)
         {
             // A row left out is remembered as Guid.Empty, so it isn't asked about again.

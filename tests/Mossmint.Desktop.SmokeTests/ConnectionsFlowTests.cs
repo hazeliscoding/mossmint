@@ -139,6 +139,27 @@ public class ConnectionsFlowTests
     }
 
     [AvaloniaFact]
+    public async Task Two_bank_accounts_cant_feed_one_mossmint_account()
+    {
+        using var app = new Harness();
+        var page = await OpenConnections(app);
+        var checking = new Account(new AccountId(Guid.CreateVersion7()), "Everyday Checking", AccountKind.Checking, Currency.Usd);
+        app.Services.Context.Current.Data.AddAccount(checking);
+        page.StartConnectCommand.Execute(null);
+        page.SetupToken = FakeConnectorProvider.Token;
+        await page.ConnectCommand.ExecuteAsync(null);
+        foreach (var row in page.Linking)
+        {
+            row.Selected = row.Choices.Single(c => c.Account?.Id == checking.Id);
+        }
+
+        await page.ContinueCommand.ExecuteAsync(null);
+
+        page.LinkError.Should().Contain("same Mossmint account");
+        page.Preview.Should().BeNull();
+    }
+
+    [AvaloniaFact]
     public async Task A_refused_sync_says_why_and_changes_nothing()
     {
         using var app = new Harness();
