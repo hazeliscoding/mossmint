@@ -161,6 +161,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $previous = gh release list --repo $env:GITHUB_REPOSITORY --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName'
+          if ($LASTEXITCODE -ne 0) { throw "Couldn't list the published releases" }
           if (-not $previous -or [version]($env:VERSION -replace '-.*$') -le [version]($previous.TrimStart('v'))) {
             "Nothing to upgrade from: $previous isn't older than $env:VERSION."
             exit 0
