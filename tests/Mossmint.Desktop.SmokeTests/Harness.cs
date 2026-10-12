@@ -3,12 +3,14 @@ using Avalonia.Controls;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Mossmint.Application.Profiles;
+using Mossmint.Connectors.Abstractions;
 using Mossmint.Desktop.Services;
 using Mossmint.Desktop.ViewModels;
 using Mossmint.Desktop.Views;
 using Mossmint.Persistence.Backups;
 using Mossmint.Persistence.Profiles;
 using Mossmint.Persistence.Security;
+using Mossmint.Samples.Connectors;
 
 namespace Mossmint.Desktop.SmokeTests;
 
@@ -69,6 +71,7 @@ internal sealed class Harness : IDisposable
             TimeProvider.System)
         {
             PreferencesFolder = Root,
+            SimpleFin = SimpleFin,
         };
         if (updates is not null)
         {
@@ -79,6 +82,9 @@ internal sealed class Harness : IDisposable
     public string Root { get; }
 
     public FakeDialogs Dialogs { get; } = new();
+
+    // Tests never reach a real SimpleFIN server.
+    public FakeConnectorProvider SimpleFin { get; } = new();
 
     public AppServices Services { get; }
 
@@ -129,4 +135,38 @@ internal sealed class Harness : IDisposable
 internal static class Visuals
 {
     public static string? AutomationName(Control control) => Avalonia.Automation.AutomationProperties.GetName(control);
+}
+
+// Plays the fake bank's syncs in order; "good-token" is the only token it takes.
+internal sealed class FakeConnectorProvider : IConnectorProvider
+{
+    public const string Token = "good-token";
+    public const string Credential = "https://user:s3cret@bridge.example/simplefin";
+
+    public ConnectorId Id { get; } = new("simplefin");
+
+    public string DisplayName => "SimpleFIN";
+
+    public List<ConnectorSync> Script { get; } = [FakeBank.First(DateTimeOffset.Now), FakeBank.Second(DateTimeOffset.Now)];
+
+    public ConnectorException? NextFailure { get; set; }
+
+    public string HostOf(string setupToken) =>
+        setupToken == Token ? "bridge.example" : throw new FormatException("That isn't a SimpleFIN setup token.");
+
+    public Task<string> ClaimAsync(string setupToken, CancellationToken cancellationToken) => Task.FromResult(Credential);
+
+    public IConnector Open(string credential) => new Failing(this, new ScriptedConnector(Id, DisplayName, Script));
+
+    private sealed class Failing(FakeConnectorProvider provider, IConnector inner) : IConnector
+    {
+        public ConnectorId Id => inner.Id;
+
+        public string DisplayName => inner.DisplayName;
+
+        public ConnectorCapabilities Capabilities => inner.Capabilities;
+
+        public Task<ConnectorSync> SyncAsync(string? cursor, CancellationToken cancellationToken) =>
+            provider.NextFailure is { } failure ? Task.FromException<ConnectorSync>(failure) : inner.SyncAsync(cursor, cancellationToken);
+    }
 }

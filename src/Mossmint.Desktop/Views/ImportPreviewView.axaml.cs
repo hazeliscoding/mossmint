@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace Mossmint.Desktop.Views;
 
-public partial class PlaceholderPageView : UserControl
+public partial class ImportPreviewView : UserControl
 {
-    public PlaceholderPageView()
+    public ImportPreviewView()
     {
         InitializeComponent();
     }

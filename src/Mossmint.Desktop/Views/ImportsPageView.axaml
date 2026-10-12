@@ -5,32 +5,6 @@
              x:Class="Mossmint.Desktop.Views.ImportsPageView"
              x:DataType="vm:ImportsPageViewModel">
 
-  <UserControl.DataTemplates>
-    <!-- Where one source account's rows go; shared by CSV and statement files. -->
-    <DataTemplate DataType="vm:DestinationRow">
-      <WrapPanel Orientation="Horizontal" Margin="0,0,0,6">
-        <StackPanel Spacing="4" Width="340" Margin="0,0,12,6">
-          <TextBlock Classes="field-label" Text="{Binding Label, StringFormat='Rows from {0}'}" TextWrapping="Wrap" />
-          <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" PlaceholderText="Choose an account" HorizontalAlignment="Stretch"
-                    AutomationProperties.Name="{Binding Label, StringFormat='Account for {0}'}">
-            <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:DestinationOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
-          </ComboBox>
-        </StackPanel>
-        <StackPanel Spacing="4" Width="220" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
-          <TextBlock Classes="field-label" Text="New account name" />
-          <TextBox Text="{Binding NewName}" AutomationProperties.Name="{Binding Label, StringFormat='New account name for {0}'}" />
-        </StackPanel>
-        <StackPanel Spacing="4" Width="160" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
-          <TextBlock Classes="field-label" Text="Type" />
-          <ComboBox ItemsSource="{x:Static vm:DestinationRow.Kinds}" SelectedItem="{Binding NewKind}" HorizontalAlignment="Stretch"
-                    AutomationProperties.Name="{Binding Label, StringFormat='New account type for {0}'}">
-            <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:KindOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
-          </ComboBox>
-        </StackPanel>
-      </WrapPanel>
-    </DataTemplate>
-  </UserControl.DataTemplates>
-
   <StackPanel Spacing="20" MaxWidth="980" HorizontalAlignment="Left">
     <StackPanel Spacing="4">
       <TextBlock Classes="page-title" Text="{Binding Title}" />
@@ -185,49 +159,7 @@
           <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelPreviewCommand}" />
           <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Importing" IsVisible="{Binding IsBusy}" Width="120" VerticalAlignment="Center" />
         </StackPanel>
-        <StackPanel Spacing="16" DataContext="{Binding Preview}" x:DataType="vm:ImportPreviewViewModel">
-          <ItemsControl ItemsSource="{Binding Files}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:SourceFileRow">
-                <Grid ColumnDefinitions="*,Auto" Margin="0,4">
-                  <StackPanel Spacing="2">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Classes="compact faint" Text="{Binding Shape}" />
-                  </StackPanel>
-                  <TextBlock Grid.Column="1" Classes="mono compact faint" Text="{Binding Hash}" VerticalAlignment="Center" />
-                </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-  
-          <Border Classes="separator" />
-          <ItemsControl ItemsSource="{Binding Changes}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:ChangeSummaryRow">
-                <Grid ColumnDefinitions="*,Auto" Margin="0,3">
-                  <TextBlock Text="{Binding Label}" />
-                  <TextBlock Grid.Column="1" Classes="mono" Text="{Binding Count}" />
-                </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-  
-          <Border Classes="separator" />
-          <ItemsControl ItemsSource="{Binding Findings}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:FindingRow">
-                <Grid ColumnDefinitions="*,140" Margin="0,8">
-                  <StackPanel Spacing="3">
-                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                    <TextBlock Classes="compact secondary" Text="{Binding Detail}" TextWrapping="Wrap" />
-                    <TextBlock Classes="mono compact faint" Text="{Binding Sources}" TextWrapping="Wrap" />
-                  </StackPanel>
-                  <c:StatusBadge Grid.Column="1" Tone="{Binding Tone}" Text="{Binding Badge}" HorizontalAlignment="Right" VerticalAlignment="Top" />
-                </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </StackPanel>
+        <ContentControl Content="{Binding Preview}" />
       </StackPanel>
     </Border>
 

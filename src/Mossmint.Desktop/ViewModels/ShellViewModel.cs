@@ -26,10 +26,7 @@ public sealed partial class ShellViewModel : ViewModelBase
             Nav(new TransactionsPageViewModel(services, navigator), "IconList", "Ctrl+7"),
             Nav(new ScenariosPageViewModel(services, navigator), "IconGitCompareArrows", "Ctrl+8"),
             Nav(new ImportsPageViewModel(services), "IconFileSpreadsheet", null, startsGroup: true),
-            Nav(Placeholder(Destination.Connections, "Connections", "0.7",
-                "Optional bank connections. Mossmint works fully without them.",
-                "No connections, by design",
-                "Mossmint never asks for bank logins and makes no network calls in normal use. File imports (CSV, OFX) and optional read-only feeds may come after the MVP, each with its own privacy notes and a way to disconnect and erase."), "IconPlug", null),
+            Nav(new ConnectionsPageViewModel(services), "IconPlug", null),
             Nav(Settings = new SettingsPageViewModel(services, navigator), "IconSettings2", "Ctrl+,"),
             Nav(new BackupsPageViewModel(services, navigator), "IconArchive", null),
         ];
@@ -69,11 +66,16 @@ public sealed partial class ShellViewModel : ViewModelBase
     [ObservableProperty]
     private string _forecastAsOfTip = "";
 
+    // Offline until the user connects something; even then, syncing is by hand.
+    [ObservableProperty]
+    private string _dataMode = "Offline · Manual";
+
     partial void OnSelectedItemChanged(NavItemViewModel? value) => Refresh();
 
     public void Refresh()
     {
         SelectedItem?.Page.OnNavigatedTo();
+        DataMode = Context.IsUnlocked && Context.Current.Imports.Connections().Count > 0 ? "SimpleFIN · Manual sync" : "Offline · Manual";
         var outcome = Context.IsUnlocked
             ? Forecasts.Build(Context.Current.Data, DateOnly.FromDateTime(_services.Clock.GetLocalNow().DateTime))
             : new ForecastUnavailable(["Unlock a profile."]);
@@ -85,9 +87,6 @@ public sealed partial class ShellViewModel : ViewModelBase
             _ => ("—", ""),
         };
     }
-
-    private static PlaceholderPageViewModel Placeholder(Destination destination, string title, string milestone, string purpose, string emptyTitle, string emptyBody) =>
-        new(destination, title, purpose, milestone, emptyTitle, emptyBody);
 
     private static NavItemViewModel Nav(PageViewModel page, string icon, string? shortcut, bool startsGroup = false) =>
         new(page, icon, shortcut, startsGroup);

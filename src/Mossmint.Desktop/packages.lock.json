@@ -343,6 +343,12 @@
           "Mossmint.Domain": "[0.6.0, )"
         }
       },
+      "mossmint.connectors.simplefin": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Connectors.Abstractions": "[0.6.0, )"
+        }
+      },
       "mossmint.domain": {
         "type": "Project"
       },

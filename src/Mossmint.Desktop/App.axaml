@@ -53,9 +53,6 @@
     <DataTemplate DataType="vm:ShellViewModel">
       <views:ShellView />
     </DataTemplate>
-    <DataTemplate DataType="vm:PlaceholderPageViewModel">
-      <views:PlaceholderPageView />
-    </DataTemplate>
     <DataTemplate DataType="vm:CreateProfileViewModel">
       <views:CreateProfileView />
     </DataTemplate>
@@ -70,6 +67,35 @@
     </DataTemplate>
     <DataTemplate DataType="vm:SetupViewModel">
       <views:SetupView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ImportPreviewViewModel">
+      <views:ImportPreviewView />
+    </DataTemplate>
+    <!-- Where one source account's rows go; shared by CSV and statement files. -->
+    <DataTemplate DataType="vm:DestinationRow">
+      <WrapPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <StackPanel Spacing="4" Width="340" Margin="0,0,12,6">
+          <TextBlock Classes="field-label" Text="{Binding Label, StringFormat='Rows from {0}'}" TextWrapping="Wrap" />
+          <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" PlaceholderText="Choose an account" HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="{Binding Label, StringFormat='Account for {0}'}">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:DestinationOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Spacing="4" Width="220" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
+          <TextBlock Classes="field-label" Text="New account name" />
+          <TextBox Text="{Binding NewName}" AutomationProperties.Name="{Binding Label, StringFormat='New account name for {0}'}" />
+        </StackPanel>
+        <StackPanel Spacing="4" Width="160" Margin="0,0,12,6" IsVisible="{Binding IsNew}">
+          <TextBlock Classes="field-label" Text="Type" />
+          <ComboBox ItemsSource="{x:Static vm:DestinationRow.Kinds}" SelectedItem="{Binding NewKind}" HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="{Binding Label, StringFormat='New account type for {0}'}">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:KindOption"><TextBlock Text="{Binding Label}" /></DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+      </WrapPanel>
+    </DataTemplate>
+    <DataTemplate DataType="vm:ConnectionsPageViewModel">
+      <views:ConnectionsPageView />
     </DataTemplate>
     <DataTemplate DataType="vm:ImportsPageViewModel">
       <views:ImportsPageView />

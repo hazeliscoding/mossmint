@@ -96,7 +96,7 @@
                        ToolTip.Tip="{Binding ForecastAsOfTip}" AutomationProperties.HelpText="{Binding ForecastAsOfTip}" />
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-            <c:StatusBadge Tone="Neutral" Text="Offline · Manual" />
+            <c:StatusBadge Tone="Neutral" Text="{Binding DataMode}" />
             <Button Classes="ghost" Command="{Binding LockCommand}" ToolTip.Tip="Lock the profile" AutomationProperties.Name="Lock">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <c:Icon Width="14" Height="14" Data="{StaticResource IconLock}" />

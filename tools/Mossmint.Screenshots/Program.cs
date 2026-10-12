@@ -107,6 +107,14 @@ var screens = new (string Name, Func<Window> Create)[]
         vm.Shell.Settings.AvailableVersion = "0.7.0";
     })),
     ("connections", () => scenes.Unlocked(vm => vm.OpenApp(Destination.Connections))),
+    ("connections-connect", () => scenes.Unlocked(vm =>
+    {
+        vm.OpenApp(Destination.Connections);
+        var page = (ConnectionsPageViewModel)vm.Shell.CurrentPage!;
+        page.StartConnectCommand.Execute(null);
+        // Decoded locally to show its host; nothing is sent.
+        page.SetupToken = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("https://bridge.simplefin.org/simplefin/claim/made-up-demo"));
+    })),
     ("sidebar-collapsed", () => scenes.Unlocked(vm =>
     {
         vm.OpenApp(Destination.CashFlow);

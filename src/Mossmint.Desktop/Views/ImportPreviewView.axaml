@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.ImportPreviewView"
+             x:DataType="vm:ImportPreviewViewModel">
+  <!-- A dry run's files, changes and findings; shared by Imports and Connections. -->
+  <StackPanel Spacing="16">
+    <ItemsControl ItemsSource="{Binding Files}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:SourceFileRow">
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+            <StackPanel Spacing="2">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              <TextBlock Classes="compact faint" Text="{Binding Shape}" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" Classes="mono compact faint" Text="{Binding Hash}" VerticalAlignment="Center" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  
+    <Border Classes="separator" />
+    <ItemsControl ItemsSource="{Binding Changes}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ChangeSummaryRow">
+          <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+            <TextBlock Text="{Binding Label}" />
+            <TextBlock Grid.Column="1" Classes="mono" Text="{Binding Count}" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  
+    <Border Classes="separator" />
+    <ItemsControl ItemsSource="{Binding Findings}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:FindingRow">
+          <Grid ColumnDefinitions="*,140" Margin="0,8">
+            <StackPanel Spacing="3">
+              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Classes="compact secondary" Text="{Binding Detail}" TextWrapping="Wrap" />
+              <TextBlock Classes="mono compact faint" Text="{Binding Sources}" TextWrapping="Wrap" />
+            </StackPanel>
+            <c:StatusBadge Grid.Column="1" Tone="{Binding Tone}" Text="{Binding Badge}" HorizontalAlignment="Right" VerticalAlignment="Top" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

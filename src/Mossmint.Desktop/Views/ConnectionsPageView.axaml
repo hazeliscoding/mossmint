@@ -1,0 +1,129 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mossmint.Desktop.ViewModels"
+             xmlns:c="using:Mossmint.Desktop.Controls"
+             x:Class="Mossmint.Desktop.Views.ConnectionsPageView"
+             x:DataType="vm:ConnectionsPageViewModel">
+
+  <StackPanel Spacing="20" MaxWidth="980" HorizontalAlignment="Left">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="page-title" Text="{Binding Title}" />
+      <TextBlock Classes="secondary" Text="{Binding Purpose}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <c:StatusBadge Tone="{Binding StatusTone}" Text="{Binding Status}" HorizontalAlignment="Left" AutomationProperties.LiveSetting="Polite"
+                   IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+    <!-- What SimpleFIN is, who sees what, and the way in. -->
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding CanStartConnect}">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="SimpleFIN" />
+        <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                   Text="For banks with no file to download. SimpleFIN Bridge is a separate paid service: you sign in to your bank there, and it gives you a one-time setup token for Mossmint. Mossmint never sees your bank login." />
+        <StackPanel Spacing="6">
+          <TextBlock Classes="card-title" Text="Before you connect" />
+          <TextBlock Classes="compact" TextWrapping="Wrap" Text="• SimpleFIN, and the company it uses to reach your bank, see your accounts, balances and transactions." />
+          <TextBlock Classes="compact" TextWrapping="Wrap" Text="• Mossmint receives account names, balances and up to 90 days of transactions, and keeps its key only in your encrypted profile." />
+          <TextBlock Classes="compact" TextWrapping="Wrap" Text="• It syncs only when you press Sync now. Nothing runs in the background." />
+          <TextBlock Classes="compact" TextWrapping="Wrap" Text="• Disconnecting deletes the key here; remove Mossmint's access in SimpleFIN too. What a sync brought in stays." />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Connect SimpleFIN…" Command="{Binding StartConnectCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="24,20" IsVisible="{Binding IsConnecting}">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="Connect SimpleFIN" />
+        <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                   Text="Paste the setup token SimpleFIN gave you. It works once: Mossmint trades it for a key and keeps that in your encrypted profile." />
+        <StackPanel Spacing="4" MaxWidth="560" HorizontalAlignment="Left">
+          <TextBlock Classes="field-label" Text="Setup token" />
+          <TextBox Classes="mono" Text="{Binding SetupToken}" PasswordChar="•" AutomationProperties.Name="Setup token" />
+        </StackPanel>
+        <TextBlock Classes="compact" TextWrapping="Wrap" IsVisible="{Binding TokenHost, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   Text="{Binding TokenHost, StringFormat='This token connects to {0}.'}" />
+        <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding HostWarning, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <c:StatusBadge Tone="Warning" Text="Unfamiliar server" VerticalAlignment="Top" />
+          <TextBlock Classes="compact" TextWrapping="Wrap" MaxWidth="560" Text="{Binding HostWarning}" />
+        </StackPanel>
+        <TextBlock Classes="error" Text="{Binding TokenError}" TextWrapping="Wrap" IsVisible="{Binding TokenError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Connect" Command="{Binding ConnectCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelConnectCommand}" />
+          <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Connecting" IsVisible="{Binding IsBusy}" Width="120" VerticalAlignment="Center" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Accounts a sync brought that aren't linked yet. -->
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="24,20" IsVisible="{Binding IsLinking}">
+      <StackPanel Spacing="14">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="section" Text="Choose the accounts to bring in" />
+          <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                     Text="Link each account to one you already have in Mossmint, make a new one, or leave it out. Mossmint remembers the choice for every later sync." />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Linking}" />
+        <TextBlock Classes="error" Text="{Binding LinkError}" TextWrapping="Wrap" IsVisible="{Binding LinkError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Continue" Command="{Binding ContinueCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelLinkingCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- The first sync, or one that something blocks, is shown before it's saved. -->
+    <Border Classes="card" Padding="24,20" IsVisible="{Binding HasPreview}">
+      <StackPanel Spacing="16">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="section" Text="First sync" />
+          <TextBlock Classes="prose secondary" Text="{Binding Preview.Verdict, FallbackValue=''}" TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="Import" Command="{Binding ImportCommand}" />
+          <Button Classes="ghost" Content="Cancel" IsCancel="True" Command="{Binding CancelPreviewCommand}" />
+          <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Importing" IsVisible="{Binding IsBusy}" Width="120" VerticalAlignment="Center" />
+        </StackPanel>
+        <ContentControl Content="{Binding Preview}" />
+      </StackPanel>
+    </Border>
+
+    <ItemsControl ItemsSource="{Binding Connections}" IsVisible="{Binding HasConnections}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ConnectionRow">
+          <Border Classes="card" Padding="24,20" Margin="0,0,0,12">
+            <StackPanel Spacing="10">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="section" Text="{Binding Title}" />
+                <TextBlock Classes="compact secondary" Text="{Binding Detail}" TextWrapping="Wrap" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Classes="primary" Content="Sync now" AutomationProperties.Name="{Binding Title, StringFormat='Sync {0} now'}"
+                        Command="{Binding $parent[UserControl].((vm:ConnectionsPageViewModel)DataContext).SyncCommand}" CommandParameter="{Binding}" />
+                <Button Classes="ghost" Content="Disconnect…" AutomationProperties.Name="{Binding Title, StringFormat='Disconnect {0}'}"
+                        Command="{Binding $parent[UserControl].((vm:ConnectionsPageViewModel)DataContext).StartDisconnectCommand}" CommandParameter="{Binding}" />
+                <ProgressBar IsIndeterminate="True" AutomationProperties.Name="Syncing" Width="120" VerticalAlignment="Center"
+                             IsVisible="{Binding $parent[UserControl].((vm:ConnectionsPageViewModel)DataContext).IsBusy}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Border c:FormFocus.IsForm="True" Classes="card" Padding="24,20"
+            IsVisible="{Binding ConfirmingDisconnect, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="section" Text="Disconnect SimpleFIN?" />
+        <TextBlock Classes="prose secondary" TextWrapping="Wrap"
+                   Text="Mossmint deletes the key it keeps for this connection. Accounts, balances and transactions it brought in stay. SimpleFIN can't be told from here, so remove Mossmint's access in SimpleFIN as well." />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="danger" Content="Disconnect" Command="{Binding ConfirmDisconnectCommand}" />
+          <Button Classes="ghost" Content="Keep it" IsCancel="True" Command="{Binding CancelDisconnectCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

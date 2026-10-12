@@ -433,6 +433,12 @@
           "Mossmint.Domain": "[0.6.0, )"
         }
       },
+      "mossmint.connectors.simplefin": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Connectors.Abstractions": "[0.6.0, )"
+        }
+      },
       "mossmint.desktop": {
         "type": "Project",
         "dependencies": {
@@ -442,6 +448,7 @@
           "CommunityToolkit.Mvvm": "[8.4.2, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.12, )",
           "Mossmint.Application": "[0.6.0, )",
+          "Mossmint.Connectors.SimpleFin": "[0.6.0, )",
           "Mossmint.Import.Excel": "[0.6.0, )",
           "Mossmint.Import.Transactions": "[0.6.0, )",
           "Mossmint.Persistence": "[0.6.0, )",
