@@ -131,6 +131,37 @@ public sealed class SimpleFinTests
     }
 
     [Fact]
+    public void A_look_alike_host_is_shown_in_its_ascii_form()
+    {
+        // The "е" is Cyrillic: shown as typed, this host would pass for bridge.example.
+        var token = Convert.ToBase64String(Encoding.UTF8.GetBytes("https://bridgе.example/simplefin/claim/abc"));
+
+        new SimpleFinProvider(new FixedTime(Now)).HostOf(token).Should().StartWith("xn--");
+    }
+
+    [Fact]
+    public async Task Text_that_could_reorder_or_hide_itself_is_stripped()
+    {
+        var json = AccountSet.Replace("PAYROLL", "PAY‮ROLL​", StringComparison.Ordinal);
+        var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, json))).Open(Access);
+
+        var sync = await connector.SyncAsync(null, CancellationToken.None);
+
+        sync.Transactions[0].Description.Should().Be("PAYROLL");
+    }
+
+    [Fact]
+    public async Task An_oversized_answer_is_refused_rather_than_read()
+    {
+        var huge = new string(' ', 17 * 1024 * 1024);
+        var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, huge))).Open(Access);
+
+        var sync = () => connector.SyncAsync(null, CancellationToken.None);
+
+        (await sync.Should().ThrowAsync<ConnectorException>()).Which.Failure.Should().Be(ConnectorFailure.Unavailable);
+    }
+
+    [Fact]
     public async Task A_garbled_answer_is_invalid()
     {
         var connector = new SimpleFinProvider(new FixedTime(Now), new Scripted(_ => Respond(HttpStatusCode.OK, "<html>maintenance</html>"))).Open(Access);

@@ -153,11 +153,13 @@ internal sealed class SimpleFinConnector(SimpleFinProvider provider, string cred
         _ => AccountKind.Checking,
     };
 
-    // Text from the provider is shown as is, so control characters go and length is capped.
+    // Text from the provider is shown as is, so control and format characters go
+    // (a right-to-left override could make one payee read as another) and
+    // length is capped.
     private static string Clean(string text)
     {
         var kept = new StringBuilder(Math.Min(text.Length, MaxText));
-        foreach (var c in text.Where(c => !char.IsControl(c)).Take(MaxText))
+        foreach (var c in text.Where(c => char.GetUnicodeCategory(c) is not (UnicodeCategory.Control or UnicodeCategory.Format)).Take(MaxText))
         {
             kept.Append(c);
         }

@@ -25,14 +25,16 @@ public sealed class SimpleFinProvider : IConnectorProvider
     public SimpleFinProvider(TimeProvider clock, HttpMessageHandler handler)
     {
         _clock = clock;
-        _http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
+        // A household's 90 days is far below this; anything bigger is refused unread.
+        _http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60), MaxResponseContentBufferSize = 16 * 1024 * 1024 };
     }
 
     public ConnectorId Id => ProviderId;
 
     public string DisplayName => "SimpleFIN";
 
-    public string HostOf(string setupToken) => ClaimUrl(setupToken).Host;
+    // The ASCII (punycode) form, so a look-alike host can't pass for a real one.
+    public string HostOf(string setupToken) => ClaimUrl(setupToken).IdnHost;
 
     public async Task<string> ClaimAsync(string setupToken, CancellationToken cancellationToken)
     {
