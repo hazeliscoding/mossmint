@@ -4,6 +4,7 @@ using Mossmint.Application.Import;
 using Mossmint.Import.Excel;
 using Mossmint.Persistence.Backups;
 using Mossmint.Persistence.Profiles;
+using Mossmint.Samples.Workbooks;
 
 // Imports workbooks into a brand-new encrypted profile from the command line,
 // then writes a verified backup of it: a profile prepared on one PC for
@@ -15,6 +16,19 @@ using Mossmint.Persistence.Profiles;
 //
 //   dotnet run --project tools/Mossmint.ImportTool -- --data-root <folder> --profile <name>
 //       --secrets <file> --report <file> [--backup <file>] [--dry-run] <workbook.xlsx>...
+
+// `--write-samples <folder>` writes the synthetic workbooks instead, as files to import:
+// the release workflow's upgrade test imports them with the previous release's tool.
+if (args is ["--write-samples", var samples])
+{
+    Directory.CreateDirectory(samples);
+    foreach (var workbook in SyntheticWorkbooks.All())
+    {
+        File.WriteAllBytes(Path.Combine(samples, workbook.FileName), workbook.Content);
+    }
+
+    return 0;
+}
 
 var options = Options.Parse(args);
 if (options is null)

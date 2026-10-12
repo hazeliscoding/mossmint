@@ -6,5 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Mossmint.Persistence/Mossmint.Persistence.csproj" />
     <ProjectReference Include="../../src/Mossmint.Import.Excel/Mossmint.Import.Excel.csproj" />
+    <ProjectReference Include="../../samples/Mossmint.Samples/Mossmint.Samples.csproj" />
   </ItemGroup>
 </Project>

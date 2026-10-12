@@ -138,15 +138,15 @@
       "mossmint.application": {
         "type": "Project",
         "dependencies": {
-          "Mossmint.Connectors.Abstractions": "[0.1.0, )",
-          "Mossmint.Domain": "[0.1.0, )",
-          "Mossmint.Engine": "[0.1.0, )"
+          "Mossmint.Connectors.Abstractions": "[0.5.0, )",
+          "Mossmint.Domain": "[0.5.0, )",
+          "Mossmint.Engine": "[0.5.0, )"
         }
       },
       "mossmint.connectors.abstractions": {
         "type": "Project",
         "dependencies": {
-          "Mossmint.Domain": "[0.1.0, )"
+          "Mossmint.Domain": "[0.5.0, )"
         }
       },
       "mossmint.domain": {
@@ -155,23 +155,30 @@
       "mossmint.engine": {
         "type": "Project",
         "dependencies": {
-          "Mossmint.Domain": "[0.1.0, )"
+          "Mossmint.Domain": "[0.5.0, )"
         }
       },
       "mossmint.import.excel": {
         "type": "Project",
         "dependencies": {
-          "Mossmint.Application": "[0.1.0, )"
+          "Mossmint.Application": "[0.5.0, )"
         }
       },
       "mossmint.persistence": {
         "type": "Project",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Sqlite.Core": "[10.0.12, )",
-          "Mossmint.Application": "[0.1.0, )",
+          "Mossmint.Application": "[0.5.0, )",
           "NSec.Cryptography": "[26.4.0, )",
           "SQLite3MC.PCLRaw.bundle": "[2.4.0, )",
           "System.Security.Cryptography.ProtectedData": "[10.0.12, )"
+        }
+      },
+      "mossmint.samples": {
+        "type": "Project",
+        "dependencies": {
+          "Mossmint.Connectors.Abstractions": "[0.5.0, )",
+          "Mossmint.Engine": "[0.5.0, )"
         }
       },
       "Microsoft.EntityFrameworkCore.Sqlite.Core": {
