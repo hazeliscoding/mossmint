@@ -12,7 +12,8 @@ How Mossmint stores a profile, what a backup file contains, and what happens whe
         ├── profile.json         name and wrapped keys; no secret in clear
         ├── profile.db           SQLCipher v4 database (SQLite3 Multiple Ciphers)
         ├── profile.db-wal       write-ahead log, also encrypted
-        ├── snapshots\           encrypted copies taken before schema upgrades
+        ├── snapshots\           encrypted copies taken before schema upgrades and imports
+        ├── migrating            only during an upgrade: the snapshot to put back after a crash
         └── backups\             local .mmbak copies, newest five
 ```
 
@@ -41,6 +42,8 @@ flowchart LR
 ## Schema upgrades
 
 Before a profile's database is migrated to a newer schema, an encrypted snapshot goes into `snapshots\`. If a migration fails, the snapshot is put back and the error is shown, so a failed upgrade never leaves a half-migrated profile.
+
+A crash or power cut mid-upgrade skips that error handling, so a small `migrating` file naming the snapshot is written first and deleted once the upgrade finishes. If the next unlock finds it, the snapshot goes back before anything else and the upgrade runs again from a whole file. If that snapshot is missing, the profile is refused unchanged; restore a backup instead.
 
 ## The backup file (`.mmbak`)
 

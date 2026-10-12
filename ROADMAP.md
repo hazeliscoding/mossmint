@@ -223,7 +223,7 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - [x] Opt-in update check in Settings: **Check now**. It asks GitHub Releases only, through an explicit `GithubSource`, never Velopack's hosted service. Download and restart are separate steps, never during a backup or an import. Offline use never depends on it. ADR-0003 lists what GitHub sees. (Moved up ahead of M4; see the 2026-10-10 decisions.)
 - [ ] An optional daily update check, off by default.
 - [ ] JSON and CSV export, with an explicit warning. Exported CSV is escaped so a spreadsheet can't run it as formulas, and the importer undoes the escaping.
-- [ ] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
+- [x] Migration safety: a migration interrupted by a crash is recovered on the next open, from its snapshot.
 - [ ] Code signing through Azure Artifact Signing.
 - [ ] Upgrade test: install, create a profile, back up, update, restore.
 - [ ] User docs and a sample-data generator.
