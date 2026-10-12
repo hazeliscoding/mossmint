@@ -78,13 +78,13 @@ public sealed class BankFileImportTests : IDisposable
     public void An_account_fed_by_a_connection_refuses_a_file()
     {
         var sync = FakeBank.First(new DateTimeOffset(2026, 10, 12, 9, 0, 0, TimeSpan.Zero));
-        ImportService.Commit(_session, _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd)));
-        var connected = _session.Data.Accounts().Single(a => a.Name == FakeBank.Checking.Name);
+        ImportService.Commit(_session, _imports.Plan(_session,
+            ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd, new Dictionary<string, Account> { [FakeBank.Checking.ExternalId] = _checking })));
 
-        var plan = Plan(File, connected);
+        var plan = Plan(File, _checking);
 
         plan.CanCommit.Should().BeFalse();
-        plan.Findings.Should().ContainSingle(f => f.Code == "one-source").Which.Title.Should().Contain(connected.Name);
+        plan.Findings.Should().ContainSingle(f => f.Code == "one-source").Which.Title.Should().Contain("a connection (fake-bank)");
     }
 
     [Fact]

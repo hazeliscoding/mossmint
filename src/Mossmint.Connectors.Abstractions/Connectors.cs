@@ -27,6 +27,8 @@ public sealed record ConnectorAccount(string ExternalId, string Name, AccountKin
 
 // A balance the source observed. AsOf is when the institution reported it,
 // not when the sync ran: a sync's timestamp is not a balance's timestamp.
+// Balances and amounts are from the account holder's side, positive meaning
+// money in or held; the import turns them around for cards and loans.
 public sealed record ConnectorBalance(string AccountExternalId, string ObservationId, Money Balance, DateOnly AsOf);
 
 public sealed record ConnectorTransaction(
@@ -41,6 +43,10 @@ public sealed record ConnectorTransaction(
 // pending charge that dropped, or one the bank reversed).
 public sealed record ConnectorRemoval(string AccountExternalId, string TransactionExternalId);
 
+// A problem the source reported, safe to show the user, for one account or
+// (AccountExternalId null) the whole connection.
+public sealed record ConnectorError(string? AccountExternalId, string Message);
+
 // One sync. Accounts lists every account the user shared, every time;
 // balances, transactions and removals may be only what changed since Cursor.
 public sealed record ConnectorSync(
@@ -50,7 +56,10 @@ public sealed record ConnectorSync(
     IReadOnlyList<ConnectorAccount> Accounts,
     IReadOnlyList<ConnectorBalance> Balances,
     IReadOnlyList<ConnectorTransaction> Transactions,
-    IReadOnlyList<ConnectorRemoval> Removed);
+    IReadOnlyList<ConnectorRemoval> Removed)
+{
+    public IReadOnlyList<ConnectorError> Errors { get; init; } = [];
+}
 
 // A source of account data the user chose to connect. Nothing in the pure
 // layers implements this; real connectors are separate projects with their

@@ -18,6 +18,13 @@ public sealed class ConnectorImportTests : IDisposable
     private readonly ImportService _imports;
     private readonly IProfileSession _session;
 
+    // The accounts the user linked the fake bank's accounts to, created by the first sync.
+    private readonly Dictionary<string, Account> _linked = new()
+    {
+        [FakeBank.Checking.ExternalId] = new(new AccountId(Guid.CreateVersion7()), "Household Checking", AccountKind.Checking, Currency.Usd),
+        [FakeBank.Savings.ExternalId] = new(new AccountId(Guid.CreateVersion7()), "Rainy Day Savings", AccountKind.Savings, Currency.Usd),
+    };
+
     public ConnectorImportTests()
     {
         _imports = new ImportService(new WorkbookImporter(), _clock);
@@ -38,7 +45,8 @@ public sealed class ConnectorImportTests : IDisposable
         var plan = Apply(await connector.SyncAsync(null, CancellationToken.None));
 
         plan.Count(ChangeKind.Add).Should().Be(2 + 2 + 3);
-        var checking = _session.Data.Accounts().Single(a => a.Name == "Everyday Checking");
+        var checking = _linked[FakeBank.Checking.ExternalId];
+        _session.Data.Accounts().Should().Contain(a => a.Id == checking.Id && a.Name == "Household Checking");
         _session.Data.Balances(checking.Id).Single().Provenance.Source.Should().Be(SourceKind.Connector);
         _session.Imports.Transactions().Should().HaveCount(3).And.OnlyContain(t => t.Transaction.Provenance.Source == SourceKind.Connector);
         _session.Imports.ReviewItems().Should().BeEmpty();
@@ -64,8 +72,8 @@ public sealed class ConnectorImportTests : IDisposable
 
         var plan = Apply(FakeBank.Second(Morning.AddDays(1)));
 
-        plan.Changes.Should().ContainSingle(c => c.Key.EndsWith("|t-101", StringComparison.Ordinal)).Which.Kind.Should().Be(ChangeKind.Update);
-        _session.Imports.Transactions().Single(t => t.Key.EndsWith("|t-101", StringComparison.Ordinal))
+        plan.Changes.Should().ContainSingle(c => c.Key.EndsWith("|fake-bank:t-101", StringComparison.Ordinal)).Which.Kind.Should().Be(ChangeKind.Update);
+        _session.Imports.Transactions().Single(t => t.Key.EndsWith("|fake-bank:t-101", StringComparison.Ordinal))
             .Transaction.Status.Should().Be(TransactionStatus.Posted);
         _session.Imports.Transactions().Should().HaveCount(4);
     }
@@ -78,7 +86,7 @@ public sealed class ConnectorImportTests : IDisposable
         var plan = Apply(FakeBank.Second(Morning.AddDays(1)));
 
         plan.Changes.Should().ContainSingle(c => c.Kind == ChangeKind.RemovedAtSource);
-        var removed = _session.Imports.Transactions().Single(t => t.Key.EndsWith("|t-102", StringComparison.Ordinal));
+        var removed = _session.Imports.Transactions().Single(t => t.Key.EndsWith("|fake-bank:t-102", StringComparison.Ordinal));
         removed.RemovedAtSource.Should().BeTrue();
         removed.Transaction.Description.Should().Be("Fuel Stop");
         _session.Imports.ReviewItems().Should().ContainSingle(r => r.Code == "removed-at-source");
@@ -102,8 +110,7 @@ public sealed class ConnectorImportTests : IDisposable
 
         Apply(late);
 
-        var checking = _session.Data.Accounts().Single(a => a.Name == "Everyday Checking");
-        var balances = _session.Data.Balances(checking.Id);
+        var balances = _session.Data.Balances(_linked[FakeBank.Checking.ExternalId].Id);
         balances.Should().HaveCount(2);
         balances[0].Balance.Should().Be(Money.Usd(1_409.85m), "the newest observation stays current");
     }
@@ -115,8 +122,40 @@ public sealed class ConnectorImportTests : IDisposable
 
         var plan = Apply(FakeBank.Second(Morning.AddDays(1)) with { Accounts = [FakeBank.Checking] });
 
-        plan.Changes.Should().ContainSingle(c => c.Kind == ChangeKind.NotInSource).Which.Key.Should().EndWith(":sav-002");
+        plan.Findings.Should().ContainSingle(f => f.Code == "connector-account-missing").Which.Title.Should().Contain("Rainy Day Savings");
         _session.Data.Accounts().Should().Contain(a => a.Name == "Rainy Day Savings");
+    }
+
+    [Fact]
+    public void An_account_left_unlinked_is_left_out_and_errors_are_queued_per_account()
+    {
+        _linked.Remove(FakeBank.Savings.ExternalId);
+        var sync = FakeBank.First(Morning) with { Errors = [new ConnectorError(FakeBank.Checking.ExternalId, "Sign in again at your bank.")] };
+
+        var plan = Apply(sync);
+
+        _session.Data.Accounts().Should().ContainSingle();
+        plan.Findings.Should().Contain(f => f.Code == "connector-account-skipped" && f.Title.Contains("Rainy Day Savings"));
+        _session.Imports.ReviewItems().Should().ContainSingle(r => r.Code == "connector-error").Which.Title.Should().Contain("Household Checking");
+    }
+
+    [Fact]
+    public void A_card_balance_and_charges_are_turned_into_what_is_owed()
+    {
+        var card = new ConnectorAccount("card-9", "Rewards Card", AccountKind.CreditCard, Currency.Usd);
+        _linked[card.ExternalId] = new Account(new AccountId(Guid.CreateVersion7()), "Rewards Card", AccountKind.CreditCard, Currency.Usd);
+        var sync = FakeBank.First(Morning) with
+        {
+            Accounts = [FakeBank.Checking, FakeBank.Savings, card],
+            Balances = [new(card.ExternalId, "bal-9", Money.Usd(-311.42m), new DateOnly(2026, 10, 8))],
+            Transactions = [new(card.ExternalId, "c-1", new DateOnly(2026, 10, 7), Money.Usd(-25.10m), false, "Green Grocer")],
+        };
+
+        Apply(sync);
+
+        var id = _linked[card.ExternalId].Id;
+        _session.Data.Balances(id).Single().Balance.Should().Be(Money.Usd(311.42m));
+        _session.Data.Transactions(id).Single().Amount.Should().Be(Money.Usd(25.10m));
     }
 
     [Fact]
@@ -124,7 +163,7 @@ public sealed class ConnectorImportTests : IDisposable
     {
         var sync = FakeBank.First(Morning) with { Accounts = [FakeBank.Savings] };
 
-        var plan = _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd));
+        var plan = _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd, _linked));
 
         plan.CanCommit.Should().BeFalse();
         plan.Findings.Should().Contain(f => f.Code == "connector-unknown-account");
@@ -132,7 +171,7 @@ public sealed class ConnectorImportTests : IDisposable
 
     private ImportPlan Apply(ConnectorSync sync)
     {
-        var plan = _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd));
+        var plan = _imports.Plan(_session, ConnectorBatches.From(sync, FakeBank.DisplayName, Today, Currency.Usd, _linked));
         ImportService.Commit(_session, plan);
         return plan;
     }

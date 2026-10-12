@@ -6,15 +6,18 @@ using Mossmint.Domain.Accounts;
 
 namespace Mossmint.Application.Import;
 
-// Normalizes a connector sync into the same batch a workbook import produces,
-// so connectors get the same validation, reconciliation, dry run, review queue
+// Normalizes a connector sync into the same batch a file import produces, so
+// connectors get the same validation, reconciliation, dry run, review queue
 // and atomic commit. Nothing here talks to a provider.
 public static class ConnectorBatches
 {
     // A sync older than this is stale: its balances may no longer be true.
     public const int StaleAfterDays = 3;
 
-    public static ImportBatch From(ConnectorSync sync, string displayName, DateOnly today, Currency currency)
+    // Destinations maps each of the source's account IDs to the Mossmint account
+    // the user linked it to (one that exists, or one this import creates).
+    // Unlinked accounts are left out.
+    public static ImportBatch From(ConnectorSync sync, string displayName, DateOnly today, Currency currency, IReadOnlyDictionary<string, Account> destinations)
     {
         var scope = Scope(sync.Connector);
         var file = new SourceFileInfo(scope, Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(scope))), 0, displayName);
@@ -36,21 +39,45 @@ public static class ConnectorBatches
                 $"Account '{orphan}' isn't in the sync's account list, so its data can't be placed.", [new SourceRef(scope, $"account:{orphan}")], scope));
         }
 
+        foreach (var account in sync.Accounts.Where(a => !destinations.ContainsKey(a.ExternalId)))
+        {
+            findings.Add(new ImportFinding("connector-account-skipped", FindingSeverity.Info, $"{account.Name} left out",
+                $"It isn't linked to a Mossmint account, so {displayName} data for it wasn't imported.", [new SourceRef(scope, $"account:{account.ExternalId}")], scope));
+        }
+
+        foreach (var (id, account) in destinations.Where(d => !known.Contains(d.Key)))
+        {
+            findings.Add(new ImportFinding("connector-account-missing", FindingSeverity.NeedsReview, $"{account.Name} is no longer shared by {displayName}",
+                "The connection stopped sending this account. What it brought in before is kept; share it again at the provider, or unlink it.",
+                [new SourceRef(scope, $"account:{id}")], ImportKeys.Account(account.Id)));
+        }
+
+        foreach (var error in sync.Errors)
+        {
+            var name = error.AccountExternalId is { } id && destinations.TryGetValue(id, out var linked) ? linked.Name : displayName;
+            findings.Add(new ImportFinding("connector-error", FindingSeverity.NeedsReview, $"{name}: {displayName} reported a problem", error.Message,
+                [new SourceRef(scope, error.AccountExternalId is { } a ? $"account:{a}" : "")], error.AccountExternalId ?? scope));
+        }
+
+        Account? Linked(string externalId) => destinations.GetValueOrDefault(externalId);
+        Money Signed(string externalId, Money amount) => Linked(externalId)!.IsLiability ? -amount : amount;
+        string Key(string externalId) => ImportKeys.Account(Linked(externalId)!.Id);
+        string TransactionId(string externalId) => $"{sync.Connector}:{externalId}";
+
         return new ImportBatch($"connector:{sync.Connector}", ImportOrigin.Connector, today, currency, [file])
         {
-            Accounts = [.. sync.Accounts.Select(a => new ProposedAccount(AccountKey(sync.Connector, a.ExternalId), a.Name, a.Kind, [new SourceRef(scope, $"account:{a.ExternalId}")]))],
-            Balances = [.. sync.Balances.Where(b => known.Contains(b.AccountExternalId)).Select(b => new ProposedBalance(
-                AccountKey(sync.Connector, b.AccountExternalId), b.Balance, b.AsOf, $"Reported by {displayName}", new SourceRef(scope, $"balance:{b.ObservationId}")))],
-            Transactions = [.. sync.Transactions.Where(t => known.Contains(t.AccountExternalId)).Select(t => new ProposedTransaction(
-                AccountKey(sync.Connector, t.AccountExternalId), t.ExternalId, t.Date, t.Amount, t.IsPending ? TransactionStatus.Pending : TransactionStatus.Posted,
-                t.Description, new SourceRef(scope, $"transaction:{t.ExternalId}")))],
-            Tombstones = [.. sync.Removed.Select(r => new Tombstone(AccountKey(sync.Connector, r.AccountExternalId), r.TransactionExternalId,
+            Accounts = [.. sync.Accounts.Where(a => Linked(a.ExternalId) is not null).Select(a => Linked(a.ExternalId)!)
+                .Select(a => new ProposedAccount(ImportKeys.Account(a.Id), a.Name, a.Kind, [new SourceRef(scope, "")]))],
+            Balances = [.. sync.Balances.Where(b => known.Contains(b.AccountExternalId) && Linked(b.AccountExternalId) is not null).Select(b => new ProposedBalance(
+                Key(b.AccountExternalId), Signed(b.AccountExternalId, b.Balance), b.AsOf, $"Reported by {displayName}", new SourceRef(scope, $"balance:{b.ObservationId}")))],
+            Transactions = [.. sync.Transactions.Where(t => known.Contains(t.AccountExternalId) && Linked(t.AccountExternalId) is not null).Select(t => new ProposedTransaction(
+                Key(t.AccountExternalId), TransactionId(t.ExternalId), t.Date, Signed(t.AccountExternalId, t.Amount),
+                t.IsPending ? TransactionStatus.Pending : TransactionStatus.Posted, t.Description, new SourceRef(scope, $"transaction:{t.ExternalId}")))],
+            Tombstones = [.. sync.Removed.Where(r => Linked(r.AccountExternalId) is not null).Select(r => new Tombstone(Key(r.AccountExternalId), TransactionId(r.TransactionExternalId),
                 new SourceRef(scope, $"transaction:{r.TransactionExternalId}")))],
             Findings = findings,
         };
     }
 
     public static string Scope(ConnectorId connector) => $"connector:{connector}";
-
-    public static string AccountKey(ConnectorId connector, string externalId) => $"{Scope(connector)}:{externalId}";
 }
