@@ -60,7 +60,7 @@ jobs:
       - run: dotnet test -c Release --no-build
       - name: Publish self-contained win-x64
         run: dotnet publish src/Mossmint.Desktop -c Release -r win-x64 --self-contained true -p:RestoreLockedMode=true -p:Version=${{ env.VERSION }} -o publish
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-publish
           path: |
@@ -157,7 +157,7 @@ jobs:
           if [ -f "releases/RELEASES-${CHANNEL}" ]; then cp "releases/RELEASES-${CHANNEL}" dist/; fi
           cp releases/${PACK_ID}-${VERSION}-*.nupkg dist/
           ls -la dist
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist-windows
           path: dist/*
