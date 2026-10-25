@@ -159,6 +159,10 @@ Until 1.0, each milestone ships as its own minor version. The first release bund
 - **0.3.0–0.6.0 were captured from their tags; each later release is captured right after its tag.** `CompatibilityTests` opens every fixture and restores its backup with today's code, so each released schema's migration path is tested too. A fixture is never captured again: a failure is fixed in the code.
 - **The fixtures hold workbook data only** (accounts, debts, bills, paychecks, balances, review items), because the import tool imports workbooks. Bank data, connections and the forecast journal aren't in them yet.
 
+## Decisions (2026-10-24, release signing)
+
+- **Releases are signed in a job of their own.** The build, the tests and the release checks run every package they load, so the jobs that run them can't get a token. `windows-package` takes the published files and only packs, signs and verifies them, and its files are the ones the release ships; `windows-check` then smoke-tests, installs and upgrades those same files. A compromised package could otherwise take the token and sign files of its own with the owner's certificate, unseen in any release. A package that changes the build is still signed with it. This gives up a single Windows job: a release starts three Windows runners and passes the files between them.
+
 ## M0: Skeleton and guardrails (v0.3.0)
 
 - [x] Repo files: `README`, `ROADMAP`, `LICENSE`, `AGENTS.md`, `CLAUDE.md`, `.editorconfig`, `.gitattributes`, `.gitignore`.
