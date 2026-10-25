@@ -40,19 +40,12 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           if [[ "$version" == *-* ]]; then echo "suffix=-beta" >> "$GITHUB_OUTPUT"; else echo "suffix=" >> "$GITHUB_OUTPUT"; fi
 
+  # The tests and the build run every package they load, so this job gets no way to sign.
   windows:
     needs: version
     runs-on: windows-latest
-    # Tag builds run in the release environment, whose variables let this job sign in to Azure Artifact Signing.
-    # Manual runs have no environment, so they build unsigned. Signing switches on only when the variables exist.
-    environment: ${{ github.ref_type == 'tag' && 'release' || '' }}
-    permissions:
-      contents: read
-      id-token: write
     env:
       VERSION: ${{ needs.version.outputs.version }}
-      CHANNEL: win${{ needs.version.outputs.suffix }}
-      SIGN: ${{ vars.AZURE_CLIENT_ID != '' && vars.ARTIFACT_SIGNING_ENDPOINT != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -67,6 +60,40 @@ jobs:
       - run: dotnet test -c Release --no-build
       - name: Publish self-contained win-x64
         run: dotnet publish src/Mossmint.Desktop -c Release -r win-x64 --self-contained true -p:RestoreLockedMode=true -p:Version=${{ env.VERSION }} -o publish
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-publish
+          path: |
+            publish/
+            !publish/**/*.pdb
+          if-no-files-found: error
+
+  # The only job that can sign. It runs no build or test code: it packs and signs the published files with vpk,
+  # and its dist-windows artifact is what the release ships.
+  windows-package:
+    needs: [version, windows]
+    runs-on: windows-latest
+    # Tag builds run in the release environment, whose variables let this job sign in to Azure Artifact Signing.
+    # Manual runs have no environment, so they build unsigned. Signing switches on only when the variables exist.
+    environment: ${{ github.ref_type == 'tag' && 'release' || '' }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      CHANNEL: win${{ needs.version.outputs.suffix }}
+      SIGN: ${{ vars.AZURE_CLIENT_ID != '' && vars.ARTIFACT_SIGNING_ENDPOINT != '' }}
+    steps:
+      # For vpk's version in dotnet-tools.json and the icon.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-publish
+          path: publish
+      - run: dotnet tool restore
       - name: Refuse to ship data files
         shell: pwsh
         run: |
@@ -117,10 +144,47 @@ jobs:
           if (-not $app) { throw "The portable package has no app" }
           & $signtool.FullName verify /pa $app.FullName
           if ($LASTEXITCODE -ne 0) { throw "Mossmint.Desktop.exe isn't signed" }
+      - name: Collect this version's files
+        shell: bash
+        run: |
+          mkdir dist
+          ls -la releases
+          cp "releases/${PACK_ID}-${CHANNEL}-Setup.exe" dist/Mossmint-Setup.exe
+          cp "releases/${PACK_ID}-${CHANNEL}-Portable.zip" dist/Mossmint-win-x64-Portable.zip
+          cp "releases/releases.${CHANNEL}.json" dist/
+          # The legacy RELEASES index is "RELEASES" on the default channel and "RELEASES-<channel>" on others.
+          if [ -f releases/RELEASES ]; then cp releases/RELEASES dist/; fi
+          if [ -f "releases/RELEASES-${CHANNEL}" ]; then cp "releases/RELEASES-${CHANNEL}" dist/; fi
+          cp releases/${PACK_ID}-${VERSION}-*.nupkg dist/
+          ls -la dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-windows
+          path: dist/*
+          if-no-files-found: error
+
+  # Tests the files the release ships. It runs the app and the import tools, so it gets no way to sign
+  # and uploads nothing.
+  windows-check:
+    needs: [version, windows-package]
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist-windows
+          path: dist
+      # The upgrade test builds and runs this commit's import tool.
+      - run: dotnet restore --locked-mode
       - name: Smoke test the packaged app
         shell: pwsh
         run: |
-          Expand-Archive "releases\$env:PACK_ID-$env:CHANNEL-Portable.zip" portable
+          Expand-Archive "dist\Mossmint-win-x64-Portable.zip" portable
           $exe = Get-ChildItem portable -Recurse -Filter Mossmint.Desktop.exe | Where-Object FullName -like '*\current\*' | Select-Object -First 1
           if (-not $exe) { throw "The portable package has no app" }
 
@@ -141,7 +205,7 @@ jobs:
           $dir = "$env:RUNNER_TEMP\installed"
           $env:MOSSMINT_DATA_ROOT = "$env:RUNNER_TEMP\installed-data"
           # Wait for Setup.exe alone: -Wait would also wait for the app Velopack starts after installing.
-          $setup = Start-Process "releases\$env:PACK_ID-$env:CHANNEL-Setup.exe" -ArgumentList "--silent", "--installto", $dir -PassThru
+          $setup = Start-Process "dist\Mossmint-Setup.exe" -ArgumentList "--silent", "--installto", $dir -PassThru
           if (-not $setup.WaitForExit(300000)) { throw "Setup.exe didn't finish within five minutes" }
           if ($setup.ExitCode -ne 0) { throw "Setup.exe failed with exit code $($setup.ExitCode)" }
           $exe = "$dir\current\Mossmint.Desktop.exe"
@@ -184,7 +248,7 @@ jobs:
           Get-Process Mossmint.Desktop -ErrorAction SilentlyContinue | Stop-Process -Force
 
           # What UpdateManager.ApplyUpdatesAndRestart does once a download finishes, without the restart.
-          $package = Get-ChildItem "releases\$env:PACK_ID-$env:VERSION-*full.nupkg" | Select-Object -First 1
+          $package = Get-ChildItem "dist\$env:PACK_ID-$env:VERSION-*full.nupkg" | Select-Object -First 1
           $apply = Start-Process "$work\app\Update.exe" -ArgumentList "apply", "--silent", "--norestart", "--package", $package.FullName -PassThru -NoNewWindow
           if (-not $apply.WaitForExit(300000) -or $apply.ExitCode -ne 0) { throw "Update.exe couldn't apply $env:VERSION" }
           $exe = "$work\app\current\Mossmint.Desktop.exe"
@@ -195,27 +259,9 @@ jobs:
           if (-not $check.WaitForExit(300000)) { throw "The upgrade check didn't finish" }
           Get-Content "$work\upgrade-check.json"
           if ($check.ExitCode -ne 0) { throw "The profile or backup from $previous didn't survive the update" }
-      - name: Collect this version's files
-        shell: bash
-        run: |
-          mkdir dist
-          ls -la releases
-          cp "releases/${PACK_ID}-${CHANNEL}-Setup.exe" dist/Mossmint-Setup.exe
-          cp "releases/${PACK_ID}-${CHANNEL}-Portable.zip" dist/Mossmint-win-x64-Portable.zip
-          cp "releases/releases.${CHANNEL}.json" dist/
-          # The legacy RELEASES index is "RELEASES" on the default channel and "RELEASES-<channel>" on others.
-          if [ -f releases/RELEASES ]; then cp releases/RELEASES dist/; fi
-          if [ -f "releases/RELEASES-${CHANNEL}" ]; then cp "releases/RELEASES-${CHANNEL}" dist/; fi
-          cp releases/${PACK_ID}-${VERSION}-*.nupkg dist/
-          ls -la dist
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: dist-windows
-          path: dist/*
-          if-no-files-found: error
 
   publish:
-    needs: [version, windows]
+    needs: [version, windows-package, windows-check]
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
