@@ -20,7 +20,7 @@
          (non-Core) or another SQLitePCLRaw bundle: a second SQLite binary could open profiles unencrypted. -->
     <PackageVersion Include="SQLite3MC.PCLRaw.bundle" Version="2.4.0" />
     <PackageVersion Include="NSec.Cryptography" Version="26.4.0" />
-    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
   </ItemGroup>
   <ItemGroup Label="Tests">
     <!-- 3.2.x: Avalonia.Headless.XUnit 12.1 is built against it and fails discovery on 4.x. -->
