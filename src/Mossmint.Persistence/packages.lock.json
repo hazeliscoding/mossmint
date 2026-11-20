@@ -48,12 +48,12 @@
       },
       "SQLite3MC.PCLRaw.bundle": {
         "type": "Direct",
-        "requested": "[2.4.0, )",
-        "resolved": "2.4.0",
-        "contentHash": "D86SPXNYZQPLnurZnDoo6ZI3TUsw7X5JWIBAMcusAJxPiGepjd5ZvyaXWOFt/GjSfSI2H5B9oGT7P7ymUC1TBg==",
+        "requested": "[2.7.1, )",
+        "resolved": "2.7.1",
+        "contentHash": "U2HdC1I4Ow/olKc3eqNTGHNS+rxHD0voa6qpD6Nl54mRkRbyRQHwFEXxbOMMEZek90CIjDaQQwThJ8vd1HqiEg==",
         "dependencies": {
-          "SQLite3MC.PCLRaw.lib": "2.4.0",
-          "SQLite3MC.PCLRaw.provider": "2.4.0"
+          "SQLite3MC.PCLRaw.lib": "2.7.1",
+          "SQLite3MC.PCLRaw.provider": "2.7.1"
         }
       },
       "System.Security.Cryptography.ProtectedData": {
@@ -272,13 +272,13 @@
       },
       "SQLite3MC.PCLRaw.lib": {
         "type": "Transitive",
-        "resolved": "2.4.0",
-        "contentHash": "1In6cTL5SGGVbyJh5Uf6Qq6/hf9ecP6bSIUkU7F9JaVvAiMZTwzLXwgXqm4jjWtHpjHiaVURUrjkpbDG3kTKHw=="
+        "resolved": "2.7.1",
+        "contentHash": "2qAVDsPXpkjnyWed+WXpCGhL/0Jryx900B7J7ikGTWWZ5YGFGGig0JHz5N8SAB9/7Al+9hmzUU1ivAQxMIU/3A=="
       },
       "SQLite3MC.PCLRaw.provider": {
         "type": "Transitive",
-        "resolved": "2.4.0",
-        "contentHash": "2PTNuZ/3k1Bpva0ZbEa4Q6w6hFclZQGyTi46WtQCp99rgwczOMzoxDWJlCWndIne7giMM/BK8hmHZ0ekbqPxUQ==",
+        "resolved": "2.7.1",
+        "contentHash": "LPRdFKVGz4xG4X5ILmTSVeJa6CdNtHYkpj4RRC75CmZRmHnK+/EAbz94PLmO/uF5tfq7fQb5uuVfQxgScpVpvQ==",
         "dependencies": {
           "SQLitePCLRaw.core": "3.0.2"
         }
@@ -344,15 +344,15 @@
       "mossmint.application": {
         "type": "Project",
         "dependencies": {
-          "Mossmint.Connectors.Abstractions": "[0.1.0, )",
-          "Mossmint.Domain": "[0.1.0, )",
-          "Mossmint.Engine": "[0.1.0, )"
+          "Mossmint.Connectors.Abstractions": "[0.7.0, )",
+          "Mossmint.Domain": "[0.7.0, )",
+          "Mossmint.Engine": "[0.7.0, )"
         }
       },
       "mossmint.connectors.abstractions": {
         "type": "Project",
         "dependencies": {
-          "Mossmint.Domain": "[0.1.0, )"
+          "Mossmint.Domain": "[0.7.0, )"
         }
       },
       "mossmint.domain": {
@@ -361,7 +361,7 @@
       "mossmint.engine": {
         "type": "Project",
         "dependencies": {
-          "Mossmint.Domain": "[0.1.0, )"
+          "Mossmint.Domain": "[0.7.0, )"
         }
       },
       "Microsoft.Extensions.DependencyInjection": {
@@ -382,8 +382,8 @@
       },
       "SQLite3MC.PCLRaw.lib": {
         "type": "Transitive",
-        "resolved": "2.4.0",
-        "contentHash": "1In6cTL5SGGVbyJh5Uf6Qq6/hf9ecP6bSIUkU7F9JaVvAiMZTwzLXwgXqm4jjWtHpjHiaVURUrjkpbDG3kTKHw=="
+        "resolved": "2.7.1",
+        "contentHash": "2qAVDsPXpkjnyWed+WXpCGhL/0Jryx900B7J7ikGTWWZ5YGFGGig0JHz5N8SAB9/7Al+9hmzUU1ivAQxMIU/3A=="
       }
     }
   }
